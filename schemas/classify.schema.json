@@ -1,0 +1,96 @@
+{
+ "type": "object",
+ "properties": {
+  "doc_type": {
+   "type": "string",
+   "enum": [
+    "office_visit",
+    "er_hospital",
+    "pt_chiro",
+    "imaging_report",
+    "diagnostic_test",
+    "procedure_note",
+    "operative_report",
+    "work_status_form",
+    "defense_doctor_report",
+    "our_doctor_report",
+    "ur_determination",
+    "fce",
+    "vocational_report",
+    "letter_narrative",
+    "prescription_pharmacy",
+    "billing",
+    "fax_cover",
+    "index_or_tab",
+    "deposition_transcript",
+    "hearing_transcript",
+    "bill_memo",
+    "pleading_or_petition",
+    "order_or_notice",
+    "correspondence",
+    "attorney_note",
+    "other"
+   ]
+  },
+  "date": {
+   "type": "string"
+  },
+  "author_or_witness": {
+   "type": "string"
+  },
+  "patient_name_on_doc": {
+   "type": "string"
+  },
+  "matches_header": {
+   "type": "string",
+   "enum": [
+    "yes",
+    "no",
+    "cannot tell"
+   ]
+  },
+  "route": {
+   "type": "string",
+   "enum": [
+    "records_review",
+    "defense_report",
+    "our_doctor_report",
+    "testimony_digest",
+    "bill_extraction",
+    "procedural_extraction",
+    "attorney_entry",
+    "stop_wrong_matter"
+   ]
+  },
+  "pages": {
+   "type": "string"
+  },
+  "bates": {
+   "type": "string"
+  },
+  "flags": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "doc_type",
+  "date",
+  "author_or_witness",
+  "patient_name_on_doc",
+  "matches_header",
+  "route",
+  "pages",
+  "bates",
+  "flags",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "classify"
+}

@@ -1,0 +1,500 @@
+<meta charset="utf-8">
+<title>Loop Watch</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --ground: #eef0f3;
+    --surface: #ffffff;
+    --surface-2: #e4e7ec;
+    --line: #cfd4dc;
+    --ink: #1c2230;
+    --ink-2: #5a6272;
+    --ember: #b4562a;
+    --ember-soft: #f3dfd4;
+    --good: #2f7d4f;
+    --good-soft: #dcefe3;
+    --warn: #9a7414;
+    --warn-soft: #f3ead0;
+    --crit: #a83a32;
+    --crit-soft: #f4dcda;
+    --run: #2b5f9e;
+    --run-soft: #dbe6f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #161a21;
+      --surface: #1e242e;
+      --surface-2: #262d39;
+      --line: #364052;
+      --ink: #e7eaef;
+      --ink-2: #9aa3b2;
+      --ember: #e2814f;
+      --ember-soft: #3d2a20;
+      --good: #6fc48f;
+      --good-soft: #1f3a2a;
+      --warn: #d9b34a;
+      --warn-soft: #3c3319;
+      --crit: #e2726a;
+      --crit-soft: #40201e;
+      --run: #7aa8e0;
+      --run-soft: #1f2e44;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #161a21;
+    --surface: #1e242e;
+    --surface-2: #262d39;
+    --line: #364052;
+    --ink: #e7eaef;
+    --ink-2: #9aa3b2;
+    --ember: #e2814f;
+    --ember-soft: #3d2a20;
+    --good: #6fc48f;
+    --good-soft: #1f3a2a;
+    --warn: #d9b34a;
+    --warn-soft: #3c3319;
+    --crit: #e2726a;
+    --crit-soft: #40201e;
+    --run: #7aa8e0;
+    --run-soft: #1f2e44;
+  }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 64px; display: flex; flex-direction: column; gap: 28px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 24px; }
+  h1 { font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 30px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+  h1 small { font-family: "IBM Plex Sans", sans-serif; font-weight: 400; font-size: 14px; color: var(--ink-2); margin-left: 10px; }
+  .stamp { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); }
+  .stamp b { color: var(--ink); font-weight: 500; }
+  .rules { color: var(--ink-2); font-size: 13px; margin: 0; max-width: 68ch; }
+  .example-banner { background: var(--warn-soft); color: var(--warn); border: 1px solid var(--warn); padding: 8px 14px; font-size: 12.5px; font-family: "IBM Plex Mono", monospace; }
+
+  .summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--line); padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+  .tile .k { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  .tile .v { font-family: "IBM Plex Mono", monospace; font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .tile .s { font-size: 12px; color: var(--ink-2); }
+
+  section { display: flex; flex-direction: column; gap: 10px; }
+  .rh { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+  h2 { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 20px; margin: 0; }
+  .rh .meta { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 14px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 760px; background: var(--surface); }
+  th { text-align: left; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.n, th.n { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.num { text-align: right; }
+  th.num { text-align: right; }
+  td.task { min-width: 260px; }
+  td.task .sub { display: block; font-size: 12px; color: var(--ink-2); }
+  tr.running td:first-child { box-shadow: inset 3px 0 0 var(--ember); }
+  tr.failed td:first-child { box-shadow: inset 3px 0 0 var(--crit); }
+  tr.total td { background: var(--surface-2); font-weight: 600; border-bottom: none; }
+  .tier { font-family: "IBM Plex Mono", monospace; font-size: 12px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; }
+  .chip { display: inline-block; font-size: 12px; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+  .chip.done { background: var(--good-soft); color: var(--good); }
+  .chip.fail { background: var(--crit-soft); color: var(--crit); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); }
+  .chip.run { background: var(--ember-soft); color: var(--ember); }
+  .chip.wait { background: var(--surface-2); color: var(--ink-2); }
+  .chip.run::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ember); margin-right: 6px; vertical-align: 1px; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+  @media (prefers-reduced-motion: reduce) { .chip.run::before { animation: none; } }
+  .note { font-size: 12px; color: var(--ink-2); margin: 0; }
+  .bar { position: relative; height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin-top: 7px; max-width: 420px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--ember); transition: width 1.2s ease; }
+  .bar.done i { background: var(--good); }
+  .bar.fail i { background: var(--crit); }
+  .bar.warn i { background: var(--warn); }
+  .pct { display: block; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-2); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  footer { font-size: 12px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 12px; }
+  footer code { font-family: "IBM Plex Mono", monospace; }
+
+  /* ---- live header: progress bar, now card, goal track, lane board, feed ---- */
+  .top { display: flex; flex-direction: column; gap: 8px; }
+  .pbar { position: relative; height: 14px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 7px; overflow: hidden; }
+  .pbar > i { display: block; height: 100%; width: 0; background: var(--ember); transition: width 1.2s ease; }
+  .pbar.done > i { background: var(--good); }
+  .pbar .tk { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--ground); }
+  .pline { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 20px; }
+  .pline .l { font-size: 15px; }
+  .pline .l b { font-family: "IBM Plex Mono", monospace; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .pline .r { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .pline .r b { color: var(--ink); font-weight: 500; }
+  .stages { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--ink-2); }
+  .stages li::before { content: "○ "; }
+  .stages li.past { color: var(--good); }
+  .stages li.past::before { content: "✓ "; }
+  .stages li.cur { color: var(--ember); font-weight: 600; }
+  .stages li.cur::before { content: "● "; }
+  .livedot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ink-2); margin-right: 6px; vertical-align: 1px; }
+  .livedot.on { background: var(--good); animation: pulse 1.6s ease-in-out infinite; }
+  .nowgrid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 12px; }
+  .nowgrid.solo { grid-template-columns: minmax(0, 1fr); }
+  .card { background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+  .card .k { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  .card .say { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: 19px; line-height: 1.35; margin: 0; text-wrap: pretty; max-width: 60ch; }
+  .card .m { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 14px; font-variant-numeric: tabular-nums; }
+  .card .m .red { color: var(--crit); }
+  .card .then { font-size: 12.5px; color: var(--ink-2); margin: 0; }
+  .goal { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px 10px; align-items: center; font-family: "IBM Plex Mono", monospace; font-size: 12px; font-variant-numeric: tabular-nums; }
+  .track { position: relative; height: 8px; background: var(--surface-2); border-radius: 4px; }
+  .track > i { display: block; height: 100%; border-radius: 4px; background: var(--warn); transition: width 1.2s ease; }
+  .track.hit > i { background: var(--good); }
+  .track .tgt { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--ink); }
+  .track .base { position: absolute; top: -2px; bottom: -2px; width: 2px; margin-left: -1px; background: var(--ink-2); }
+  .lanes { display: flex; flex-direction: column; gap: 7px; }
+  .lane { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr) 54px 96px; gap: 10px; align-items: center; font-size: 13px; }
+  .lane .bar { margin: 0; max-width: none; height: 8px; border-radius: 4px; }
+  .lane .c { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+  .lane .chip { text-align: center; }
+  .lane .nt { grid-column: 1 / -1; font-size: 12px; color: var(--ink-2); margin-top: -4px; }
+  .feed { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .feed li { display: grid; grid-template-columns: 132px minmax(0, 1fr); gap: 10px; }
+  .feed time { white-space: nowrap; }
+  .feed time { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .feed .fail { color: var(--crit); }
+  .feed .done { color: var(--good); }
+  .sub-h { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+  @media (max-width: 640px) {
+    .nowgrid { grid-template-columns: minmax(0, 1fr); }
+    .lane { grid-template-columns: minmax(0, 1fr) 96px; }
+    .lane .bar { grid-column: 1 / -1; grid-row: 2; }
+    .lane .c { display: none; }
+    .feed li { grid-template-columns: 1fr; gap: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .livedot.on { animation: none; } .pbar > i, .track > i { transition: none; } }
+
+  /* ---- tabs: Now (the live round) and History (every closed round) ---- */
+  .tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--ink); margin-top: -12px; }
+  .tabs button { font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); background: none; border: 1px solid transparent; border-bottom: none; padding: 8px 16px; cursor: pointer; border-radius: 4px 4px 0 0; }
+  .tabs button:hover { color: var(--ink); background: var(--surface-2); }
+  .tabs button[aria-selected="true"] { color: var(--ground); background: var(--ink); }
+  .tabs button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+  .tabs .cnt { font-family: "IBM Plex Mono", monospace; font-size: 12px; margin-left: 6px; }
+  [hidden] { display: none !important; }
+  .pane { display: flex; flex-direction: column; gap: 28px; }
+  .wrap > *, .pane > * { min-width: 0; }
+  .rh .meta { min-width: 0; }
+  .rh .meta .chip { white-space: normal; border-radius: 10px; }
+  .empty { font-size: 13px; color: var(--ink-2); margin: 0; }
+
+  /* ---- tabs in the title row; Agent Flow under the live header ---- */
+  header { align-items: center; }
+  header .tabs { border-bottom: none; margin-top: 0; gap: 6px; }
+  header .tabs button { border: 1px solid var(--line); border-radius: 4px; padding: 6px 14px; background: var(--surface); }
+  header .tabs button[aria-selected="true"] { border-color: var(--ink); }
+  .stampline { margin: 0; }
+  .flowhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; }
+  .flowhead a { color: var(--run); font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  .flowframe { display: block; width: 100%; height: 640px; min-height: 320px; border: 1px solid var(--line); background: #0b0d12; resize: vertical; overflow: auto; }
+  .flownote { background: var(--surface); border: 1px dashed var(--line); padding: 14px 16px; font-size: 13px; color: var(--ink-2); margin: 0; max-width: none; }
+  .flownote code { font-family: "IBM Plex Mono", monospace; font-size: 12px; color: var(--ink); background: var(--surface-2); padding: 1px 5px; border-radius: 3px; }
+</style>
+
+<div class="wrap">
+  <div class="top" id="top">
+    <div class="pbar" id="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-label="Round progress"><i></i></div>
+    <div class="pline"><span class="l" id="pl"></span><span class="r" id="pr"></span></div>
+    <ul class="stages" id="stages" aria-label="Stages of a round"></ul>
+  </div>
+  <header>
+    <h1>Loop Watch <small>create → build → verify</small></h1>
+    <nav class="tabs" role="tablist" aria-label="Loop Watch views">
+      <button type="button" role="tab" id="tab-now" aria-controls="pane-now" aria-selected="true">Now</button>
+      <button type="button" role="tab" id="tab-hist" aria-controls="pane-hist" aria-selected="false">History<span class="cnt" id="histcnt"></span></button>
+    </nav>
+  </header>
+  <div class="pane" id="pane-now" role="tabpanel" aria-labelledby="tab-now">
+  <div class="nowgrid" id="nowgrid">
+    <div class="card"><span class="k"><span class="livedot" id="livedot"></span><span id="livelabel">Happening now</span></span><p class="say" id="say"></p><div class="m" id="nowmeta"></div><p class="then" id="then"></p></div>
+    <div class="card" id="goalcard"><span class="k" id="goalk"></span><div class="goal" id="goal"></div><p class="then" id="goalnote"></p></div>
+  </div>
+  <section id="lanesec" hidden><p class="sub-h">Lanes in this round</p><div class="lanes" id="lanes"></div></section>
+  <section id="flowsec">
+    <div class="flowhead"><p class="sub-h">Agent Flow · what every agent is doing, live</p><a id="flowlink" href="http://127.0.0.1:3001" target="_blank" rel="noopener">open it by itself</a></div>
+    <div id="flowbody"><p class="flownote">Checking for the Agent Flow viewer…</p></div>
+  </section>
+  <section id="feedsec" hidden><p class="sub-h">Latest</p><ul class="feed" id="feed"></ul></section>
+  <p class="example-banner">EXAMPLE DATA — this page ships with one placeholder round so the layout
+    is visible before the first real spawn. Replace the <code>ROUNDS</code> block in the script tag
+    at the bottom of this file with the project's own rounds, then republish.</p>
+    <div id="rounds-now"></div>
+  </div>
+  <div class="pane" id="pane-hist" role="tabpanel" aria-labelledby="tab-hist" hidden>
+  <p class="stamp stampline">Updated <b id="stamp"></b> · tables republish on every spawn and completion; the header above is live</p>
+  <p class="rules">Tokens are each worker's own usage as reported at completion; the chair's tokens are not counted. Elapsed is the worker's wall-clock. <span id="tier-rule">State the project's own tier rule here (e.g. "sonnet and opus only; no Fable sub-agents without permission").</span> Source of record: <code>docs/loop/agent-log.md</code> in the repo.</p>
+
+  <div class="summary" id="summary"></div>
+  <div id="rounds"></div>
+
+  </div>
+
+  <footer>Status key: <span class="chip done">done</span> finished and accepted · <span class="chip run">running</span> in flight · <span class="chip fail">failed</span> killed or verdict FAIL · <span class="chip warn">stopped</span> stopped short, re-briefed · <span class="chip wait">pending</span> not yet spawned.</footer>
+</div>
+
+<script>
+  // ---- data: edit this block and republish ----
+  // EXAMPLE DATA. Replace ROUNDS below with the real project's rounds before the first publish
+  // that anyone other than the chair will see. One short round is kept here as a worked example
+  // of the shape: a build item that finished, a verifier that failed the round once, a fix that
+  // closed it, and a worker still running — one row per status chip the page defines.
+  const UPDATED = "2026-01-01 00:00 UTC (example)";
+  const ROUNDS = [
+    {
+      name: "Round 1 — e.g. Phase 1 foundation (example round)",
+      opened: "2026-01-01 09:00", closed: "",
+      verdict: { text: "building, verify cycle 1 failed once", cls: "run" },
+      rows: [
+        ["Round-1 build brief", "e.g. reconciled the plan to the code, 4 work items, 2 owner questions", "opus", "12 min", 210, "done", "done"],
+        ["Build item 1 (e.g. nav grid + pathing)", "e.g. 3 CHECKs, all proven red-then-green", "opus", "54 min", 340, "done", "done"],
+        ["Fresh verifier, cycle 1", "e.g. one item's seed survived; verdict FAIL", "opus", "19 min", 165, "verdict FAIL", "fail"],
+        ["Fix cycle 1", "e.g. closed the survived seed, reproduced RED then GREEN", "sonnet", "14 min", 122, "done", "done"],
+        ["Build item 2 (e.g. wave budget), attempt 1", "", "opus", "—", null, "killed: API error", "fail"],
+        ["Build item 2, attempt 2 (tier switched)", "in progress", "sonnet", "since 10:40", null, "running", "run"],
+        ["Fresh verifier, cycle 2", "queued behind item 2", "—", "", null, "pending", "wait"],
+      ],
+      totals: { workers: 6, wall: "~2.3 h so far", tokens: 837, cycles: 1 }
+    }
+  ];
+  // ---- live header data: the snapshot the page shows until the db answers ----
+  // The chair keeps the SAME object in the artifact's db at `loop/live` (ArtifactData "set"/"update")
+  // and one small doc per event in the collection `feed` ({ ts, text, cls }); see references/agent-log.md.
+  // stages: [key, label, weight] — weights are this project's measured share of a round's wall-clock.
+  // stage: the current key ("done" when the round has closed); frac: 0–1 inside that stage, or omit it
+  // during the build and the page uses the lanes' ticked ledger items (done / total).
+  // eta: minutes remaining { low, high } as of `at`; the browser counts it down. Omit it and set etaNote.
+  const LIVE = {
+    round: "Round 1", stageNote: "build · 2 lanes (example)",
+    stages: [["clarify", "Clarify", 2], ["ledger", "Ledger", 1], ["brief", "Brief", 5], ["build", "Build", 50], ["merge", "Merge and tail", 12], ["verify", "Verify and fix", 20], ["close", "Close", 10]],
+    stage: "build", updated: new Date(Date.now() - 12 * 60000).toISOString() /* example only: a real page carries a literal timestamp */,
+    eta: { low: 150, high: 320, at: new Date(Date.now() - 12 * 60000).toISOString() }, etaNote: "",
+    now: "Example: the wave-budget lane is re-running its three checks after a verifier's seeded defect survived.",
+    counts: { running: 1, red: 0, queued: 1 }, tokens_k: 837,
+    next: "merge and tail · fresh verifier, cycle 2 · close",
+    goal: { label: "Critic grade toward 8.5 (example)", target: 8.5, max: 10, note: "last graded at the round-0 baseline", series: [{ name: "Grade", value: 5.2, base: 5.2 }] },
+    lanes: [
+      { name: "Nav grid + pathing", done: 3, total: 3, status: "done", label: "merged" },
+      { name: "Wave budget", done: 1, total: 4, status: "run", note: "attempt 2, tier switched after an API error" },
+    ],
+  };
+  const FEED = [
+    { ts: "2026-01-01T10:40:00Z", text: "Build item 2, attempt 2 spawned (sonnet)", cls: "" },
+    { ts: "2026-01-01T10:31:00Z", text: "Build item 2, attempt 1 killed: API error", cls: "fail" },
+    { ts: "2026-01-01T10:12:00Z", text: "Fix cycle 1 done: survived seed closed, RED then GREEN", cls: "done" },
+  ];
+  // ---- render ----
+  const fmtTok = t => t == null ? "—" : (t >= 1000 ? (t/1000).toFixed(2) + " M" : t + " k");
+  document.getElementById("stamp").textContent = UPDATED;
+  const allTok = ROUNDS.reduce((a, r) => a + r.totals.tokens, 0);
+  const allWorkers = ROUNDS.reduce((a, r) => a + r.totals.workers, 0);
+  const running = ROUNDS.flatMap(r => r.rows).filter(x => x[6] === "run").length;
+  const cur = ROUNDS[ROUNDS.length - 1];
+  document.getElementById("summary").innerHTML = [
+    ["Current round", cur.name.split(" — ")[0], cur.verdict.text],
+    ["Workers running", String(running), "of " + allWorkers + " spawned so far"],
+    ["Worker tokens, all rounds", fmtTok(allTok), "chair excluded"],
+    ["Rounds merged", "0", "example data — none merged yet"],
+  ].map(([k, v, s]) => `<div class="tile"><span class="k">${k}</span><span class="v">${v}</span><span class="s">${s}</span></div>`).join("");
+  // ---- progress bars ----
+  // A row may carry an 8th element: { start: ISO-8601 with offset, est: minutes, basis: "what the estimate rests on" }.
+  // Running rows fill from 0 toward 95 % as elapsed approaches the estimate (never 100 % until the worker reports);
+  // finished rows show 100 %. The estimate is the mean of earlier tasks of the same shape, named in `basis`.
+  const fmtMin = m => m >= 60 ? `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")} min` : `${Math.round(m)} min`;
+  const progressOf = x => {
+    const p = x[7];
+    if (x[6] !== "run") return { pct: x[6] === "wait" ? 0 : 100, label: "" };
+    if (!p || !p.start || !p.est) return { pct: 0, label: "no estimate yet" };
+    const el = (Date.now() - new Date(p.start).getTime()) / 60000;
+    const raw = 100 * el / p.est;
+    const pct = Math.max(2, Math.min(95, raw));
+    const over = el > p.est;
+    return { pct, el, label: `${Math.round(pct)} % · ${fmtMin(el)} of ~${fmtMin(p.est)}${over ? ` · over the estimate by ${fmtMin(el - p.est)}` : ""}${p.basis ? ` · est. from ${p.basis}` : ""}` };
+  };
+  const barHtml = (x, r, i) => {
+    if (x[6] === "wait") return "";
+    const pr = progressOf(x);
+    return `<span class="bar ${x[6]}" data-bar="${r.name}|${i}"><i style="width:${pr.pct}%"></i></span>${x[6] === "run" ? `<span class="pct" data-pct="${r.name}|${i}">${pr.label}</span>` : ""}`;
+  };
+  const tick = () => ROUNDS.forEach(r => r.rows.forEach((x, i) => {
+    if (x[6] !== "run") return;
+    const pr = progressOf(x), key = `${r.name}|${i}`;
+    const b = document.querySelector(`[data-bar="${CSS.escape(key)}"] i`); if (b) b.style.width = pr.pct + "%";
+    const l = document.querySelector(`[data-pct="${CSS.escape(key)}"]`); if (l) l.textContent = pr.label;
+    const e = document.querySelector(`[data-elapsed="${CSS.escape(key)}"]`); if (e && pr.el != null) e.textContent = fmtMin(pr.el) + " so far";
+  }));
+  setInterval(tick, 15000);
+  const roundHtml = r => `
+    <section>
+      <div class="rh">
+        <h2>${r.name}</h2>
+        <div class="meta"><span>opened ${r.opened}</span>${r.closed ? `<span>closed ${r.closed}</span>` : ""}<span class="chip ${r.verdict.cls}">${r.verdict.text}</span></div>
+      </div>
+      <div class="scroll"><table>
+        <thead><tr><th>#</th><th>Task</th><th>Tier</th><th class="n">Elapsed</th><th class="n num">Tokens</th><th>Status</th></tr></thead>
+        <tbody>
+          ${r.rows.map((x, i) => `<tr class="${x[6] === "run" ? "running" : x[6] === "fail" ? "failed" : ""}">
+            <td class="n">${i + 1}</td>
+            <td class="task">${x[0]}${x[1] ? `<span class="sub">${x[1]}</span>` : ""}${barHtml(x, r, i)}</td>
+            <td><span class="tier">${x[2]}</span></td>
+            <td class="n" data-elapsed="${r.name}|${i}">${x[3]}</td>
+            <td class="n num">${fmtTok(x[4])}</td>
+            <td><span class="chip ${x[6]}">${x[5]}</span></td>
+          </tr>`).join("")}
+          <tr class="total"><td></td><td>${r.totals.workers} workers · ${r.totals.cycles} verify cycle${r.totals.cycles === 1 ? "" : "s"}</td><td></td><td class="n">${r.totals.wall}</td><td class="n num">${fmtTok(r.totals.tokens)}</td><td></td></tr>
+        </tbody>
+      </table></div>
+    </section>`;
+  const openRounds = ROUNDS.filter(r => !r.closed), closedRounds = ROUNDS.filter(r => r.closed);
+  document.getElementById("rounds-now").innerHTML = openRounds.length ? openRounds.map(roundHtml).join("")
+    : `<p class="empty">No round is open, so there is no task table here yet. It appears with the first spawn; the ${closedRounds.length} closed round${closedRounds.length === 1 ? "" : "s"} are under History.</p>`;
+  document.getElementById("rounds").innerHTML = closedRounds.slice().reverse().map(roundHtml).join("") || `<p class="empty">No round has closed yet.</p>`;
+  document.getElementById("histcnt").textContent = closedRounds.length ? String(closedRounds.length) : "";
+  tick();
+  // ---- live header ----
+  // Renders from the LIVE / FEED snapshot above, then — when the viewer grants the artifact's `db`
+  // capability — from the document `loop/live` and the collection `feed`, which the chair writes with
+  // one small ArtifactData call per event (no republish). Everything read from the db is escaped.
+  // The bar only moves when the chair reports progress; between reports the browser ticks the clocks
+  // ("updated N min ago", the ETA countdown) and nothing else.
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const clamp01 = v => Math.max(0, Math.min(1, Number(v) || 0));
+  const fmtDur = m => { m = Math.max(0, m); if (m < 90) return `${Math.round(m)} min`; const h = m / 60; if (h < 36) return `${h < 10 ? h.toFixed(1).replace(/\.0$/, "") : Math.round(h)} h`; return `${Math.floor(h / 24)} d ${Math.round(h % 24)} h`; };
+  const CHIP = { run: "running", done: "done", fail: "red", warn: "stopped", wait: "queued" };
+  let live = LIVE, feed = FEED, liveMode = "snapshot";
+  const stagePct = L => {
+    const st = L.stages || [], tot = st.reduce((a, s) => a + s[2], 0) || 1;
+    if (L.stage === "done") return 100;
+    const i = st.findIndex(s => s[0] === L.stage);
+    if (i < 0) return 0;
+    let frac = L.frac;
+    if (frac == null && (L.lanes || []).length) {
+      const d = L.lanes.reduce((a, l) => a + (Number(l.done) || 0), 0), t = L.lanes.reduce((a, l) => a + (Number(l.total) || 0), 0);
+      frac = t ? d / t : 0;
+    }
+    const before = st.slice(0, i).reduce((a, s) => a + s[2], 0);
+    return 100 * (before + st[i][2] * clamp01(frac)) / tot;
+  };
+  const etaHtml = L => {
+    const e = L.eta;
+    if (L.stage === "done") return "<b>round closed</b>";
+    if (!e || e.low == null || e.high == null || !e.at) return esc(L.etaNote || "no estimate yet");
+    const gone = (Date.now() - new Date(e.at).getTime()) / 60000, lo = e.low - gone, hi = e.high - gone, mid = (lo + hi) / 2;
+    if (hi <= 0) return `<b>over the estimate</b> by ${fmtDur(-hi)}`;
+    const fin = new Date(Date.now() + Math.max(mid, 0) * 60000).toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
+    return `<b>about ${fmtDur(mid)} left</b> · range ${fmtDur(lo)}–${fmtDur(hi)} · done near ${esc(fin)}`;
+  };
+  const renderLive = () => {
+    const L = live, $ = id => document.getElementById(id), st = L.stages || [];
+    const pct = stagePct(L), tot = st.reduce((a, s) => a + s[2], 0) || 1;
+    const bar = $("pbar");
+    bar.className = "pbar" + (L.stage === "done" ? " done" : "");
+    bar.setAttribute("aria-valuenow", String(Math.round(pct)));
+    let cum = 0;
+    bar.innerHTML = `<i style="width:${pct.toFixed(1)}%"></i>` + st.slice(0, -1).map(s => { cum += s[2]; return `<span class="tk" style="left:${(100 * cum / tot).toFixed(2)}%"></span>`; }).join("");
+    const ci = st.findIndex(s => s[0] === L.stage);
+    $("pl").innerHTML = `<b>${esc(L.round)} · ${Math.round(pct)} %</b>${L.stageNote ? " · " + esc(L.stageNote) : ""}`;
+    $("pr").innerHTML = etaHtml(L);
+    $("stages").innerHTML = st.map((s, i) => `<li class="${L.stage === "done" || i < ci ? "past" : i === ci ? "cur" : ""}">${esc(s[1])}</li>`).join("");
+    const c = L.counts || {}, age = L.updated ? (Date.now() - new Date(L.updated).getTime()) / 60000 : null;
+    $("livedot").className = "livedot" + (liveMode === "live" ? " on" : "");
+    $("livelabel").textContent = "Happening now · " + (liveMode === "live" ? "live" : "snapshot") + (age == null ? "" : ` · updated ${age < 1 ? "just now" : fmtDur(age) + " ago"}`);
+    $("say").textContent = L.now || "";
+    $("nowmeta").innerHTML = [
+      `${Number(c.running) || 0} running`,
+      Number(c.red) ? `<span class="red">${Number(c.red)} red</span>` : "0 red",
+      `${Number(c.queued) || 0} queued`,
+      L.tokens_k == null ? "" : `${fmtTok(Number(L.tokens_k))} tokens this round`,
+    ].filter(Boolean).map(x => `<span>${x}</span>`).join("");
+    $("then").textContent = L.next ? "Then: " + L.next : "";
+    const g = L.goal;
+    $("goalcard").hidden = !g; $("nowgrid").className = "nowgrid" + (g ? "" : " solo");
+    if (g) {
+      const max = Number(g.max) || 10, pos = v => (100 * clamp01(Number(v) / max)).toFixed(1);
+      $("goalk").textContent = g.label || "Goal";
+      $("goal").innerHTML = (g.series || []).map(s => `<span>${esc(s.name)}</span><span class="track${Number(s.value) >= Number(g.target) ? " hit" : ""}"><i style="width:${pos(s.value)}%"></i>${s.base == null ? "" : `<span class="base" style="left:${pos(s.base)}%" title="where this loop started"></span>`}<span class="tgt" style="left:${pos(g.target)}%" title="target"></span></span><span>${esc(Number(s.value).toFixed(2))} / ${esc(g.target)}</span>`).join("");
+      $("goalnote").textContent = g.note || "";
+    }
+    const lanes = L.lanes || [];
+    $("lanesec").hidden = !lanes.length;
+    $("lanes").innerHTML = lanes.map(l => { const cls = CHIP[l.status] ? l.status : "wait", t = Number(l.total) || 0, d = Number(l.done) || 0;
+      return `<div class="lane"><span>${esc(l.name)}</span><span class="bar ${cls}"><i style="width:${t ? (100 * clamp01(d / t)).toFixed(0) : 0}%"></i></span><span class="c">${t ? d + "/" + t : ""}</span><span class="chip ${cls}">${esc(l.label || CHIP[cls])}</span>${l.note ? `<span class="nt">${esc(l.note)}</span>` : ""}</div>`; }).join("");
+    $("feedsec").hidden = !feed.length;
+    $("feed").innerHTML = feed.slice(0, 8).map(f => `<li><time>${esc(f.ts ? new Date(f.ts).toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "")}</time><span class="${f.cls === "fail" || f.cls === "done" ? f.cls : ""}">${esc(f.text)}</span></li>`).join("");
+  };
+  renderLive();
+  setInterval(renderLive, 30000);
+  (async () => {
+    let db = null;
+    try { db = await window.claude?.use?.("db"); } catch (_) { db = null; }
+    if (!db) return;
+    db.doc("loop/live").onSnapshot(s => {
+      liveMode = "live";
+      const d = s.exists ? s.data() : null;
+      const stale = !d || (d.updated && LIVE.updated && new Date(d.updated) < new Date(LIVE.updated));
+      if (!stale) { live = { ...LIVE, ...d }; if (Array.isArray(d.feed)) feed = d.feed; }
+      renderLive();
+    }, () => { liveMode = "snapshot"; renderLive(); });
+    db.collection("feed").orderBy("ts", "desc").limit(8).onSnapshot(q => {
+      if (q.empty) return;
+      feed = q.docs.map(x => x.data()); renderLive();
+    }, () => {});
+  })();
+  // ---- tabs ----
+  // "Now" holds the live header and the round that is open; "History" holds the totals and every
+  // closed round. The choice is a per-viewer convenience, so it lives in localStorage and the page
+  // works without it.
+  const showTab = (name, remember) => {
+    for (const t of ["now", "hist"]) {
+      document.getElementById("tab-" + t).setAttribute("aria-selected", String(t === name));
+      document.getElementById("pane-" + t).hidden = t !== name;
+    }
+    if (remember) { try { localStorage.setItem("loopwatch.tab", name); } catch (_) {} }
+  };
+  document.getElementById("tab-now").addEventListener("click", () => showTab("now", true));
+  document.getElementById("tab-hist").addEventListener("click", () => showTab("hist", true));
+  let savedTab = "now";
+  try { savedTab = localStorage.getItem("loopwatch.tab") === "hist" ? "hist" : "now"; } catch (_) {}
+  showTab(savedTab, false);
+  // ---- Agent Flow under the header, and local mode ----
+  // The graph is a local app on the machine that runs the loop (http://127.0.0.1:3001). A page published
+  // on claude.ai cannot frame or fetch it (the artifact's CSP, and a phone has no such localhost), so the
+  // frame appears only when THIS page is itself served from that machine (tools: a static server on the
+  // repo root, e.g. http://127.0.0.1:3002/docs/loop/loop-watch.html). Served locally the header also
+  // stops needing the db: it polls LOCAL_LIVE, the same JSON the chair sends to the db with file_path.
+  const AGENT_FLOW_URL = "http://127.0.0.1:3001", LOCAL_LIVE = "/.workflow/scratch/live.json";
+  const IS_LOCAL = location.protocol === "http:" && /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+  const flowBody = document.getElementById("flowbody");
+  const flowNote = html => { if (!flowBody.querySelector("iframe")) flowBody.innerHTML = `<p class="flownote">${html}</p>`; };
+  if (!IS_LOCAL) {
+    flowNote(`The agent graph runs on the machine that runs the loop, so it cannot be shown inside this published page. On that machine open <code>http://127.0.0.1:3002/docs/loop/loop-watch.html</code> for this same page with the graph under the header, or <code>${AGENT_FLOW_URL}</code> for the graph alone. If neither answers, start the viewer there: <code>AGENT_FLOW_TELEMETRY=false npx agent-flow-app</code>.`);
+  } else {
+    const tryFlow = async () => {
+      if (flowBody.querySelector("iframe")) return;
+      try {
+        await fetch(AGENT_FLOW_URL, { mode: "no-cors", cache: "no-store" });
+        flowBody.innerHTML = `<iframe class="flowframe" src="${AGENT_FLOW_URL}" title="Agent Flow: live graph of every agent and tool call" loading="lazy"></iframe>`;
+      } catch (_) {
+        flowNote(`The Agent Flow viewer is not answering on <code>${AGENT_FLOW_URL}</code>. Start it in a terminal: <code>AGENT_FLOW_TELEMETRY=false npx agent-flow-app --no-open</code>. This panel retries every 15 seconds.`);
+      }
+    };
+    tryFlow(); setInterval(tryFlow, 15000);
+    const pull = async () => {
+      try {
+        const r = await fetch(LOCAL_LIVE + "?t=" + Date.now(), { cache: "no-store" });
+        if (!r.ok) throw new Error(String(r.status));
+        const d = await r.json();
+        liveMode = "live";
+        if (!(d.updated && LIVE.updated && new Date(d.updated) < new Date(LIVE.updated))) { live = { ...LIVE, ...d }; if (Array.isArray(d.feed)) feed = d.feed; }
+      } catch (_) { liveMode = "snapshot"; }
+      renderLive();
+    };
+    pull(); setInterval(pull, 5000);
+  }
+</script>

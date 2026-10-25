@@ -1,0 +1,101 @@
+{
+ "type": "object",
+ "properties": {
+  "deponent": {
+   "type": "string"
+  },
+  "section": {
+   "type": "string",
+   "enum": [
+    "primary",
+    "cross",
+    "redirect"
+   ]
+  },
+  "topic": {
+   "type": "string"
+  },
+  "questions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "text": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     },
+     "verified": {
+      "type": "string",
+      "enum": [
+       "V",
+       "S"
+      ]
+     },
+     "note": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "text",
+     "cite",
+     "verified",
+     "note"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "missing": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "danger_zone": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "fact": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     },
+     "why_not_to_open": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "fact",
+     "cite",
+     "why_not_to_open"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "points_for_our_expert": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "deponent",
+  "section",
+  "topic",
+  "questions",
+  "missing",
+  "danger_zone",
+  "points_for_our_expert",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "questions"
+}

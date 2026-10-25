@@ -1,0 +1,111 @@
+{
+ "type": "object",
+ "properties": {
+  "entries": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "doc_type": {
+      "type": "string"
+     },
+     "date": {
+      "type": "string"
+     },
+     "filed_by": {
+      "type": "string"
+     },
+     "what_it_does": {
+      "type": "string"
+     },
+     "deadlines_stated": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "properties": {
+        "what": {
+         "type": "string"
+        },
+        "date": {
+         "type": "string"
+        },
+        "quote": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "what",
+        "date",
+        "quote"
+       ],
+       "additionalProperties": false
+      }
+     },
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     },
+     "tags": {
+      "type": "object",
+      "properties": {
+       "body_part": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "issue": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "provider": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "witness": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      },
+      "required": [
+       "body_part",
+       "issue",
+       "provider",
+       "witness"
+      ],
+      "additionalProperties": false
+     }
+    },
+    "required": [
+     "doc_type",
+     "date",
+     "filed_by",
+     "what_it_does",
+     "deadlines_stated",
+     "quote",
+     "cite",
+     "tags"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "entries",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "procedural"
+}

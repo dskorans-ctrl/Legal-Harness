@@ -1,0 +1,98 @@
+{
+ "type": "object",
+ "properties": {
+  "listed_and_present": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "as_listed": {
+      "type": "string"
+     },
+     "inventory_doc": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "as_listed",
+     "inventory_doc"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "listed_not_in_production": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "as_listed": {
+      "type": "string"
+     },
+     "report_cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "as_listed",
+     "report_cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "in_production_not_listed": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "inventory_doc": {
+      "type": "string"
+     },
+     "date": {
+      "type": "string"
+     },
+     "provider": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "inventory_doc",
+     "date",
+     "provider"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "listed_not_discussed": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "as_listed": {
+      "type": "string"
+     },
+     "report_cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "as_listed",
+     "report_cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "listed_and_present",
+  "listed_not_in_production",
+  "in_production_not_listed",
+  "listed_not_discussed",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "records_audit"
+}

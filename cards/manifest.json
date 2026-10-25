@@ -1,0 +1,597 @@
+{
+ "version": "1.0",
+ "notes": "Script loads prepend files then the card as the system prompt; for json output pass the schema as Ollama 'format'. Tier STRONG cards should run on a stronger model or be done by the attorney.",
+ "cards": [
+  {
+   "id": "00-ATTORNEY",
+   "title": "Record an attorney note",
+   "file": "cards/00-intake/attorney-entry.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-BILLS",
+   "title": "Bill memo extraction",
+   "file": "cards/00-intake/bills.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/bills.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-CHANGE",
+   "title": "Change report after an update",
+   "file": "cards/00-intake/change-report.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-CLASSIFY",
+   "title": "Classify a new document",
+   "file": "cards/00-intake/classify.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/classify.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-PROCEDURAL",
+   "title": "Filings, orders, notices, letters",
+   "file": "cards/00-intake/procedural.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/procedural.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-RECONCILE",
+   "title": "Compare one new fact with the case file",
+   "file": "cards/00-intake/reconcile.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/reconcile.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-SNAPSHOT",
+   "title": "Case snapshot",
+   "file": "cards/00-intake/snapshot.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "00-TESTIMONY",
+   "title": "Deposition or hearing testimony digest",
+   "file": "cards/00-intake/testimony-digest.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/testimony.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "01-P0",
+   "title": "Page inventory",
+   "file": "cards/01-records/p0-inventory.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/inventory.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "01-P1",
+   "title": "Encounter extraction",
+   "file": "cards/01-records/p1-extract.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/encounters.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "01-P2",
+   "title": "Claim verification",
+   "file": "cards/01-records/p2-verify.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/verify.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "01-P4",
+   "title": "Issue analysis (one topic)",
+   "file": "cards/01-records/p4-issue.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "01-P5",
+   "title": "Records report assembly",
+   "file": "cards/01-records/p5-report.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "02-A",
+   "title": "Deposition fact sheet",
+   "file": "cards/02-depo/a-factsheet.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/factsheet.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "02-B",
+   "title": "Two-page case outline (one page per request)",
+   "file": "cards/02-depo/b-outline.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "02-C-CLIENT",
+   "title": "Client deposition prep (one topic)",
+   "file": "cards/02-depo/c-client.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/questions.schema.json",
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "02-C-DEFDOC",
+   "title": "Cross of the defense doctor (one topic)",
+   "file": "cards/02-depo/c-defense-doctor.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "STRONG",
+   "output": "json",
+   "schema": "schemas/questions.schema.json",
+   "temperature": 0.1,
+   "max_material_tokens": 8000
+  },
+  {
+   "id": "02-C-OURDOC",
+   "title": "Questions for our doctor (one topic)",
+   "file": "cards/02-depo/c-our-doctor.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/questions.schema.json",
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "02-C-WITNESS",
+   "title": "Witness questions (one topic)",
+   "file": "cards/02-depo/c-witness.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/questions.schema.json",
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "02-D",
+   "title": "Question verification",
+   "file": "cards/02-depo/d-verify.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/qverify.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "03-CHECKLIST",
+   "title": "Pre-hearing checklist",
+   "file": "cards/03-hearing/checklist.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "03-CLIENT",
+   "title": "Client hearing testimony prep (one topic)",
+   "file": "cards/03-hearing/client-prep.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "03-CLOSING",
+   "title": "Closing outline (one issue)",
+   "file": "cards/03-hearing/closing.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "STRONG",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.2,
+   "max_material_tokens": 8000
+  },
+  {
+   "id": "03-CONSIST",
+   "title": "Client consistency check (one subject)",
+   "file": "cards/03-hearing/consistency.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/comparison.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "03-DOCTOR",
+   "title": "Prep memo for our doctor (one section)",
+   "file": "cards/03-hearing/doctor-prep.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "03-ISSUE",
+   "title": "Issue sheet (one issue)",
+   "file": "cards/03-hearing/issue-sheet.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/factsheet.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "03-OUTLINE",
+   "title": "Hearing outline section (one issue)",
+   "file": "cards/03-hearing/outline-section.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "04-A",
+   "title": "Map the defense doctor's report",
+   "file": "cards/04-defense-report/a-map.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/report_map.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "04-B",
+   "title": "History check",
+   "file": "cards/04-defense-report/b-history.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/comparison.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "04-C",
+   "title": "Records review audit",
+   "file": "cards/04-defense-report/c-records-audit.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/records_audit.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "04-D",
+   "title": "Summary accuracy (one entry)",
+   "file": "cards/04-defense-report/d-summary-accuracy.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/summary_accuracy.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "04-E",
+   "title": "Exam findings and opinion basis (one opinion)",
+   "file": "cards/04-defense-report/e-exam-opinions.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/opinion_basis.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "04-F",
+   "title": "Two reports by the same doctor (one subject)",
+   "file": "cards/04-defense-report/f-multi-report.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/comparison.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "04-G",
+   "title": "Concessions, labels, danger zone",
+   "file": "cards/04-defense-report/g-concessions.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/concessions.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "04-H",
+   "title": "Report analysis memo (one section)",
+   "file": "cards/04-defense-report/h-memo.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "05-A",
+   "title": "Elements check",
+   "file": "cards/05-our-doctor/a-elements.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/elements.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "05-B",
+   "title": "Consistency check (one subject)",
+   "file": "cards/05-our-doctor/b-consistency.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "json",
+   "schema": "schemas/comparison.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "05-C",
+   "title": "Our doctor vs defense doctor (one opinion)",
+   "file": "cards/05-our-doctor/c-defense-compare.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/comparison.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "05-D",
+   "title": "Our doctor memo (one section)",
+   "file": "cards/05-our-doctor/d-memo.md",
+   "prepend": [
+    "cards/_core.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "06-A",
+   "title": "Brief outline",
+   "file": "cards/06-brief/a-outline.md",
+   "prepend": [
+    "cards/_core.md",
+    "cards/06-brief/_brief-rules.md"
+   ],
+   "tier": "STRONG",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.2,
+   "max_material_tokens": 8000
+  },
+  {
+   "id": "06-B",
+   "title": "Statement of facts (one chunk)",
+   "file": "cards/06-brief/b-facts.md",
+   "prepend": [
+    "cards/_core.md",
+    "cards/06-brief/_brief-rules.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "06-C",
+   "title": "One argument section",
+   "file": "cards/06-brief/c-argument.md",
+   "prepend": [
+    "cards/_core.md",
+    "cards/06-brief/_brief-rules.md"
+   ],
+   "tier": "STRONG",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.2,
+   "max_material_tokens": 8000
+  },
+  {
+   "id": "06-D",
+   "title": "Front and back matter",
+   "file": "cards/06-brief/d-front-back.md",
+   "prepend": [
+    "cards/_core.md",
+    "cards/06-brief/_brief-rules.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.1,
+   "max_material_tokens": 5000
+  },
+  {
+   "id": "06-E",
+   "title": "Citation and fact verification",
+   "file": "cards/06-brief/e-cite-verify.md",
+   "prepend": [
+    "cards/_core.md",
+    "cards/06-brief/_brief-rules.md"
+   ],
+   "tier": "LOCAL",
+   "output": "json",
+   "schema": "schemas/cite_verify.schema.json",
+   "temperature": 0.0,
+   "max_material_tokens": 4000
+  },
+  {
+   "id": "06-F",
+   "title": "Voice sweep",
+   "file": "cards/06-brief/f-voice.md",
+   "prepend": [
+    "cards/_core.md",
+    "cards/06-brief/_brief-rules.md"
+   ],
+   "tier": "LOCAL_REVIEW",
+   "output": "markdown",
+   "schema": null,
+   "temperature": 0.0,
+   "max_material_tokens": 5000
+  }
+ ]
+}

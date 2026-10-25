@@ -1,0 +1,62 @@
+{
+ "type": "object",
+ "properties": {
+  "lines": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "provider": {
+      "type": "string"
+     },
+     "date_range": {
+      "type": "string"
+     },
+     "charges": {
+      "type": "string"
+     },
+     "payments": {
+      "type": "string"
+     },
+     "adjustments": {
+      "type": "string"
+     },
+     "balance": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "provider",
+     "date_range",
+     "charges",
+     "payments",
+     "adjustments",
+     "balance",
+     "quote",
+     "cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "memo_stated_total": {
+   "type": "string"
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "lines",
+  "memo_stated_total",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "bills"
+}

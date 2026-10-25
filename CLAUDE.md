@@ -1,0 +1,19 @@
+# Legal Harness (casefile)
+
+A local case system for one attorney: it reads client and medical records on a Mac Studio and builds
+the case file, medical memo, deposition and hearing prep, and anonymized brief packages. Built round
+by round with the `app-loop` skill (`.claude/skills/app-loop/`).
+
+**New session? Read `docs/loop/HANDOFF.md` first** (one page), then `.workflow/LEDGER.md`
+(`## Project` and `## Clarified`), then `Librarian.md`'s builder pre-flight.
+
+- Spec (canon): `docs/spec.md`.
+- One round per session. Remote Control on (`/rc` if it is not already).
+- **No real client data in this repo or in any session.** Fixtures are invented. Never commit a PDF,
+  Word file or image outside `tests/fixtures/`, or anything from `Cases/` or `Bench/`.
+- Only `main` is pushed to GitHub, and only on the owner's word.
+- Prose has no em or en dashes.
+
+## Mistakes Log
+
+(one line per mistake that cost time, newest last)

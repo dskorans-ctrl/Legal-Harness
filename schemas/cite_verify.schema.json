@@ -1,0 +1,82 @@
+{
+ "type": "object",
+ "properties": {
+  "results": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "citation_text": {
+      "type": "string"
+     },
+     "authority_label": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string",
+      "enum": [
+       "PASS",
+       "FIX"
+      ]
+     },
+     "problem": {
+      "type": "string"
+     },
+     "correction": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "citation_text",
+     "authority_label",
+     "label",
+     "problem",
+     "correction"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "fact_results": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "sentence": {
+      "type": "string"
+     },
+     "record_cite": {
+      "type": "string"
+     },
+     "label": {
+      "type": "string",
+      "enum": [
+       "PASS",
+       "FIX"
+      ]
+     },
+     "problem": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "sentence",
+     "record_cite",
+     "label",
+     "problem"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "results",
+  "fact_results",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "cite_verify"
+}

@@ -1,0 +1,71 @@
+{
+ "type": "object",
+ "properties": {
+  "elements": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "element": {
+      "type": "string",
+      "enum": [
+       "treating_relationship",
+       "mechanism",
+       "history_prior_conditions",
+       "exam_findings",
+       "imaging_reviewed",
+       "diagnosis",
+       "causation",
+       "treatment_reasonable_necessary_related",
+       "bills_reasonable_related",
+       "work_status_restrictions",
+       "mmi",
+       "permanency_rating",
+       "future_treatment",
+       "records_reviewed"
+      ]
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "STATED",
+       "PARTIAL",
+       "NOT_FOUND"
+      ]
+     },
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     },
+     "absent_note": {
+      "type": "string"
+     },
+     "pages_searched": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "element",
+     "status",
+     "quote",
+     "cite",
+     "absent_note",
+     "pages_searched"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "elements",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "elements"
+}

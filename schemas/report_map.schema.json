@@ -1,0 +1,157 @@
+{
+ "type": "object",
+ "properties": {
+  "doctor": {
+   "type": "string"
+  },
+  "specialty": {
+   "type": "string"
+  },
+  "exam_date": {
+   "type": "string"
+  },
+  "report_date": {
+   "type": "string"
+  },
+  "signature_date": {
+   "type": "string"
+  },
+  "body_parts": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "records_listed": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "as_listed": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "as_listed",
+     "cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "history": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "subject": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "subject",
+     "quote",
+     "cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "exam_findings": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "test": {
+      "type": "string"
+     },
+     "side": {
+      "type": "string"
+     },
+     "result_quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "test",
+     "side",
+     "result_quote",
+     "cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "diagnoses": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "quote",
+     "cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "opinions": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "number": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     }
+    },
+    "required": [
+     "number",
+     "quote",
+     "cite"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "doctor",
+  "specialty",
+  "exam_date",
+  "report_date",
+  "signature_date",
+  "body_parts",
+  "records_listed",
+  "history",
+  "exam_findings",
+  "diagnoses",
+  "opinions",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "report_map"
+}

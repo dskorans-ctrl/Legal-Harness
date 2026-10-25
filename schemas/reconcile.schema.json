@@ -1,0 +1,45 @@
+{
+ "type": "object",
+ "properties": {
+  "candidate_ref": {
+   "type": "string"
+  },
+  "relation": {
+   "type": "string",
+   "enum": [
+    "NEW",
+    "DUPLICATE",
+    "CORROBORATES",
+    "SUPERSEDES",
+    "CONFLICTS",
+    "RESOLVES"
+   ]
+  },
+  "linked_ids": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "reason": {
+   "type": "string"
+  },
+  "quote_supporting_relation": {
+   "type": "string"
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "candidate_ref",
+  "relation",
+  "linked_ids",
+  "reason",
+  "quote_supporting_relation",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "reconcile"
+}

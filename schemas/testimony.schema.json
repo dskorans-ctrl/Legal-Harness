@@ -1,0 +1,99 @@
+{
+ "type": "object",
+ "properties": {
+  "entries": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "witness": {
+      "type": "string"
+     },
+     "summary": {
+      "type": "string"
+     },
+     "question_quote": {
+      "type": "string"
+     },
+     "answer_quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     },
+     "tags": {
+      "type": "object",
+      "properties": {
+       "body_part": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "issue": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "provider": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       },
+       "witness": {
+        "type": "array",
+        "items": {
+         "type": "string"
+        }
+       }
+      },
+      "required": [
+       "body_part",
+       "issue",
+       "provider",
+       "witness"
+      ],
+      "additionalProperties": false
+     },
+     "designate": {
+      "type": "string",
+      "enum": [
+       "verbatim",
+       "reference",
+       "none"
+      ]
+     },
+     "flags": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    },
+    "required": [
+     "witness",
+     "summary",
+     "question_quote",
+     "answer_quote",
+     "cite",
+     "tags",
+     "designate",
+     "flags"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "entries",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "testimony"
+}

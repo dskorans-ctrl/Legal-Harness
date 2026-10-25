@@ -1,0 +1,106 @@
+{
+ "type": "object",
+ "properties": {
+  "pages": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "pdf_page": {
+      "type": "integer"
+     },
+     "doc_type": {
+      "type": "string",
+      "enum": [
+       "office_visit",
+       "er_hospital",
+       "pt_chiro",
+       "imaging_report",
+       "diagnostic_test",
+       "procedure_note",
+       "operative_report",
+       "work_status_form",
+       "defense_doctor_report",
+       "our_doctor_report",
+       "ur_determination",
+       "fce",
+       "vocational_report",
+       "letter_narrative",
+       "prescription_pharmacy",
+       "billing",
+       "fax_cover",
+       "index_or_tab",
+       "deposition_transcript",
+       "hearing_transcript",
+       "bill_memo",
+       "pleading_or_petition",
+       "order_or_notice",
+       "correspondence",
+       "attorney_note",
+       "other"
+      ]
+     },
+     "provider_or_facility": {
+      "type": "string"
+     },
+     "date_on_page": {
+      "type": "string"
+     },
+     "footer_page": {
+      "type": "string"
+     },
+     "bates": {
+      "type": "string"
+     },
+     "patient_name_on_page": {
+      "type": "string"
+     },
+     "readable": {
+      "type": "string",
+      "enum": [
+       "yes",
+       "partial",
+       "no"
+      ]
+     },
+     "flags": {
+      "type": "array",
+      "items": {
+       "type": "string",
+       "enum": [
+        "WRONG_PATIENT?",
+        "DUPLICATE?",
+        "BLANK_OR_ILLEGIBLE",
+        "NO_DATE_VISIBLE",
+        "INDEX_PAGE",
+        "OCR_SUSPECT"
+       ]
+      }
+     }
+    },
+    "required": [
+     "pdf_page",
+     "doc_type",
+     "provider_or_facility",
+     "date_on_page",
+     "footer_page",
+     "bates",
+     "patient_name_on_page",
+     "readable",
+     "flags"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "pages",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "inventory"
+}

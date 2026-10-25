@@ -1,0 +1,60 @@
+{
+ "type": "object",
+ "properties": {
+  "facts": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "properties": {
+     "fact": {
+      "type": "string"
+     },
+     "quote": {
+      "type": "string"
+     },
+     "cite": {
+      "type": "string"
+     },
+     "entry_id": {
+      "type": "string"
+     },
+     "verified": {
+      "type": "string",
+      "enum": [
+       "V",
+       "S"
+      ]
+     },
+     "use": {
+      "type": "string",
+      "enum": [
+       "our_case",
+       "defense_case",
+       "both",
+       "danger"
+      ]
+     }
+    },
+    "required": [
+     "fact",
+     "quote",
+     "cite",
+     "entry_id",
+     "verified",
+     "use"
+    ],
+    "additionalProperties": false
+   }
+  },
+  "coverage": {
+   "type": "string"
+  }
+ },
+ "required": [
+  "facts",
+  "coverage"
+ ],
+ "additionalProperties": false,
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "title": "factsheet"
+}

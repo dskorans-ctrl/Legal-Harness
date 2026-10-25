@@ -1,0 +1,33 @@
+# Client data never enters this repo
+Cases/
+Bench/
+*.pdf
+*.docx
+*.doc
+*.png
+*.jpg
+*.jpeg
+*.tif
+*.tiff
+*.heic
+!tests/fixtures/**
+!.claude/skills/**
+
+# Loop scratch
+.workflow/scratch/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# Local config and secrets
+config.toml
+.env
+*.sqlite
+*.db
+.DS_Store
