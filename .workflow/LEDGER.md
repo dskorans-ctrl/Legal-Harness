@@ -74,6 +74,9 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   question stays open.
 - Q20: model tag (owner, question 2)? -> `qwen3.8:27b`, set in config.toml.
 - Q21: Bates format (owner, question 5)? -> letters plus digits: `[A-Z]{1,8}[ -]?\d{4,}`, configurable.
+- Q22: tiers for round 1 session 2 (owner, 2026-10-26)? -> code review Codex gpt-6.1-sol (high);
+  output critic and blind verifier fresh Opus 5.5, one each; fixes written by Codex gpt-6.1-sol
+  (as Q14), chair commits and re-runs seeds.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -122,11 +125,37 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   commits every Codex item after re-running its CHECKs. -> process note, Librarian.
 - [ ] R1-15. Q18's `allowLocalBinding` did not take effect mid-session; socket tests ran outside the
   sandbox. -> confirm in a fresh session.
+  Note (chair, session 2, fresh session): `scripts/run.sh pytest -q -m socket` inside the sandbox -> `5 passed, 93 deselected`; the setting takes effect at session start.
 - [ ] R1-16. Toolchain inside the checkout broke the strict privacy row (4 idlelib PNGs under `.uv/`);
   fixed by D23 (commit 9d05301), seed `toolchain_inside_repo=1` red per Codex. -> verifier re-seeds.
 - [ ] R1-17. Process slip: the chair committed loop records (3e12678) while a Codex lane was live in the
   main tree (catalog #53); disjoint files, no conflict. -> Librarian.
 - [ ] R1-18. Built in four Codex batches (A1, A2+B, A3, F1) instead of one run per item, to save chair
   usage. -> process note.
+
+- [ ] R1-19. CX-9's real OCR smoke test (ocrmypdf on an invented fixture PDF) is stage 3 work (Q11);
+  cycle 1 makes check_ocr honest ("versions only"). -> carry to the stage 3 brief.
+
+## Round 1 critic round (session 2, 2026-10-26)
+- 8a Codex code review (gpt-6.1-sol, read-only): 11 findings, 2 high, 8 med, 1 low; all 11
+  REPRODUCED by the chair (`docs/loop/round-01/round01-codex-review.md`). Librarian R01-CX-1 to CX-11.
+- Fix cycle 1 (Codex gpt-6.1-sol builder, Q22): CX-1 to CX-11, commit 28a5f96. Chair re-run:
+  `150 passed`, gate `0`; chair repros all clear (CX-1 ConfigError, CX-3 `runlog is append-only`, CX-4
+  `exit=97 secs=0`, CX-6 `scan=['Cases']`, CX-7/CX-8 caught); chair SEED drop done_reason guard
+  (doctor.py:126) -> `1 failed, 32 passed`, restored by cmp. Chair found the CX-7 fix over-blocked
+  benefits prose; follow-up narrowed it to one clause, 60 chars (T-5). run.sh now execs
+  `scripts/run_capture.py` (needs a python3 on PATH before `uv sync`).
+
+- 8b output critic (fresh Opus 5.5): `OUTPUT CRITIC 5/10 · high 3 · med 8 · low 3`
+  (`docs/loop/round-01/round01-critic.md`). Chair reproduced H2 (7 of 7 DME/IME forms missed), H3 (6 of 6
+  false hits), M2 (bad example `[]` as text), M5 (ranges and lists rejected), M8 (config-dir limit from
+  cycle 1's CX-1 instruction, chair's own error). Owner questions 8 to 14 held with interim rulings.
+- Fix cycle 2 (Codex): H1, H2, H3, M1 (partial), M2, M3, M5, M6, M7, M8, L1, L2. Carried: M4 (unbracketed
+  cites, to the stage that writes cited text) as R1-20; L3 (gate selftest breadth is the rules suite).
+  Done: chair re-run `162 passed`, gate `0`, critic repros clear (H2 missed `[]`, H3 false hits `[]`, M5 `[]`);
+  doctor with no server: `failed=4 of 8`, exit 1, every FAIL line has `| do:`.
+- Cycle budget (Q5): 8a fixes = cycle 1, critic fixes = cycle 2; one cycle left for the verifier's findings.
+- [ ] R1-20. Critic M4: `bates-cites` sees only bracketed cites; "(Ex. 3 at 12)" and "See page 12" pass.
+  -> brief of the stage that generates cited prose.
 
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.

@@ -19,3 +19,13 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 7 | Lane A batch 3: R1-9 doctor, R1-10 gate, R1-11 exit test | codex gpt-6.1-sol | n/a | n/a | done; 92 passed; gate red in checkout (toolchain PNGs, one dash) |
 | 8 | Fix F1: toolchain outside the checkout (D23), dash removed | codex gpt-6.1-sol | n/a | n/a | done; gate 0, 98 passed |
 | | **Round 1 build total (session 1)** | | **~3 h wall-clock** | **~353 k Fable + Codex** | 8 workers; critic round held to session 2 (Q15) |
+
+## Round 1 session 2, 2026-10-26 (critic round and close; tiers Q22)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 9 | 8a code review of `main...loop/round-01` | codex gpt-6.1-sol (read-only, high) | ~10 min | n/a | done; 11 findings (2 high, 8 med, 1 low), all reproduced by chair |
+| 10 | Fix cycle 1: CX-1 to CX-11 | codex gpt-6.1-sol (workspace-write, high) | ~35 min | n/a | done; 141 passed + 5 socket denied in its sandbox; chair re-run 146 passed, gate 0 |
+| 11 | Fix cycle 1 follow-up: CX-7 over-block | codex gpt-6.1-sol (workspace-write, high) | ~8 min | n/a | done; chair re-run 150 passed, gate 0; committed 28a5f96 |
+| 12 | 8b output critic (doctor, gate, rules.toml) | opus | 4.3 min | 87 k | done; 5/10, high 3, med 8, low 3; left a stand-in server running (chair stopped it) |
+| 13 | Fix cycle 2: critic findings | codex gpt-6.1-sol (workspace-write, high) | ~30 min | n/a | done; chair re-run 162 passed, gate 0; committed |
