@@ -85,6 +85,11 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   critic round, then close and merge. `main` stays at the seed until then.
 - Q25: additional instructions at round 1 close (owner, 2026-10-26)? -> "Hold the round for now": do not
   start the re-brief until the owner says so.
+- Q26: (owner, 2026-10-26, after merging origin/main 4614a1e spec §8b) -> "ok, finish round 1": the Q25 hold
+  is lifted; run the Q24 re-brief in this session with Q22 tiers, then close and merge.
+- Q27: tiers for the re-brief (owner, 2026-10-26, supersedes Q22's coding tier)? -> Opus 5.5 orchestrates
+  (the chair); Sonnet 5.5 writes all code, builds and fixes; Codex gpt-6.1-sol keeps the plan review and
+  code review. Fable brief, Opus output critic and blind verifier unchanged.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -213,6 +218,17 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Round 1 verdict: DISCARDED per Q23/Q5, not merged (Q24: re-brief on the branch). R1-4 and R1-13 refused;
   V1 not ticked. Carried to the re-brief: V3-1 to V3-4, verify2 N2 (non-blocking), R1-12 (spec §11 as-built,
   written at the merge).
+
+- [ ] R1-21. Spec §8b (owner, 4614a1e) labels its decisions D12 to D16, which collide with §9 rows D12 to D16
+  (round 1 rulings). -> owner question 15; chair does not edit the owner's section.
+
+## Round 1 re-brief (Q24, Q26; opened 2026-10-26 on `loop/round-01` at 3502fc5)
+- [ ] R1-22. One shared path-identity check (Python) used by config.py and scripts/run.sh: matters and
+  toolchain refused when inside the checkout by any alias; V3-1 (symlink loop exits 2, ConfigError),
+  V3-2 (`..` toolchain exits 95, nothing created), V3-4 (cannot-verify branch tested); table-driven
+  alias tests shared by both callers.
+- [ ] R1-23. One test per D12 exit branch (96, 97 incl. grandchild killed, 98 mktemp and write, 95,
+  126, 127, child code); V3-3; verify2 N2.
 
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.

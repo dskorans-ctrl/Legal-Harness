@@ -37,5 +37,23 @@ Held questions, numbered, with any interim ruling made while the owner was away 
 13. Should other exam labels (QME, AME, PQME) count as "any form" of DME or IME? Interim: no.
 14. Should the doctor ever create a missing matters folder? Interim: never; FAIL and name the path.
 
+15. Spec §8b (your commit 4614a1e) names its decisions D12 to D16; the §9 table already uses D12 to
+    D16 for round 1's rulings (run.sh, config, data root, ...). Renumber §8b's as D24 to D28 in §9?
+    Interim: cite them as "§8b D12" etc. to keep them apart; the chair does not edit your section.
+
 ## Answered 2026-10-25
 - Q1 -> ledger Q10, Q14. Q2 -> Q20. Q3 -> Q17. Q4 -> Q16. Q5 -> Q21. Q6 -> Q18. Q7 -> Q19 (still open).
+
+## Held (round 1 re-brief), 2026-10-26 (interim rulings by the chair, pending veto)
+16. On the Studio, will a `python3` be on PATH before `uv sync` (Xcode Command Line Tools installed, or a
+    python.org build)? `scripts/run.sh` needs one for the path guard and the capture stage before the
+    venv exists; without one it exits 95 "cannot verify". Interim: assumed yes; the setup guide (stage 9)
+    lists it as a prerequisite.
+17. When a job's child exits but a background process it started still holds the output pipe, may the
+    wrapper kill that process group after 2 seconds and return the child's code (so no run can hang on a
+    stray server)? A process that detached itself is not reached. Interim: yes, 2 seconds, in D12.
+18. `scripts/run.sh` puts its capture directory under `${TMPDIR:-/tmp}` (run.sh:33) and removes it when
+    the run ends (run_capture.py:66). If TMPDIR were ever set to a folder inside the checkout, captured
+    output would briefly live there. Should the wrapper refuse such a TMPDIR (a new limit, D12), or is
+    "TMPDIR is never inside the checkout" a setup-guide rule? Interim: no new limit; the setup guide says
+    it; the test suite's TMPDIR is outside (sandbox).
