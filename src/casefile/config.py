@@ -126,15 +126,17 @@ def load(path: str | Path | None = None) -> Config:
     if not matters.is_absolute():
         raise ConfigError("[paths].matters must be an absolute path")
     try:
-        inside = matters.resolve().is_relative_to(checkout) or any(
+        resolved = Path(os.path.realpath(matters.resolve(strict=False)))
+        inside = resolved.is_relative_to(checkout) or any(
             ancestor.exists() and os.path.samefile(ancestor, checkout)
-            for ancestor in (matters, *matters.parents)
+            for candidate in (matters, resolved)
+            for ancestor in (candidate, *candidate.parents)
         )
     except OSError as exc:
         raise ConfigError(f"cannot verify [paths].matters is outside the checkout: {exc}") from exc
     if inside:
         raise ConfigError(f"[paths].matters must be outside the checkout {checkout}")
-    paths["matters"] = matters.resolve()
+    paths["matters"] = resolved
     for key in ("state", "playbook"):
         paths[key] = (source.parent / Path(paths[key]).expanduser()).resolve()
     return Config(Paths(**paths), Model(**model), OCR(**values["ocr"]), source,

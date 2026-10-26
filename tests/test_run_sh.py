@@ -157,6 +157,91 @@ def test_toolchain_inside_checkout_refused(tmp_path, alias):
     env = dict(os.environ, CASEFILE_TOOLCHAIN=str(base / "invented-toolchain"))
     result = subprocess.run([str(ROOT / "scripts/run.sh"), "true"], cwd=ROOT,
                             env=env, capture_output=True, timeout=30)
-    assert (result.returncode, result.stdout) == (98, b"")
-    assert b"toolchain must be outside the checkout" in result.stderr
+    assert (result.returncode, result.stdout) == (95, b"")
+    assert result.stderr == b"run.sh: toolchain must be outside the checkout; exit 95\n"
     assert not (ROOT / "invented-toolchain").exists()
+
+
+@pytest.mark.parametrize("suffix", ["", "invented-toolchain"])
+def test_toolchain_symlink_case_swapped_subdirectory_refused(tmp_path, suffix):
+    target = ROOT.with_name(ROOT.name.swapcase()) / "tests" / "fixtures"
+    assert os.path.samefile(target, ROOT / "tests" / "fixtures")
+    alias = tmp_path / "invented-toolchain-alias"
+    alias.symlink_to(target, target_is_directory=True)
+    env = dict(os.environ, CASEFILE_TOOLCHAIN=str(alias / suffix))
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), "true"], cwd=ROOT,
+                            env=env, capture_output=True, timeout=30)
+    assert (result.returncode, result.stdout) == (95, b"")
+    assert result.stderr == b"run.sh: toolchain must be outside the checkout; exit 95\n"
+    assert not (target / suffix / ROOT.name).exists()
+
+
+@pytest.mark.parametrize("size", [4096, 200000], ids=["short-write", "write-error"])
+def test_capture_write_failure_exits_98(tmp_path, size):
+    directory = tmp_path / "invented-capture"
+    directory.mkdir()
+    # Limit only the inner capture process so the outer run.sh cannot mask its verdict.
+    launcher = """
+import resource
+import runpy
+import signal
+import sys
+
+resource.setrlimit(resource.RLIMIT_FSIZE, (1024, 1024))
+signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
+sys.argv = sys.argv[1:]
+runpy.run_path(sys.argv[0], run_name="__main__")
+"""
+    child = f"import sys; sys.stdout.buffer.write(b'x' * {size})"
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), sys.executable, "-c", launcher,
+                             str(ROOT / "scripts/run_capture.py"), str(CAP), str(directory),
+                             sys.executable, "-c", child],
+                            cwd=tmp_path, capture_output=True, timeout=30)
+    assert result.returncode == 98, result.stdout + result.stderr
+    assert b"run.sh: capture stage failed:" in result.stdout + result.stderr
+    assert b"exit 98" in result.stdout + result.stderr
+    assert not directory.exists()
+
+
+def test_capture_completes_short_writes(tmp_path, monkeypatch, capfdbinary):
+    import runpy
+
+    main = runpy.run_path(str(ROOT / "scripts/run_capture.py"))["main"]
+    directory = tmp_path / "invented-short-capture"
+    directory.mkdir()
+    payload = b"invented capture bytes" * 200
+
+    class ShortCapture:
+        def __init__(self):
+            self.data = bytearray()
+            self.calls = 0
+            self.closed = False
+
+        def write(self, chunk):
+            count = min(7, len(chunk))
+            self.data.extend(chunk[:count])
+            self.calls += 1
+            return count
+
+        def close(self):
+            self.closed = True
+
+    capture = ShortCapture()
+    original_open = Path.open
+
+    def open_capture(path, *args, **kwargs):
+        if path == directory / "out":
+            return capture
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", open_capture)
+    monkeypatch.setattr(sys, "argv", [str(ROOT / "scripts/run_capture.py"), str(CAP), str(directory),
+                                     str(ROOT / "scripts/run.sh"), sys.executable, "-c",
+                                     f"import sys; sys.stdout.buffer.write({payload!r})"])
+    assert main() == 0
+    assert capture.data == payload
+    assert capture.calls > 1
+    assert capture.closed
+    output = capfdbinary.readouterr()
+    assert (output.out, output.err) == (payload, b"")
+    assert not directory.exists()

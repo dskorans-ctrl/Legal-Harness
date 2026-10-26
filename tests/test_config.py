@@ -156,3 +156,42 @@ def test_symlink_checkout_identity_refused(tmp_path, monkeypatch, suffix):
 def test_host_path_refused(tmp_path):
     with pytest.raises(ConfigError, match="hostname 127.0.0.1"):
         load(write_config(tmp_path, host="http://127.0.0.1:11434/x"))
+
+
+@pytest.mark.parametrize("suffix", ["", "invented-matter"])
+def test_symlink_case_swapped_checkout_subdirectory_refused(tmp_path, suffix):
+    from conftest import ROOT
+
+    target = ROOT.with_name(ROOT.name.swapcase()) / "tests" / "fixtures"
+    assert os.path.samefile(target, ROOT / "tests" / "fixtures")
+    alias = tmp_path / "invented-fixture-alias"
+    alias.symlink_to(target, target_is_directory=True)
+    path = write_config(tmp_path, matters=alias / suffix)
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), "casefile", "config", "show",
+                             "--config", str(path)], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "paths.matters =" not in result.stdout
+    assert "ConfigError:" in result.stdout + result.stderr
+    assert "must be outside the checkout" in result.stdout + result.stderr
+    with pytest.raises(ConfigError, match="must be outside the checkout"):
+        load(path)
+
+
+def test_matters_identity_cannot_be_verified_refused(tmp_path):
+    from conftest import ROOT
+
+    blocked = tmp_path / "invented-inaccessible"
+    blocked.mkdir()
+    matters = blocked / "invented-matter"
+    path = write_config(tmp_path, matters=matters)
+    blocked.chmod(0o000)
+    try:
+        result = subprocess.run([str(ROOT / "scripts/run.sh"), "casefile", "config", "show",
+                                 "--config", str(path)], capture_output=True, text=True, timeout=30)
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert "paths.matters =" not in result.stdout
+        assert "ConfigError: cannot verify [paths].matters" in result.stdout + result.stderr
+        with pytest.raises(ConfigError, match="cannot verify"):
+            load(path)
+    finally:
+        blocked.chmod(0o700)

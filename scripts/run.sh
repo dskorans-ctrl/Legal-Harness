@@ -1,28 +1,32 @@
 #!/bin/bash
 CAP=52428800                      # 50 MiB of combined stdout and stderr
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd -P "$(dirname "$0")/.." && pwd -P)" || exit 95
 TOOLCHAIN="${CASEFILE_TOOLCHAIN:-$HOME/.casefile-dev}/$(basename "$ROOT")"
-if ! python3 - "$ROOT" "$TOOLCHAIN" <<'PYTHON'
-import os
-from pathlib import Path
-import sys
-
-root, toolchain = map(Path, sys.argv[1:])
-try:
-    inside = toolchain.resolve().is_relative_to(root.resolve()) or any(
-        ancestor.exists() and os.path.samefile(ancestor, root)
-        for ancestor in (toolchain, *toolchain.parents)
-    )
-except OSError as exc:
-    print(f"run.sh: cannot verify toolchain path: {exc}; exit 98", file=sys.stderr)
-    raise SystemExit(98)
-if inside:
-    print("run.sh: toolchain must be outside the checkout; exit 98", file=sys.stderr)
-    raise SystemExit(98)
-PYTHON
-then
-    exit 98
-fi
+# Resolve the deepest existing directory without creating toolchain folders.
+ancestor="$TOOLCHAIN"
+while [ ! -d "$ancestor" ]; do
+    if [ -e "$ancestor" ] || [ -L "$ancestor" ]; then
+        echo "run.sh: cannot verify toolchain path; exit 95" >&2
+        exit 95
+    fi
+    parent="$(dirname "$ancestor")"
+    [ "$parent" != "$ancestor" ] || { echo "run.sh: cannot verify toolchain path; exit 95" >&2; exit 95; }
+    ancestor="$parent"
+done
+physical="$(cd -P "$ancestor" && pwd -P)" \
+    || { echo "run.sh: cannot verify toolchain path; exit 95" >&2; exit 95; }
+# Check identity along both the typed path and its physical ancestors.
+for candidate in "$TOOLCHAIN" "$physical"; do
+    while :; do
+        if [ "$candidate" -ef "$ROOT" ]; then
+            echo "run.sh: toolchain must be outside the checkout; exit 95" >&2
+            exit 95
+        fi
+        parent="$(dirname "$candidate")"
+        [ "$parent" != "$candidate" ] || break
+        candidate="$parent"
+    done
+done
 export UV_PYTHON_INSTALL_DIR="$TOOLCHAIN/python" UV_CACHE_DIR="$TOOLCHAIN/cache" UV_PROJECT_ENVIRONMENT="$TOOLCHAIN/venv"
 [ -d "$TOOLCHAIN/venv/bin" ] && PATH="$TOOLCHAIN/venv/bin:$PATH"
 [ "$#" -ge 1 ] || { echo "run.sh: usage: scripts/run.sh <cmd> [args]" >&2; exit 96; }

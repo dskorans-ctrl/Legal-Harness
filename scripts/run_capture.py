@@ -36,7 +36,12 @@ def main():
         total = 0
         while chunk := os.read(child.stdout.fileno(), min(65536, cap + 1 - total)):
             try:
-                capture.write(chunk)
+                remaining = memoryview(chunk)
+                while remaining:
+                    written = capture.write(remaining)
+                    if written is None or written <= 0:
+                        raise OSError("capture write made no progress")
+                    remaining = remaining[written:]
             except OSError as exc:
                 return capture_failed(exc)
             sys.stdout.buffer.write(chunk[:max(0, cap - total)])

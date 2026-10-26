@@ -148,7 +148,7 @@ owner's devices over Tailscale with the page password; never on the public inter
 | D9 | Code in the private repo dskorans-ctrl/Legal-Harness; only `main` pushed, on the owner's word | owner | 2026-10-25 |
 | D10 | Obsidian: possible later, not decided | owner | 2026-10-25 |
 | D11 | No MLX work; Ollama is the engine | owner | 2026-10-25 |
-| D12 | `scripts/run.sh`: 50 MB combined cap; exit 96 no command, 97 cap hit (child process group killed), 98 capture failure, 127 command not found, 126 not executable, else the child's code; toolchain outside the checkout (D23) | chair, pending veto | 2026-10-25, amended 2026-10-26 (CX-4, B2) |
+| D12 | `scripts/run.sh`: 50 MB combined cap; exit 96 no command, 97 cap hit (child process group killed), 98 capture failure, 127 command not found, 126 not executable, 95 toolchain inside the checkout (D23, by identity), else the child's code | chair, pending veto | 2026-10-25, amended 2026-10-26 (CX-4, B2, B1b) |
 | D13 | Config: `$CASEFILE_CONFIG` or `./config.toml`, TOML; missing file, unknown key, bad type, `num_ctx` below 65536 or a host other than `http://127.0.0.1:<port>` fail closed; `[paths].matters` required and outside the checkout (owner Q17); model tag `qwen3.8:27b` (owner Q20) | chair, pending veto | 2026-10-25 |
 | D14 | Data root outside the checkout; `state/` (run log) in the checkout, gitignored; `Cases/` and `Bench/` forbidden repo prefixes | chair, pending veto | 2026-10-25 |
 | D15 | Run log SQLite schema v1 (`schema_meta`, `runs`, `answers`, `failures`, `approvals`), append-only by triggers; "a test job" is the doctor's warmup run with an `ok` answer | chair, pending veto | 2026-10-25 |
