@@ -101,6 +101,50 @@ def test_cap_terminates_sleeping_child(tmp_path):
                 pass
 
 
+def wait_dead(pid, seconds=2.0):
+    """True once the pid is gone (a killed orphan is reaped by init a moment later)."""
+    import time
+
+    end = time.monotonic() + seconds
+    while time.monotonic() < end:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return True
+        time.sleep(0.05)
+    return False
+
+
+def test_cap_kills_grandchild_in_group(tmp_path):
+    import signal
+    import time
+
+    pidfile = tmp_path / "invented-grandchild.pid"
+    command = f"sleep 77 & echo $! > {pidfile}; head -c {CAP + 1} /dev/zero"
+    started = time.monotonic()
+    pid = None
+    try:
+        try:
+            result = subprocess.run([str(ROOT / "scripts/run.sh"), "bash", "-c", command],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=5)
+        except subprocess.TimeoutExpired:
+            pytest.fail("output cap did not finish within 5 seconds")
+        pid = int(pidfile.read_text())
+        alive = 0 if wait_dead(pid) else 1
+        print(f"\ngrandchild_alive={alive}")
+        assert result.returncode == 97, result.stderr
+        assert time.monotonic() - started < 5
+        assert alive == 0
+    finally:
+        if pid is None and pidfile.exists():
+            pid = int(pidfile.read_text())
+        if pid is not None:
+            try:
+                os.kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+
+
 def test_missing_command_relays_127():
     command = "invented-casefile-command-that-does-not-exist"
     result = subprocess.run([str(ROOT / "scripts/run.sh"), command], cwd=ROOT,
