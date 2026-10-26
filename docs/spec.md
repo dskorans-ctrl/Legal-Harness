@@ -63,7 +63,8 @@ UI mockup: https://claude.ai/artifact/TcvRDeJAfG3B5MnvEnoQnk
 3. Schema check against the card's schema.
 4. Quote check ladder: exact, then whitespace, then curly versus straight quotes, then OCR faults
    (ligatures, line-break hyphens, running headers); otherwise rejected with the pages searched.
-5. Firm rules check (`rules.toml`): never "DME" or "IME" (say "the report"); never who hired, paid or
+5. Firm rules check (`rules.toml`), on outputs only: never "DME", "IME", "independent medical
+   examination" or "defense medical examination" (say "the report"); never who hired, paid or
    retained the doctor, fees or exam volume; treatment and bills never in one question; Bates cites,
    with a warning when records are not stamped.
 6. Coverage ledger: a page counts as read only when all of the above pass.
@@ -147,6 +148,17 @@ owner's devices over Tailscale with the page password; never on the public inter
 | D9 | Code in the private repo dskorans-ctrl/Legal-Harness; only `main` pushed, on the owner's word | owner | 2026-10-25 |
 | D10 | Obsidian: possible later, not decided | owner | 2026-10-25 |
 | D11 | No MLX work; Ollama is the engine | owner | 2026-10-25 |
+| D12 | `scripts/run.sh`: 50 MB combined cap; exit 96 no command, 97 cap hit, 98 capture failure, else the child's code | chair, pending veto | 2026-10-25 |
+| D13 | Config: `$CASEFILE_CONFIG` or `./config.toml`, TOML; missing file, unknown key, bad type, `num_ctx` below 65536 or a host other than `http://127.0.0.1:<port>` fail closed; `[paths].matters` required and outside the checkout (owner Q17); model tag `qwen3.8:27b` (owner Q20) | chair, pending veto | 2026-10-25 |
+| D14 | Data root outside the checkout; `state/` (run log) in the checkout, gitignored; `Cases/` and `Bench/` forbidden repo prefixes | chair, pending veto | 2026-10-25 |
+| D15 | Run log SQLite schema v1 (`schema_meta`, `runs`, `answers`, `failures`, `approvals`), append-only by triggers; "a test job" is the doctor's warmup run with an `ok` answer | chair, pending veto | 2026-10-25 |
+| D16 | `rules.toml` schema; rule 5 on outputs only, blocking DME, IME and both spelled-out phrases (owner Q16); a Bates cite body must fully match the configurable pattern (owner Q21); "every fact has a cite" is gate 6 at stage 4 | chair, pending veto | 2026-10-25 |
+| D17 | Playbook entries in TOML with the six §6 fields; non-rules entries are SAMPLE until owner content (owner Q12), enforced by a gate row; version `pb-` plus a sha256 prefix | chair, pending veto | 2026-10-25 |
+| D18 | Stand-in model server: stdlib, Ollama native `/api/chat` and `/api/ps` shape, port 18434 (never 11434), modes replay, truncated, malformed, forbidden, short_context, empty | chair, pending veto | 2026-10-25 |
+| D19 | `casefile doctor`: eight checks, each PASS or FAIL with a reason, none skipped; loopback by hostname, `/api/version` and `lsof`; full context by a warmup answering `READY` and `/api/ps` context; OCR FAIL until stage 3 (owner Q11); exit 0 or 1 | chair, pending veto | 2026-10-25 |
+| D20 | Gate `python -m casefile.gate`: rows pytest, privacy (ignored files included), rules self-test, playbook, prose; prints and exits the failed-row count; the doctor is covered by the stage 1 exit test, not a gate row | chair, pending veto | 2026-10-25 |
+| D21 | Model client transport: no proxy, redirects refused, an empty answer is an error | chair, pending veto | 2026-10-25 |
+| D22 | Codex gpt-6.1-sol writes code instead of Sonnet (owner Q14); critic round of round 1 held to the next session (owner Q15) | owner | 2026-10-25 |
 
 ## §10 Open questions
 
