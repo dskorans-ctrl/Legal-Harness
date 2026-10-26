@@ -9,6 +9,8 @@ from typing import Mapping
 import tomllib
 from urllib.parse import urlsplit
 
+from casefile.pathguard import classify
+
 
 class ConfigError(ValueError):
     """Configuration is absent, malformed, or unsafe to use."""
@@ -121,22 +123,18 @@ def load(path: str | Path | None = None) -> Config:
         raise ConfigError("[model].host must use http with hostname 127.0.0.1")
 
     paths = values["paths"]
-    matters = Path(paths["matters"]).expanduser()
+    expanded = os.path.expanduser(paths["matters"])
+    if expanded.startswith("~"):
+        raise ConfigError("cannot expand ~ in [paths].matters: no home directory")
     checkout = Path(__file__).resolve().parents[2]
-    if not matters.is_absolute():
+    verdict, detail = classify(expanded, checkout)
+    if verdict == "relative":
         raise ConfigError("[paths].matters must be an absolute path")
-    try:
-        resolved = Path(os.path.realpath(matters.resolve(strict=False)))
-        inside = resolved.is_relative_to(checkout) or any(
-            ancestor.exists() and os.path.samefile(ancestor, checkout)
-            for candidate in (matters, resolved)
-            for ancestor in (candidate, *candidate.parents)
-        )
-    except OSError as exc:
-        raise ConfigError(f"cannot verify [paths].matters is outside the checkout: {exc}") from exc
-    if inside:
+    if verdict == "inside":
         raise ConfigError(f"[paths].matters must be outside the checkout {checkout}")
-    paths["matters"] = resolved
+    if verdict == "cannot-verify":
+        raise ConfigError(f"cannot verify [paths].matters is outside the checkout: {detail}")
+    paths["matters"] = Path(detail)
     for key in ("state", "playbook"):
         paths[key] = (source.parent / Path(paths[key]).expanduser()).resolve()
     return Config(Paths(**paths), Model(**model), OCR(**values["ocr"]), source,

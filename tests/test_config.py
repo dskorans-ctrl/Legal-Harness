@@ -9,7 +9,7 @@ import subprocess
 import pytest
 
 from casefile.config import ConfigError, load
-from conftest import write_config
+from conftest import ROOT, alias_table, write_config
 
 
 def test_rejections(tmp_path, capsys):
@@ -195,3 +195,43 @@ def test_matters_identity_cannot_be_verified_refused(tmp_path):
             load(path)
     finally:
         blocked.chmod(0o700)
+
+
+def test_matters_alias_table(tmp_path):
+    base = tmp_path / "aliases"
+    base.mkdir()
+    messages = {"inside": "must be outside the checkout", "relative": "must be an absolute path",
+                "cannot-verify": "cannot verify [paths].matters is outside the checkout"}
+    wrong = set()
+    with alias_table(base, ROOT) as rows:
+        for row_id, matters, expected in rows:
+            path = write_config(tmp_path / "cfg", matters=matters)
+            result = subprocess.run([str(ROOT / "scripts/run.sh"), "casefile", "config", "show",
+                                     "--config", str(path)], capture_output=True, text=True,
+                                    timeout=30)
+            shown = "paths.matters = " + json.dumps(os.path.realpath(matters))
+            if expected == "outside":
+                if result.returncode != 0 or shown not in result.stdout:
+                    wrong.add(f"{row_id}@cli")
+                if load(path).paths.matters != Path(os.path.realpath(matters)):
+                    wrong.add(f"{row_id}@load")
+                continue
+            if (result.returncode != 2 or "paths.matters =" in result.stdout
+                    or messages[expected] not in result.stdout + result.stderr):
+                wrong.add(f"{row_id}@cli")
+            try:
+                load(path)
+                wrong.add(f"{row_id}@load")
+            except ConfigError as exc:
+                if messages[expected] not in str(exc):
+                    wrong.add(f"{row_id}@load")
+        total = len(rows)
+    print(f"\nmatters_alias_wrong={len({name.split('@')[0] for name in wrong})} of {total}")
+    assert not wrong, sorted(wrong)
+
+
+def test_matters_unexpandable_home(tmp_path, monkeypatch):
+    path = write_config(tmp_path, matters="~/invented-casefile-test")
+    monkeypatch.setattr(os.path, "expanduser", lambda value: value)
+    with pytest.raises(ConfigError, match="cannot expand ~ in \\[paths\\].matters"):
+        load(path)
