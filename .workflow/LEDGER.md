@@ -80,61 +80,80 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
-- [ ] R1-1. Build brief reconciled to the code at main `5a55b54`, a CHECK and seed per item, Codex
+- [~] R1-1. Build brief reconciled to the code at main `5a55b54`, a CHECK and seed per item, Codex
   reviewed, revised with dispositions. `.workflow/scratch/round01-build-brief.md`.
-- [ ] R1-2. `scripts/run.sh <cmd>`: caps combined stdout/stderr at 50 MB, exits 97 when the cap is hit,
+  deferred: chair at close
+- [x] R1-2. `scripts/run.sh <cmd>`: caps combined stdout/stderr at 50 MB, exits 97 when the cap is hit,
   otherwise carries the child's exit code.
   Build note (chair re-run, not a tick): cap `exit=97 bytes=52428800`, child `3`, capture `98`; SEED `head -c "$CAP"` -> `exit=0`; restored by cmp.
-- [ ] R1-3. Skeleton: Python 3.12 (uv, project-local), package `casefile`, console entry `casefile`,
+  Verifier (blind, 2026-10-26, tip 9c25e8f): `scripts/run.sh bash -c 'head -c 52428801 /dev/zero | tr "\0" a' | wc -c` -> `52428800`, pipefail exit `97`, stderr `run.sh: output cap 52428800 bytes hit (child status -9); exit 97`; `bash -c 'exit 3'` -> `3`; exact cap -> `0`; no args -> `96`; `TMPDIR=/nonexistent/dir` -> `98`. SEED run_capture.py:32 `128 - status` -> `1`: `1 failed, 161 passed` (sigkill `(1, 0) == (137, 0)`), restored cmp 0.
+- [x] R1-3. Skeleton: Python 3.12 (uv, project-local), package `casefile`, console entry `casefile`,
   `scripts/run.sh pytest -q` green.
   Build note: `3.12.13 0.1.0`, `casefile 0.1.0`; isolation SEED (matters -> repo `Cases`) -> pytest exit 3 `test isolation failed`; restored by cmp, exit 0.
+  Verifier (blind, 2026-10-26, tip 9c25e8f): `scripts/run.sh python --version` -> `Python 3.12.13`; `scripts/run.sh casefile version` -> `casefile 0.1.0` (venv `~/.casefile-dev/legal-harness/venv`, D23); `scripts/run.sh pytest -q` -> `162 passed in 9.82s`.
 - [ ] R1-4. Config: one config file with defaults and validation; an unknown key or bad value fails
   closed with a message, never a silent default.
   Build note: SEED unknown-key raise -> `continue` gave `4 failed, 21 passed`; restored green.
-- [ ] R1-5. `playbook/rules.toml` with the four spec §4 firm rules, loaded and validated; each rule has a
+  Verifier (blind, 2026-10-26, tip 9c25e8f): REFUSED. Unknown key, bad type, low num_ctx, bad host, missing file, matters in checkout all exit 2 with a ConfigError (seed config.py:69 missing-file branch -> `3 failed, 159 passed`). But `[paths].matters = "/Users/davidskoranski/LEGAL-HARNESS/invented-matters"` (case variant of the checkout on case-insensitive APFS) -> `casefile config show` exit `0`, `paths.matters = "/Users/davidskoranski/LEGAL-HARNESS/invented-matters" (source=file)`: config.py:128 `is_relative_to(checkout)` compares case-sensitively. Fail open on D13/Q17. Blocking.
+- [x] R1-5. `playbook/rules.toml` with the four spec §4 firm rules, loaded and validated; each rule has a
   test with a forbidden output that goes red.
   Build note: SEED drop `re.IGNORECASE` (rules.py:59) -> `2 failed, 39 passed`; restored green.
-- [ ] R1-6. Playbook loader: entries carry rule, why, good example, bad example, date added, where
+  Verifier (blind, 2026-10-26, tip 9c25e8f): four rule ids loaded; `rules_red=9 of 9`, `good_clean=4 of 4`; probes "The IME found a normal gait." -> `['no-dme-ime']`, "Who retained the doctor?" -> `['no-hired-paid-retained']`, question "What treatment did you get and who paid the bills?" -> `['treatment-and-bills-apart']`, "Gait normal [cite p. 12]" -> `['bates-cites']` (unstamped `warning`). SEEDS rules.py:76 fullmatch->match `2 failed`; rules.py:61 unit skip off `2 failed`; rules.toml:43 drop bill pattern `4 failed`; all restored cmp 0. Non-blocking: "independent-medical-examination" and "defense medical-examination" (hyphens) -> `[]`.
+- [x] R1-6. Playbook loader: entries carry rule, why, good example, bad example, date added, where
   learned (spec §6); malformed entry fails closed; a playbook version is computed. Entries other than
   rules.toml are invented and marked SAMPLE (Q12).
   Build note: lane B reports `refused=3 of 3`, `version_changed=1` with seeds red; chair did not re-run these two seeds.
-- [ ] R1-7. Run log (SQLite): every run, card version, pages in, raw answer, failures, approvals
+  Verifier (blind, 2026-10-26, tip 9c25e8f): `casefile playbook show` -> `version=pb-8c41a5ae7727 entries=7` (4 rules + 3 SAMPLE); missing-why fixture -> exit 2 `missing field why`; unmarked fixture -> exit 2 `field sample: round 1 requires sample = true and rule starting SAMPLE:`; one byte appended -> `version=pb-959a6c383d9a`. SEEDS playbook.py:72 sample check off `3 failed`; playbook.py:109 duplicate id off `2 failed`; playbook.py:86 rules.toml guard off `1 failed`; restored cmp 0. Non-blocking: SEED cli.py:38 playbook error `return 2` -> `return 0` stays `162 passed` (CLI exit untested).
+- [x] R1-7. Run log (SQLite): every run, card version, pages in, raw answer, failures, approvals
   (spec §5); records a test job.
   Build note: SEED `approvals_no_delete` -> `SELECT 1` gave `1 failed, 24 passed`; restored green.
-- [ ] R1-8. Stand-in model server `tests/fakemodel/`: Ollama native `/api/chat` shape; replays recorded
+  Verifier (blind, 2026-10-26, tip 9c25e8f): driven doctor x2 on stand-in: runs `(1, 'doctor', 'doctor.warmup', 'a48ba54e9a3e', 'pb-8c41a5ae7727', 'qwen3.8:27b', 0, ...)`, answers `(1, 'ok', 'stop', 21, 2, '{"model": ...')`, `DELETE FROM runs` -> `runlog is append-only`. SEEDS runlog.py:111 foreign_keys OFF `2 failed`; runlog.py:92 drop card filter `1 failed` (`assert 2 == 1`); doctor.py:142 status always failed `4 failed`; restored cmp 0.
+- [x] R1-8. Stand-in model server `tests/fakemodel/`: Ollama native `/api/chat` shape; replays recorded
   answers; returns truncated, malformed or forbidden answers on demand.
   Build note: socket `test_http_roundtrip` 1 passed outside the sandbox; FAILS (not skips) inside it until the session restarts with Q18's setting.
-- [ ] R1-9. `casefile doctor`: Ollama on 127.0.0.1 only, full context loaded, OCR works, folders
+  Verifier (blind, 2026-10-26, tip 9c25e8f): over HTTP on 127.0.0.1: replay `'READY' stop ctx 65536`; truncated `'RE' length`; malformed `'{"facts": [{"page": 1,'`; forbidden `'The IME found no injury; ...retained by the employer.'`; short_context ps `8192`; empty `''`; unrecorded `404`; `/v1/chat/completions` `404`. SEEDS core.py:88 stream check off `2 failed`; core.py:46 short_context ctx `4 failed`; restored cmp 0. Note: mode `incomplete` is not in D18's list.
+- [x] R1-9. `casefile doctor`: Ollama on 127.0.0.1 only, full context loaded, OCR works, folders
   writable; each check PASS or FAIL with a reason, none skipped; exit code carries the verdict.
   Build note: covered by the R1-11 run; doctor seeds are Codex's only (chair did not re-run).
-- [ ] R1-10. Gate `scripts/run.sh python -m casefile.gate` prints 0 when green; includes the privacy
+  Verifier (blind, 2026-10-26, tip 9c25e8f): driven run, eight lines: `config PASS`, `folders PASS writable=3 of 3`, `playbook PASS version=pb-8c41a5ae7727`, `runlog_schema PASS schema=1 triggers=15 (counted)`, `ollama_loopback PASS addr=127.0.0.1:53510`, `context PASS context_length=65536`, `runlog_job PASS test_jobs=+1`, `ocr FAIL OCR not verified: tools unavailable (...) | do: install tesseract and ocrmypdf; expected until stage 3`; `doctor failed=1 of 8`, exit 1. SEEDS cli.py:32 drop doctor return `3 failed`; doctor.py:83 lsof error ignored `1 failed`; doctor.py:47 missing matters `1 failed`; restored cmp 0. Non-blocking: SEED doctor.py:152 `== 1` -> `>= 0` stays `162 passed`; with doctor.py:142 also seeded the doctor prints `runlog_job PASS test_jobs=+0` (only the exit test's own count catches it).
+- [x] R1-10. Gate `scripts/run.sh python -m casefile.gate` prints 0 when green; includes the privacy
   check (PDF, Word or image outside `tests/fixtures/`, or anything under `Cases/` or `Bench/`, fails).
   Build note: gate prints `0`, exit 0 (rows pytest, privacy scanned=188, rules_selftest, playbook pb-e46d368e8caf, prose); SEED `docs/seed.pdf` -> `privacy FAIL offenders=1`, prints `1`, exit 1.
-- [ ] R1-11. Stage 1 exit test (spec §7): `casefile doctor` runs and the run log records a test job,
+  Verifier (blind, 2026-10-26, tip 9c25e8f): `scripts/run.sh python -m casefile.gate` -> rows pytest, privacy `offenders=0 scanned=213`, rules_selftest, playbook, prose `dashes=0 files=57`, prints `0`, exit 0. SEED transient `state/probe-seed.HEIC` (ignored), `Bench/invented-notes.txt`, `docs/probe-seed.md` with U+2013 -> `gate privacy FAIL offenders=2 scanned=216`, `gate prose FAIL dashes=1 files=58`, prints `2`, exit 2; removed. SEED privacy.py:11 drop `--others` `4 failed`; restored cmp 0. Non-blocking: SEED gate.py:37 drop `false_hits == 0` stays `162 passed`.
+- [x] R1-11. Stage 1 exit test (spec §7): `casefile doctor` runs and the run log records a test job,
   driven end to end through `scripts/run.sh`.
   Build note: `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`, 1 passed via scripts/run.sh outside the sandbox. Full suite `98 passed`.
-- [ ] R1-12. Spec §9 rows for this round's rulings, §11 as-built updated; Librarian, agent log,
+  Verifier (blind, 2026-10-26, tip 9c25e8f): `scripts/run.sh pytest -q -s tests/test_stage1_exit.py` -> `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`, `stage-control exit=1 verdicts=8 fails={'ocr'} expected={'ocr'} test_jobs=1`, `2 passed`; socket server stopped by the test.
+- [~] R1-12. Spec §9 rows for this round's rulings, §11 as-built updated; Librarian, agent log,
   round report under `docs/loop/round-01/`.
+  deferred: chair at close
 ## Discoveries during round 1 (appended, not yet scheduled)
 
 - [ ] R1-13. Brief CHECK wording: R1-2 CHECK 1 needs caller `pipefail` (without it prints `FAIL exit=0`);
   R1-2 second SEED (mktemp) is masked by the later unreadable-capture guard, which also returns 98 (two
   guards mask each other: isolate each); R1-4 missing-file shell CHECK prints PASS under its seed; R1-7
   trigger seed leaves `test_jobs=1` (Codex added a status-filter seed). -> verifier checks each.
-- [ ] R1-14. Codex workspace-write cannot write `.git` (`index.lock: Operation not permitted`); the chair
+  Verifier (blind, 2026-10-26, tip 9c25e8f): REFUSED (one of four parts). (a) without pipefail the overflow pipeline exits `0`, with pipefail `97`: reproduced. (b) mktemp guard now isolated: SEED run.sh:8 drop `|| {...}` -> `capture-failure (1, 0)`, red (it also wrote a stray `out` in the cwd, removed). But the second guard is not: SEED run_capture.py:35 `return 98` -> `return 0` stays `162 passed`; `scripts/run.sh invented-no-such-cmd` -> `capture stage failed ... exit 98` on the tip, untested. Blocking. (c) SEED config.py:69 missing-file branch removed -> `3 failed, 159 passed` (message falls to `cannot load config`): red. (d) SEED runlog.py:92 card filter -> `assert 2 == 1`: red.
+- [x] R1-14. Codex workspace-write cannot write `.git` (`index.lock: Operation not permitted`); the chair
   commits every Codex item after re-running its CHECKs. -> process note, Librarian.
-- [ ] R1-15. Q18's `allowLocalBinding` did not take effect mid-session; socket tests ran outside the
+  Verifier (blind, 2026-10-26, tip 9c25e8f): ticked on reading the record: agent-log row 4 `uncommitted (sandbox denies .git), chair committed`; every build commit 7fd2913..9d05301 is by the chair. Process note; Librarian entry is R1-12's.
+- [x] R1-15. Q18's `allowLocalBinding` did not take effect mid-session; socket tests ran outside the
   sandbox. -> confirm in a fresh session.
   Note (chair, session 2, fresh session): `scripts/run.sh pytest -q -m socket` inside the sandbox -> `5 passed, 93 deselected`; the setting takes effect at session start.
-- [ ] R1-16. Toolchain inside the checkout broke the strict privacy row (4 idlelib PNGs under `.uv/`);
+  Verifier (blind, 2026-10-26, tip 9c25e8f): fresh session, inside the sandbox: `scripts/run.sh pytest -q -m socket` -> `5 passed, 157 deselected in 2.76s`.
+- [x] R1-16. Toolchain inside the checkout broke the strict privacy row (4 idlelib PNGs under `.uv/`);
   fixed by D23 (commit 9d05301), seed `toolchain_inside_repo=1` red per Codex. -> verifier re-seeds.
-- [ ] R1-17. Process slip: the chair committed loop records (3e12678) while a Codex lane was live in the
+  Verifier (blind, 2026-10-26, tip 9c25e8f): SEED run.sh:5 `UV_CACHE_DIR="$ROOT/.uv/cache"` -> `AssertionError: toolchain_inside_repo=1`, restored cmp 0; ignored-file scan proven by `state/probe-seed.HEIC` -> privacy offender (R1-10).
+- [x] R1-17. Process slip: the chair committed loop records (3e12678) while a Codex lane was live in the
   main tree (catalog #53); disjoint files, no conflict. -> Librarian.
-- [ ] R1-18. Built in four Codex batches (A1, A2+B, A3, F1) instead of one run per item, to save chair
+  Verifier (blind, 2026-10-26, tip 9c25e8f): ticked on reading the record: `git show --stat 3e12678` touches only ledger, spec, loop records and `.claude/settings.json`, no src or tests. Process note.
+- [x] R1-18. Built in four Codex batches (A1, A2+B, A3, F1) instead of one run per item, to save chair
   usage. -> process note.
+  Verifier (blind, 2026-10-26, tip 9c25e8f): ticked on reading the record: agent-log rows 4 to 8 (A1, A2, lane B, A3, F1). Process note.
 
-- [ ] R1-19. CX-9's real OCR smoke test (ocrmypdf on an invented fixture PDF) is stage 3 work (Q11);
+- [~] R1-19. CX-9's real OCR smoke test (ocrmypdf on an invented fixture PDF) is stage 3 work (Q11);
   cycle 1 makes check_ocr honest ("versions only"). -> carry to the stage 3 brief.
+  deferred: carried (chair, 2026-10-26)
 
 ## Round 1 critic round (session 2, 2026-10-26)
 - 8a Codex code review (gpt-6.1-sol, read-only): 11 findings, 2 high, 8 med, 1 low; all 11
@@ -155,7 +174,8 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   Done: chair re-run `162 passed`, gate `0`, critic repros clear (H2 missed `[]`, H3 false hits `[]`, M5 `[]`);
   doctor with no server: `failed=4 of 8`, exit 1, every FAIL line has `| do:`.
 - Cycle budget (Q5): 8a fixes = cycle 1, critic fixes = cycle 2; one cycle left for the verifier's findings.
-- [ ] R1-20. Critic M4: `bates-cites` sees only bracketed cites; "(Ex. 3 at 12)" and "See page 12" pass.
+- [~] R1-20. Critic M4: `bates-cites` sees only bracketed cites; "(Ex. 3 at 12)" and "See page 12" pass.
   -> brief of the stage that generates cited prose.
+  deferred: carried (chair, 2026-10-26)
 
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
