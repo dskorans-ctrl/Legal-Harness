@@ -178,4 +178,10 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   -> brief of the stage that generates cited prose.
   deferred: carried (chair, 2026-10-26)
 
+- 8c blind verifier (fresh Opus 5.5): FAIL, 14 ticked, 4 deferred, 2 refused (B1 R1-4, B2 R1-13);
+  `docs/loop/round-01/round01-verify.md`. Chair reproduced B1 (`exit=0`, want 2).
+- Fix cycle 3 (Codex, last allowed): B1, B2, S2, S6, S9, S10, N1 to N3; spec D12 and D18 amended
+  (chair rulings, pending veto). Commit f2023ae. Chair re-run `184 passed`, gate `0`, B1 `exit=2`,
+  missing command `127`; SEED run_capture.py:13 `return 98` -> `return 0` -> `5 failed, 13 passed`, cmp, `18 passed`.
+
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
