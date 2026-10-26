@@ -1,9 +1,11 @@
 """Keep all test configuration and writes inside temporary directories."""
 
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
 import shutil
+import unicodedata
 
 import pytest
 
@@ -123,6 +125,76 @@ def isolated_config(tmp_path_factory, production_dirs_untouched):
             os.environ.pop("CASEFILE_CONFIG", None)
         else:
             os.environ["CASEFILE_CONFIG"] = old_config
+
+
+@contextmanager
+def alias_table(base, root, firmlink=True):
+    """Yield the 19 path rows (id, path, expected) every guard caller must agree on.
+
+    Links are made under `base` (a tmp_path) against `root` (the checkout under test).
+    The unreadable folder is restored on exit. A disk that cannot build a row fails the
+    row (samefile asserts), it is never skipped.
+    """
+    base, root = Path(base), Path(root)
+    swapped = root.with_name(root.name.swapcase())
+    assert os.path.samefile(swapped, root), "this disk must treat a case-swapped checkout as the same folder"
+    (root / "tests" / "fixtures").mkdir(parents=True, exist_ok=True)
+    (root / "src").mkdir(exist_ok=True)
+
+    def link(name, target):
+        (base / name).symlink_to(target, target_is_directory=True)
+        return base / name
+
+    link("lroot", root)
+    link("lsub", swapped / "tests" / "fixtures")
+    link("c1", base / "lsub")
+    link("c2", base / "c1")
+    (base / "loopA").symlink_to(base / "loopB")
+    (base / "loopB").symlink_to(base / "loopA")
+    link("dang", swapped / "no-such" / "x")
+    link("lsrc", root / "src")
+    nfc = link("Caf\u00e9", root)
+    nfd = base / unicodedata.normalize("NFD", "Caf\u00e9")
+    assert nfd.name != nfc.name and os.path.samefile(nfd, root), "NFD spelling must reach the same folder"
+    # hop leads two levels down, so `hop/..` lands in base/deep while its text says base.
+    (base / "deep" / "sub").mkdir(parents=True)
+    link("hop", base / "deep" / "sub")
+    (base / "out" / "ok").mkdir(parents=True)
+    blocked = base / "blocked"
+    blocked.mkdir()
+    if firmlink:
+        firm = "/System/Volumes/Data" + str(root)
+        assert os.path.samefile(firm, root), "firmlink spelling must reach the same folder"
+    else:
+        firm = str(link("lroot2", root))
+    rows = [
+        ("case-swapped-root", f"{swapped}/m", "inside"),
+        ("symlink-root", f"{base}/lroot/m", "inside"),
+        ("symlink-root-bare", f"{base}/lroot", "inside"),
+        ("symlink-subfolder-case", f"{base}/lsub/m", "inside"),
+        ("symlink-subfolder-bare", f"{base}/lsub", "inside"),
+        ("chain", f"{base}/c2/m", "inside"),
+        ("loop", f"{base}/loopA/m", "cannot-verify"),
+        ("dotdot-after-missing", f"{base}/nope" + "/.." * (len(base.parts) + 1) + f"{root}/tc", "inside"),
+        ("dangling-into-checkout", f"{base}/dang/m", "inside"),
+        ("dotdot-after-symlink", f"{base}/lsrc/../m", "inside"),
+        ("relative", "relchk", "relative"),
+        ("unreadable-ancestor", f"{blocked}/m", "cannot-verify"),
+        ("checkout-itself", str(root), "inside"),
+        ("trailing-slash", f"{root}/", "inside"),
+        ("nfd-alias", f"{nfd}/m", "inside"),
+        ("firmlink", f"{firm}/m", "inside"),
+        # normpath would read this as base/lroot/m (inside); the kernel lands in base/deep (outside).
+        ("hop-dotdot-through-link", f"{base}/hop/../lroot/m", "outside"),
+        ("outside-existing", f"{base}/out/ok", "outside"),
+        ("outside-new", f"{base}/out/new/deeper", "outside"),
+    ]
+    assert len(rows) == 19 and len({row[0] for row in rows}) == 19
+    blocked.chmod(0o000)
+    try:
+        yield rows
+    finally:
+        blocked.chmod(0o700)
 
 
 def ocr_expected_fail() -> bool:
