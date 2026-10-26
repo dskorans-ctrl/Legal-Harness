@@ -159,6 +159,7 @@ owner's devices over Tailscale with the page password; never on the public inter
 | D20 | Gate `python -m casefile.gate`: rows pytest, privacy (ignored files included), rules self-test, playbook, prose; prints and exits the failed-row count; the doctor is covered by the stage 1 exit test, not a gate row | chair, pending veto | 2026-10-25 |
 | D21 | Model client transport: no proxy, redirects refused, an empty answer is an error | chair, pending veto | 2026-10-25 |
 | D22 | Codex gpt-6.1-sol writes code instead of Sonnet (owner Q14); critic round of round 1 held to the next session (owner Q15) | owner | 2026-10-25 |
+| D23 | Dev toolchain (uv Python, cache, venv) lives outside the checkout under `~/.casefile-dev/<checkout name>` (override `CASEFILE_TOOLCHAIN`), so the privacy row can scan ignored files with no exemption | chair, pending veto | 2026-10-25 |
 
 ## §10 Open questions
 
