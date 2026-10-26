@@ -20,6 +20,7 @@ Bench/
 __pycache__/
 *.pyc
 .venv/
+.uv/
 .pytest_cache/
 *.egg-info/
 dist/
@@ -27,6 +28,7 @@ build/
 
 # Local config and secrets
 config.toml
+state/
 .env
 *.sqlite
 *.db
