@@ -79,6 +79,10 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   (as Q14), chair commits and re-runs seeds.
 - Q23: cycle cap reached in round 1 (owner, 2026-10-26)? -> one extra fix cycle (exception to Q5),
   limited to B1b and B3, then one focused fresh re-verify; if that fails, discard per Q5.
+- Q24: round 1 discarded after the focused re-verify failed (owner, 2026-10-26)? -> re-brief on the
+  branch: keep `loop/round-01`'s tip; the next session runs a Fable brief limited to a redesign of the
+  path-identity guards and wrapper exit branches plus V3-1 to V3-4, a Codex plan review, build, the full
+  critic round, then close and merge. `main` stays at the seed until then.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -201,6 +205,12 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   Owner Q23: one extra cycle.
 - Fix cycle 4 (Codex, Q23): B1b and B3. Chair re-run `192 passed`, gate `0`, B1b `exit=2`, toolchain alias
   `exit=95`; SEED run_capture.py:46 `return capture_failed(exc)` -> `pass` -> `2 failed, 21 passed`, cmp, `23 passed`.
+
+- 8c focused re-verify (fresh Opus 5.5, Q23): FAIL, V3-1 to V3-4 (`round01-verify3.md`); chair reproduced
+  V3-2 (`CASEFILE_TOOLCHAIN=<scratch>/nope/../../../../../<checkout>` -> `exit=0`, want 95).
+- Round 1 verdict: DISCARDED per Q23/Q5, not merged (Q24: re-brief on the branch). R1-4 and R1-13 refused;
+  V1 not ticked. Carried to the re-brief: V3-1 to V3-4, verify2 N2 (non-blocking), R1-12 (spec §11 as-built,
+  written at the merge).
 
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.
