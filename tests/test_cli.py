@@ -14,3 +14,33 @@ def test_no_args():
     result = subprocess.run(["casefile"], capture_output=True, text=True, timeout=30)
     assert (result.returncode, result.stdout) == (2, "")
     assert "usage: casefile" in result.stderr
+
+
+def test_playbook_show(tmp_path):
+    import os
+    import shutil
+    from conftest import ROOT, write_config
+
+    config = write_config(tmp_path)
+    shutil.copytree(ROOT / "playbook", tmp_path / "playbook", dirs_exist_ok=True)
+    env = dict(os.environ, CASEFILE_CONFIG=str(tmp_path / "absent.toml"))
+    result = subprocess.run(["casefile", "playbook", "show", "--config", str(config)],
+                            env=env, capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines()[0].startswith("version=pb-")
+    assert "entries=7" in result.stdout.splitlines()[0]
+    assert len(result.stdout.splitlines()) == 8
+
+
+def test_doctor_config_override(tmp_path):
+    import os
+    from conftest import write_config
+
+    config = write_config(tmp_path)
+    # An explicitly missing config blocks every model path before any socket.
+    result = subprocess.run(["casefile", "doctor", "--config", str(tmp_path / "absent.toml")],
+                            env=dict(os.environ, CASEFILE_CONFIG=str(config)),
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 1
+    assert "doctor config FAIL no config file" in result.stdout
+    assert result.stdout.count("FAIL blocked by config") == 7

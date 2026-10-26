@@ -6,14 +6,21 @@ import json
 from pathlib import Path
 import sys
 
-from casefile import __version__
+from casefile import __version__, doctor, playbook
 from casefile.config import ConfigError, load
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(prog="casefile")
     subcommands = parser.add_subparsers(dest="command", required=True)
-    subcommands.add_parser("version", help="Print the installed version")
+    version = subcommands.add_parser("version", help="Print the installed version")
+    version.add_argument("--config", type=Path)
+    doctor_parser = subcommands.add_parser("doctor", help="Check local readiness")
+    doctor_parser.add_argument("--config", type=Path)
+    playbook_parser = subcommands.add_parser("playbook", help="Inspect the playbook")
+    playbook_commands = playbook_parser.add_subparsers(dest="playbook_command", required=True)
+    playbook_show = playbook_commands.add_parser("show")
+    playbook_show.add_argument("--config", type=Path)
     config_parser = subcommands.add_parser("config", help="Inspect configuration")
     config_commands = config_parser.add_subparsers(dest="config_command", required=True)
     show = config_commands.add_parser("show", help="Print effective values and their sources")
@@ -21,6 +28,17 @@ def main() -> int:
     args = parser.parse_args()
     if args.command == "version":
         print(f"casefile {__version__}")
+    elif args.command == "doctor":
+        return doctor.run(args.config)
+    elif args.command == "playbook":
+        try:
+            book = playbook.load(load(args.config).paths.playbook)
+        except (ConfigError, playbook.PlaybookError) as exc:
+            print(f"{type(exc).__name__}: {exc}", file=sys.stderr)
+            return 2
+        print(f"version={book.version} entries={len(book.entries)}")
+        for entry in book.entries:
+            print(f"{entry.id}: {entry.rule}")
     elif args.command == "config":
         try:
             config = load(args.config)
