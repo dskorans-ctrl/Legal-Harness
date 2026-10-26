@@ -7,6 +7,8 @@ import sys
 
 import pytest
 
+from conftest import alias_table
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CAP = 52428800
@@ -174,6 +176,102 @@ def test_toolchain_symlink_case_swapped_subdirectory_refused(tmp_path, suffix):
     assert (result.returncode, result.stdout) == (95, b"")
     assert result.stderr == b"run.sh: toolchain must be outside the checkout; exit 95\n"
     assert not (target / suffix / ROOT.name).exists()
+
+
+def residue():
+    """Every entry in the checkout, empty and ignored directories included."""
+    return sorted(os.path.join(parent, name) for parent, dirs, files in os.walk(ROOT)
+                  for name in dirs + files)
+
+
+def run_toolchain(toolchain, cwd=ROOT, env=None):
+    env = dict(os.environ if env is None else env, CASEFILE_TOOLCHAIN=str(toolchain))
+    before = residue()
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), "true"], cwd=cwd, env=env,
+                            capture_output=True, timeout=30)
+    return result, residue() != before
+
+
+def toolchain_refusal_ok(result, expected):
+    if expected == "outside":
+        return result.returncode == 0 and result.stdout == b""
+    prefix = (b"run.sh: toolchain must be outside the checkout; exit 95\n" if expected == "inside"
+              else b"run.sh: cannot verify toolchain path")
+    return (result.returncode, result.stdout) == (95, b"") and result.stderr.startswith(prefix)
+
+
+def test_toolchain_alias_table(tmp_path):
+    wrong, created, runs = set(), 0, 0
+    with alias_table(tmp_path, ROOT) as rows:
+        for row_id, path, expected in rows:
+            if expected == "relative":
+                # run.sh takes a relative override against the current directory, as before.
+                cases = [(ROOT, "inside"), (tmp_path, "outside")]
+            else:
+                cases = [(ROOT, expected)]
+            for cwd, want in cases:
+                result, changed = run_toolchain(path, cwd=cwd)
+                runs += 1
+                created += changed
+                if changed or not toolchain_refusal_ok(result, want):
+                    wrong.add(f"{row_id}@{cwd.name}")
+    print(f"\ntoolchain_alias_wrong={len(wrong)} of {runs} created={created}")
+    assert (runs, wrong, created) == (20, set(), 0)
+
+
+@pytest.mark.parametrize("child", ["python", "cache", "venv", "venv/bin"])
+def test_toolchain_exported_child_symlink_refused(tmp_path, child):
+    target = ROOT.with_name(ROOT.name.swapcase()) / "tests" / "fixtures"
+    assert os.path.samefile(target, ROOT / "tests" / "fixtures")
+    judged = tmp_path / "tc" / ROOT.name
+    (judged / child).parent.mkdir(parents=True)
+    (judged / child).symlink_to(target, target_is_directory=True)
+    result, changed = run_toolchain(tmp_path / "tc")
+    assert toolchain_refusal_ok(result, "inside"), result
+    assert not changed
+
+
+def test_toolchain_guard_unavailable_exits_95(tmp_path):
+    import shutil
+
+    shims = {"exit-1": "#!/bin/sh\nexit 1\n", "exit-0": "#!/bin/sh\nexit 0\n"}
+    paths = {}
+    for name, body in shims.items():
+        shim = tmp_path / name
+        shim.mkdir()
+        (shim / "python3").write_text(body)
+        (shim / "python3").chmod(0o755)
+        paths[name] = f"{shim}:{os.environ['PATH']}"
+    bare = tmp_path / "bare"
+    bare.mkdir()
+    for tool in ("dirname", "basename", "mktemp"):
+        (bare / tool).symlink_to(shutil.which(tool))
+    paths["no-python3"] = str(bare)
+    for name, path in paths.items():
+        result, changed = run_toolchain(tmp_path / "tc", env=dict(os.environ, PATH=path))
+        assert toolchain_refusal_ok(result, "cannot-verify"), (name, result)
+        assert b"Traceback" not in result.stderr and not changed, name
+
+
+def test_run_sh_on_system_python_only(tmp_path):
+    # A fresh checkout has no venv yet: the guard and the capture stage need only the system python3.
+    assert os.path.exists("/usr/bin/python3"), "owner question 16: no system python3 on this machine"
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), "/usr/bin/true"], cwd=ROOT, capture_output=True,
+                            timeout=30, env={"HOME": str(tmp_path), "PATH": "/usr/bin:/bin", "TMPDIR": str(tmp_path),
+                                             "CASEFILE_TOOLCHAIN": str(tmp_path / "tc")})
+    assert (result.returncode, result.stdout) == (0, b""), result.stderr
+
+
+@pytest.mark.parametrize("toolchain", [None, ROOT / "x"], ids=["default", "inside-toolchain"])
+def test_no_command_exits_96(toolchain):
+    env = dict(os.environ)
+    if toolchain is not None:
+        env["CASEFILE_TOOLCHAIN"] = str(toolchain)
+    result = subprocess.run([str(ROOT / "scripts/run.sh")], cwd=ROOT, env=env,
+                            capture_output=True, timeout=30)
+    print(f"\nusage_exit={result.returncode}")
+    assert (result.returncode, result.stdout) == (96, b"")
+    assert result.stderr == b"run.sh: usage: scripts/run.sh <cmd> [args]\n"
 
 
 @pytest.mark.parametrize("size", [4096, 200000], ids=["short-write", "write-error"])
