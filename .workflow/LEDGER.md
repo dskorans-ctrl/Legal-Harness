@@ -83,6 +83,8 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   branch: keep `loop/round-01`'s tip; the next session runs a Fable brief limited to a redesign of the
   path-identity guards and wrapper exit branches plus V3-1 to V3-4, a Codex plan review, build, the full
   critic round, then close and merge. `main` stays at the seed until then.
+- Q25: additional instructions at round 1 close (owner, 2026-10-26)? -> "Hold the round for now": do not
+  start the re-brief until the owner says so.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 

@@ -11,6 +11,7 @@ critic-round lines), then `Librarian.md` (builder pre-flight first). Spec (canon
 - Round report: `docs/loop/round-01/round01-report.md` (verdict, numbers, carried items, design).
 
 ## Next session: round 1 re-brief (Q24), on `loop/round-01`
+**ON HOLD (owner Q25, 2026-10-26): start only when the owner says so.**
 1. Ask the owner the tiers for the session (Q22 is the last answer).
 2. Fable brief, limited scope: redesign the path-identity guards and the wrapper exit branches as ONE
    Python identity check shared by `src/casefile/config.py` and `scripts/run.sh`, with table-driven
