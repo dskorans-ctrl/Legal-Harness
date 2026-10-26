@@ -65,7 +65,7 @@ def check_runlog_schema(state):
     ).fetchone()[0]
     state.before = state.log.count_test_jobs()
     version = state.log.schema_version
-    return version == 1 and count == 8, f"schema={version} triggers={count} (counted, exercised by the test suite)"
+    return version == 1 and count == 15, f"schema={version} triggers={count} (counted, exercised by the test suite)"
 
 
 def check_ollama_loopback(state):
@@ -121,11 +121,15 @@ def check_context(state):
             context_length = loaded["context_length"]
             context_ok = type(context_length) is int and context_length == state.config.model.num_ctx
             answer_ok = answer.content.strip() == "READY"
-            ok = context_ok and answer.done_reason == "stop" and answer_ok
+            counts_ok = all(type(count) is int and count > 0
+                            for count in (answer.prompt_eval_count, answer.eval_count))
+            ok = context_ok and answer.done_reason == "stop" and answer_ok and counts_ok
             if not context_ok:
                 reason = f"context_length={context_length} want {state.config.model.num_ctx}"
             elif answer.done_reason != "stop":
                 reason = f"done_reason={answer.done_reason}"
+            elif not counts_ok:
+                reason = "prompt_eval_count and eval_count must be positive integers"
             elif not answer_ok:
                 reason = f"answer={answer.content[:40]} want READY"
             else:
@@ -147,14 +151,21 @@ def check_runlog_job(state):
 
 
 def check_ocr(state):
-    tesseract = shutil.which(state.config.ocr.tesseract)
-    ocrmypdf = shutil.which(state.config.ocr.ocrmypdf)
-    if tesseract is None:
-        return False, "tesseract not found on PATH"
-    if ocrmypdf is None:
-        return False, "ocrmypdf not found on PATH"
-    result = subprocess.run([tesseract, "--version"], capture_output=True, timeout=30, check=False)
-    return result.returncode == 0, f"tesseract --version exit={result.returncode}"
+    codes = []
+    reasons = []
+    for name in ("tesseract", "ocrmypdf"):
+        executable = shutil.which(getattr(state.config.ocr, name))
+        code = "not-found"
+        if executable is not None:
+            try:
+                result = subprocess.run([executable, "--version"], capture_output=True,
+                                        timeout=30, check=False)
+                code = result.returncode
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                code = f"error ({exc})"
+        codes.append(code)
+        reasons.append(f"{name} --version exit={code}")
+    return codes == [0, 0], "versions only: " + "; ".join(reasons)
 
 
 DEPENDENCIES = {"context": ("playbook", "runlog_schema", "ollama_loopback"),

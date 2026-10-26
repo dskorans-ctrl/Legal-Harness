@@ -73,6 +73,8 @@ class ModelClient:
             raise ModelError(f"status=200 missing message.content: {str(raw)[:200]}")
         if not content.strip():
             raise ModelError(f"status=200 empty message.content: {str(raw)[:200]}")
+        if raw.get("done") is not True:
+            raise ModelError("status=200 done must be true")
         for field in ("prompt_eval_count", "eval_count"):
             if raw.get(field) is not None and type(raw[field]) is not int:
                 raise ModelError(f"status=200 invalid {field}")

@@ -93,3 +93,18 @@ def test_http(tmp_path, monkeypatch, proxy):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+@pytest.mark.parametrize("done", [False, None, 0, 1, "true"])
+def test_requires_completed_answer(tmp_path, done):
+    payload = {"message": {"content": "READY"}, "done_reason": "stop", "done": done,
+               "prompt_eval_count": 20, "eval_count": 2}
+    with pytest.raises(ModelError, match="done must be true"):
+        ModelClient(load(write_config(tmp_path)).model,
+                    Transport(FakeResponse(200, payload))).chat(MESSAGES)
+
+
+def test_fake_incomplete_answer(tmp_path):
+    with pytest.raises(ModelError, match="done must be true"):
+        ModelClient(load(write_config(tmp_path)).model,
+                    FakeTransport(FakeModel(mode="incomplete"))).chat(MESSAGES)

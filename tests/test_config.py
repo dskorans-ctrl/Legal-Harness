@@ -112,3 +112,12 @@ def test_config_show(tmp_path, capsys):
         print(f"unknown_key_cli_exit={unknown.returncode}")
     assert (unknown.returncode, unknown.stdout) == (2, "")
     assert "unknown key [model].hots" in unknown.stderr
+
+
+def test_external_config_cannot_put_matters_in_checkout(tmp_path):
+    from conftest import ROOT
+
+    path = write_config(tmp_path, matters=ROOT / "invented-matters")
+    assert not path.is_relative_to(ROOT)
+    with pytest.raises(ConfigError, match="must be outside the checkout"):
+        load(path)

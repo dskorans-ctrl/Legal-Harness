@@ -8,7 +8,7 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 
 
-MODES = ("replay", "truncated", "malformed", "forbidden", "short_context", "empty")
+MODES = ("replay", "truncated", "malformed", "forbidden", "short_context", "empty", "incomplete")
 DEFAULT_MODEL = "qwen3.8:27b"
 
 
@@ -118,7 +118,7 @@ class FakeModel:
             prompt_count = min(prompt_count, 8192)
         self.loaded = True
         return 200, {"model": self.model, "created_at": "2026-10-25T00:00:00Z",
-                     "message": {"role": "assistant", "content": content}, "done": True,
+                     "message": {"role": "assistant", "content": content}, "done": self.mode != "incomplete",
                      "done_reason": done_reason, "total_duration": 1000, "load_duration": 100,
                      "prompt_eval_count": prompt_count, "prompt_eval_duration": 200,
                      "eval_count": len(content) // 4 + 1, "eval_duration": 300}

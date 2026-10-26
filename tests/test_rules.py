@@ -102,3 +102,32 @@ def test_invalid_rules_fail_closed(tmp_path, old, new, field):
     path.write_text(RULES_PATH.read_text().replace(old, new, 1))
     with pytest.raises(RulesError, match=field):
         load(path)
+
+
+@pytest.mark.parametrize("text", [
+    "The insurer paid Dr. Example.",
+    "Dr. Example was paid by the insurer.",
+    "The defense paid the examiner for the report.",
+    "Who paid for the exam?",
+    "Payment from the carrier went directly to the doctor.",
+    "The examiner received payment from the employer.",
+    "The insurer pays the consulting doctor.",
+    "DR. EXAMPLE WAS COMPENSATED BY THE CARRIER.",
+])
+def test_doctor_payment_any_order(text):
+    assert {f.rule_id for f in load(RULES_PATH).check(text)} == {"no-hired-paid-retained"}
+
+
+@pytest.mark.parametrize("label", ["independent", "defense"])
+@pytest.mark.parametrize("space", ["\n", "  ", "\t", "\r\n"])
+def test_spelled_out_label_across_whitespace(label, space):
+    text = f"The {label}{space}medical{space}examination found normal motion."
+    assert {f.rule_id for f in load(RULES_PATH).check(text)} == {"no-dme-ime"}
+
+
+@pytest.mark.parametrize("text", [
+    "The carrier paid temporary total disability through March; Dr. Lane released him to light duty in April.",
+    "Benefits were paid until the report issued.",
+])
+def test_benefit_payment_prose_clean(text):
+    assert load(RULES_PATH).check(text) == []

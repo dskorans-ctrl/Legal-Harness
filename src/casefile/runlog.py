@@ -115,6 +115,18 @@ def open_db(path: str | Path) -> RunLog:
         log = RunLog(connection)
         if log.schema_version != 1:
             raise sqlite3.DatabaseError(f"unsupported runlog schema version {log.schema_version}")
+        with connection:
+            for table in ("schema_meta", "runs", "answers", "failures", "approvals"):
+                key = "key" if table == "schema_meta" else "id"
+                connection.execute(
+                    f"CREATE TRIGGER IF NOT EXISTS {table}_no_replace BEFORE INSERT ON {table} "
+                    f"WHEN EXISTS (SELECT 1 FROM {table} WHERE {key}=NEW.{key}) "
+                    "BEGIN SELECT RAISE(ABORT, 'runlog is append-only'); END")
+            for operation in ("UPDATE", "DELETE"):
+                connection.execute(
+                    f"CREATE TRIGGER IF NOT EXISTS schema_meta_no_{operation.lower()} "
+                    f"BEFORE {operation} ON schema_meta "
+                    "BEGIN SELECT RAISE(ABORT, 'runlog is append-only'); END")
         return log
     except BaseException:
         connection.close()

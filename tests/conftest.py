@@ -132,9 +132,9 @@ def ocr_expected_fail() -> bool:
     if tesseract is None or ocrmypdf is None:
         return True
     try:
-        result = subprocess.run(
-            [tesseract, "--version"], capture_output=True, timeout=30, check=False
-        )
+        codes = [subprocess.run([executable, "--version"], capture_output=True,
+                                timeout=30, check=False).returncode
+                 for executable in (tesseract, ocrmypdf)]
     except (OSError, subprocess.TimeoutExpired):
         return True
-    return result.returncode != 0
+    return codes != [0, 0]

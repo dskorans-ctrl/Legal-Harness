@@ -63,25 +63,29 @@ def test_fake_green_except_ocr(tmp_path, capsys):
 
 @pytest.mark.parametrize("mode,reason", [("short_context", "context_length=8192 want 65536"),
                                         ("truncated", "done_reason=length")])
-def test_bad_context(tmp_path, mode, reason):
-    _, output = invoke(setup_config(tmp_path), fake=FakeModel(mode=mode))
+def test_bad_context(tmp_path, mode, reason, context_status_only):
+    code, output = invoke(setup_config(tmp_path), fake=FakeModel(mode=mode))
+    assert code == 1, output
     assert f"doctor context FAIL {reason}" in output, output
 
 
-def test_short_context_fails(tmp_path, capsys):
-    _, output = invoke(setup_config(tmp_path), fake=FakeModel(mode="short_context"))
+def test_short_context_fails(tmp_path, capsys, context_status_only):
+    code, output = invoke(setup_config(tmp_path), fake=FakeModel(mode="short_context"))
+    assert code == 1, output
     report(capsys, next(line for line in output.splitlines() if line.startswith("doctor context ")))
     assert "doctor context FAIL context_length=8192 want 65536" in output, output
 
 
-def test_truncated_fails(tmp_path):
-    _, output = invoke(setup_config(tmp_path), fake=FakeModel(mode="truncated"))
+def test_truncated_fails(tmp_path, context_status_only):
+    code, output = invoke(setup_config(tmp_path), fake=FakeModel(mode="truncated"))
+    assert code == 1, output
     assert "doctor context FAIL done_reason=length" in output, output
 
 
-def test_empty_answer_fails(tmp_path):
+def test_empty_answer_fails(tmp_path, context_status_only):
     config = setup_config(tmp_path)
-    _, output = invoke(config, fake=FakeModel(mode="empty"))
+    code, output = invoke(config, fake=FakeModel(mode="empty"))
+    assert code == 1, output
     assert "doctor context FAIL status=200 empty" in output, output
     with runlog.open_db(config.paths.state / "runlog.sqlite") as log:
         assert log.count_test_jobs() == 0
@@ -89,9 +93,10 @@ def test_empty_answer_fails(tmp_path):
         assert log.connection.execute("SELECT gate FROM failures").fetchone()[0] == "doctor.context"
 
 
-def test_wrong_word_fails(tmp_path, capsys):
+def test_wrong_word_fails(tmp_path, capsys, context_status_only):
     fake = FakeModel(recordings=[{"messages": doctor.MESSAGES, "answer": "READY."}])
-    _, output = invoke(setup_config(tmp_path), fake=fake)
+    code, output = invoke(setup_config(tmp_path), fake=fake)
+    assert code == 1, output
     report(capsys, next(line for line in output.splitlines() if line.startswith("doctor context ")))
     assert "doctor context FAIL answer=READY. want READY" in output, output
 
@@ -153,3 +158,77 @@ def test_loopback_real_bind_all(tmp_path):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+class ReplyFields(FakeModel):
+    def __init__(self, **fields):
+        super().__init__()
+        self.fields = fields
+
+    def handle(self, method, path, body=b""):
+        status, payload = super().handle(method, path, body)
+        if path == "/api/chat" and status == 200:
+            payload.update(self.fields)
+            for key, value in self.fields.items():
+                if value is None:
+                    payload.pop(key)
+        return status, payload
+
+
+@pytest.mark.parametrize("field", ["prompt_eval_count", "eval_count"])
+@pytest.mark.parametrize("count", [None, 0, -1, True, "20", 1.5])
+def test_context_requires_positive_token_counts(tmp_path, monkeypatch, field, count, context_status_only):
+    from dataclasses import replace
+
+    native_chat = doctor.ModelClient.chat
+
+    def chat(client, *args, **kwargs):
+        return replace(native_chat(client, *args, **kwargs), **{field: count})
+
+    monkeypatch.setattr(doctor.ModelClient, "chat", chat)
+    config = setup_config(tmp_path)
+    code, output = invoke(config)
+    assert code == 1, output
+    assert "doctor context FAIL" in output, output
+    with runlog.open_db(config.paths.state / "runlog.sqlite") as log:
+        assert log.count_test_jobs() == 0
+
+
+@pytest.mark.parametrize("codes", [(0, 0), (0, 7), (8, 0), (8, 7)])
+def test_ocr_checks_both_versions(tmp_path, monkeypatch, codes):
+    calls = []
+    monkeypatch.setattr(doctor.shutil, "which", lambda name: f"/invented/{name}")
+
+    def version(command, **kwargs):
+        calls.append(command)
+        code = codes[0 if command[0].endswith("tesseract") else 1]
+        return subprocess.CompletedProcess(command, code, b"invented version", b"")
+
+    monkeypatch.setattr(doctor.subprocess, "run", version)
+    config = setup_config(tmp_path)
+    ok, reason = doctor.check_ocr(doctor.State(config, config=config))
+    assert ok is (codes == (0, 0))
+    assert calls == [["/invented/tesseract", "--version"], ["/invented/ocrmypdf", "--version"]]
+    assert reason == (f"versions only: tesseract --version exit={codes[0]}; "
+                      f"ocrmypdf --version exit={codes[1]}")
+    calls.clear()
+    assert ocr_expected_fail() is (codes != (0, 0))
+    assert calls == [["/invented/tesseract", "--version"], ["/invented/ocrmypdf", "--version"]]
+
+
+@pytest.mark.parametrize("fields,reason", [
+    ({"done_reason": "length"}, "done_reason=length"),
+    ({"done": False}, "done must be true"),
+])
+def test_ready_requires_completion(tmp_path, fields, reason, context_status_only):
+    code, output = invoke(setup_config(tmp_path), fake=ReplyFields(**fields))
+    assert code == 1, output
+    assert "doctor context FAIL" in output, output
+    assert reason in next(line for line in output.splitlines() if line.startswith("doctor context "))
+
+
+@pytest.fixture
+def context_status_only(monkeypatch):
+    # Keep unrelated and downstream failures from masking the context exit status.
+    monkeypatch.setattr(doctor, "check_ocr", lambda state: (True, "isolated version check"))
+    monkeypatch.setattr(doctor, "check_runlog_job", lambda state: (True, "isolated downstream check"))

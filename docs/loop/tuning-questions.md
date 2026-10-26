@@ -14,3 +14,7 @@ benchmark says, and what to watch for.
 - T-4 (round 1 brief, D-9): the stand-in's token estimate `prompt_eval_count = chars // 4 + 8`. Replace
   with the real model's counts recorded on the Studio at stage 9 before any truncation threshold is
   tuned on it.
+- T-5 (round 1 fix cycle 1, CX-7): rule `no-hired-paid-retained` pairs a payment term with
+  doctor/examiner/exam in one clause within 60 characters (`playbook/rules.toml:21`). The 120-character
+  cross-sentence window over-blocked benefits prose ("The carrier paid temporary total disability ...;
+  Dr. Lane released him"). Measure false hits on the benchmark memos before widening or narrowing.

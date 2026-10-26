@@ -68,3 +68,32 @@ def test_run_sh(command, tmpdir, expected_status, expected_bytes):
         assert b"output cap 52428800 bytes hit" in result.stderr
     elif expected_status == 98:
         assert b"cannot create capture dir" in result.stderr
+
+
+def test_cap_terminates_sleeping_child(tmp_path):
+    import signal
+    import time
+
+    pidfile = tmp_path / "invented-child.pid"
+    child = ("import os,sys,time; "
+             "open(sys.argv[1], 'w').write(str(os.getpid())); "
+             f"sys.stdout.buffer.write(b'a' * {CAP + 1}); "
+             "sys.stdout.buffer.flush(); time.sleep(30)")
+    started = time.monotonic()
+    try:
+        try:
+            result = subprocess.run([str(ROOT / "scripts/run.sh"), sys.executable,
+                                     "-c", child, str(pidfile)],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=5)
+        except subprocess.TimeoutExpired:
+            pytest.fail("output cap did not terminate sleeping child within 5 seconds")
+        assert result.returncode == 97, result.stderr
+        assert time.monotonic() - started < 5
+        with pytest.raises(ProcessLookupError):
+            os.kill(int(pidfile.read_text()), 0)
+    finally:
+        if pidfile.exists():
+            try:
+                os.kill(int(pidfile.read_text()), signal.SIGKILL)
+            except ProcessLookupError:
+                pass

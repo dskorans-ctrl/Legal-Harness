@@ -23,7 +23,7 @@ def test_append_only(tmp_path, capsys):
                           prompt_eval_count=12, eval_count=1)
         log.record_failure(run, "invented.gate", "invented failure")
         log.record_approval(run, item="invented item", decision="approved", by_whom="test actor")
-        assert log.connection.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger'").fetchone()[0] == 8
+        assert log.connection.execute("SELECT COUNT(*) FROM sqlite_master WHERE type='trigger'").fetchone()[0] == 15
         blocked = 0
         for table in ("runs", "answers", "failures", "approvals"):
             for statement in (f"UPDATE {table} SET id=id", f"DELETE FROM {table}"):
@@ -93,3 +93,23 @@ def test_persisted_fields_and_constraints(tmp_path):
             log.record_answer(run, raw_answer="invalid", status="unknown")
         with pytest.raises(sqlite3.IntegrityError):
             log.record_approval(run, item="invalid", decision="unknown", by_whom="test actor")
+
+
+@pytest.mark.parametrize("table", ["schema_meta", "runs", "answers", "failures", "approvals"])
+def test_replace_rejected_with_recursive_triggers_off(tmp_path, table):
+    with open_db(tmp_path / "runlog.sqlite") as log:
+        run = _start(log)
+        log.record_answer(run, raw_answer="READY", status="ok")
+        log.record_failure(run, "invented", "invented refusal")
+        log.record_approval(run, item="invented", decision="approved", by_whom="test actor")
+        connection = log.connection
+        connection.execute("PRAGMA recursive_triggers=OFF")
+        assert connection.execute("PRAGMA recursive_triggers").fetchone()[0] == 0
+        before = [tuple(row) for row in connection.execute(f"SELECT * FROM {table}")]
+        columns = [row[1] for row in connection.execute(f"PRAGMA table_info({table})")]
+        values = list(before[0])
+        values[-1] = "changed" if table != "answers" else "failed"
+        with pytest.raises(sqlite3.DatabaseError, match="append-only"):
+            connection.execute(f"INSERT OR REPLACE INTO {table} ({','.join(columns)}) "
+                               f"VALUES ({','.join('?' for _ in values)})", values)
+        assert [tuple(row) for row in connection.execute(f"SELECT * FROM {table}")] == before
