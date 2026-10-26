@@ -132,6 +132,75 @@ closed matters (owner only), `casefile service install`, `tailscale serve --bg 8
 owner's devices over Tailscale with the page password; never on the public internet. Updates:
 `git pull && ./install.sh`, then `casefile bench` before any live use.
 
+## §8b The headless Studio and the Claude bridge (owner, 2026-10-26)
+
+The Studio runs headless (no monitor) and also hosts Claude Code, so Claude can plan and draft with the
+local system's results without ever reading client files. Decisions D12 to D16 below; they are
+recorded here rather than in the §9 table so this section merges cleanly with round 1.
+
+**Two macOS users; the operating system is the wall.**
+- `casefile` (standard user): owns `~/Cases`, the run log, the playbook copy in use, and runs Ollama,
+  the engine, the web page and the bridge. Its home folder is 700: no other user can read it.
+- `claude` (standard user, not admin once setup is done): runs Claude Code. It cannot read the
+  `casefile` user's files at all. Its Claude Code settings also deny reads and shell commands on
+  `/Users/casefile`, but the file permissions are the real boundary; instructions are not.
+- Setup and installs happen under an admin account before any client file is on the machine.
+- Claude Code uses a Team or Enterprise account (commercial terms; zero data retention if Enterprise).
+
+**The bridge: an MCP server run by the `casefile` user.** It listens on 127.0.0.1 only (streamable
+HTTP, with a token the `claude` user's Claude Code holds), and offers a fixed menu, nothing else:
+
+| Tool | Returns |
+|---|---|
+| `list_matters` | matter numbers (e.g. 1012.001) and status counts only |
+| `matter_status(matter)` | pages read and failed, open-item count, which outputs are ready; no content |
+| `start_job(matter, job, options)` | a job id; jobs are the §2 menu (intake, memo, depo, hearing, report, brief-out) |
+| `job_status(job_id)` | queued, running, done or failed, with counts |
+| `get_package(matter, package_id)` | only a package that passed the identifier check AND that the attorney approved on the web page |
+| `submit_draft(matter, file)` | the brief-in re-import; returns the fact-check report, itself anonymized |
+
+There is no tool to read a file, search a matter or fetch the memo. Every payload the bridge returns
+passes the identifier check in code first (fail closed: a hit blocks the reply and is logged). Every
+call is written to the run log. The mapping from matter numbers to client names lives only in the
+`casefile` user's config.
+
+**Matter numbers are the shared language, not the protection.** Claude's skills may refer to 1012.001;
+a number plus enough facts can still identify a client, so returned packages are anonymized as in §2
+(placeholders, dates as days from injury, keep list).
+
+**The local model still has no tools.** Text in a document cannot make it act, because it can only
+answer in JSON to the engine. No local agent loop, no MLX, no Alfred: the engine's fixed jobs and
+scripts are the only actions.
+
+**Shared folders on the network (macOS File Sharing).**
+- `Outbox` (read-only share): approved, anonymized packages only, for the operations computer.
+- `Inbox` (write-only drop box share): records dropped from the operations computer land in the
+  `casefile` intake queue; nobody can list or read it over the network.
+- Shares limited to one network user and to the operations computer; a Firewalla rule blocks every
+  other device. Client files themselves are never shared.
+
+**Headless operation.**
+- Managed with Screen Sharing and SSH from the M4 or over Tailscale; a dummy display adapter only if
+  Screen Sharing needs one for a usable resolution.
+- Restart automatically after a power loss (`pmset autorestart 1`), with the UPS shutting it down
+  cleanly first. FileVault stays on; whether this macOS can unlock FileVault over SSH after a
+  restart is an open question (§10). If it cannot, a restart needs a Screen Sharing unlock.
+- The engine, web page, bridge and Ollama start at login of the `casefile` user (launchd), and
+  `casefile doctor` reports their state.
+
+**Firm financial documents.** Same rules, in their own area (`~/Finance` under `casefile`, IDs such as
+F-2026-01), as a later job type; not in the current build scope.
+
+**Build stage 8b (after stage 8, before the Studio).** The bridge server, its six tools, the
+identifier check on every reply, the two-user install steps and the shares in `install.sh`.
+Exit test: in the loop, a planted client name in a package is blocked by the bridge and logged, and
+no tool returns content outside the table above; on the Studio (stage 9), the `claude` user gets
+"permission denied" on `/Users/casefile/Cases`.
+
+Decisions: D12 headless Studio hosts Claude Code under its own user; D13 two macOS users with the OS
+as the boundary; D14 MCP bridge with the fixed menu and cleared-results-only rule; D15 Inbox drop box
+and read-only Outbox shares for the operations computer; D16 no local agent loop, no MLX, no Alfred.
+
 ## §9 Decisions
 
 | # | Decision | By | Date |
@@ -155,6 +224,8 @@ owner's devices over Tailscale with the page password; never on the public inter
 - Which closed matters form the benchmark, and who writes each answer key (owner; names never in this repo).
 - 8-bit or full precision: decided by the benchmark.
 - Will firm IT allow Tailscale on the office computer?
+- Can this macOS unlock FileVault over SSH after a restart (headless Studio)? (§8b)
+- Which computer is the "operations computer" for the Inbox and Outbox shares? (§8b)
 
 ## §11 As-built
 
