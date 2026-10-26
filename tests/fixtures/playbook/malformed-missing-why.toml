@@ -1,0 +1,10 @@
+# Invented SAMPLE fixture. The missing why field is deliberate.
+[[entry]]
+id = "sample-missing-why"
+kind = "question"
+sample = true
+rule = "SAMPLE: Ask one question."
+good = "SAMPLE: What finding supports this?"
+bad = "SAMPLE: Explain everything."
+added = 2026-10-25
+learned = "SAMPLE: invented refusal fixture"

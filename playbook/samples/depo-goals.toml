@@ -1,0 +1,35 @@
+# All entries are invented SAMPLE fixtures, not attorney practice content.
+
+[[entry]]
+id = "sample-depo-goal"
+kind = "depo-goal"
+deponent = "SAMPLE: invented defense doctor Dr. Example"
+sample = true
+rule = "SAMPLE: Identify the medical support for Dr. Example's conclusion."
+why = "SAMPLE: This invented goal exercises the loader without a case or claimant."
+good = "SAMPLE: Which recorded finding supports your conclusion?"
+bad = "SAMPLE: Your conclusion has no support, correct?"
+added = 2026-10-25
+learned = "SAMPLE: invented loader fixture"
+
+[[entry]]
+id = "sample-topic-order"
+kind = "topic-order"
+sample = true
+rule = "SAMPLE: Address records reviewed, findings, then conclusions."
+why = "SAMPLE: This invented sequence demonstrates a topic-order entry."
+good = "SAMPLE: What records did you review before reaching your conclusion?"
+bad = "SAMPLE: State every conclusion before describing the records reviewed."
+added = 2026-10-25
+learned = "SAMPLE: invented loader fixture"
+
+[[entry]]
+id = "sample-question"
+kind = "question"
+sample = true
+rule = "SAMPLE: Ask about a single medical finding at a time."
+why = "SAMPLE: This invented question demonstrates good and bad wording."
+good = "SAMPLE: What does that finding show?"
+bad = "SAMPLE: What does that finding show and what do all the other findings show?"
+added = 2026-10-25
+learned = "SAMPLE: invented loader fixture"

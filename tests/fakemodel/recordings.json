@@ -1,0 +1,10 @@
+[
+  {
+    "name": "doctor-warmup",
+    "messages": [
+      {"role": "system", "content": "Reply with the single word READY."},
+      {"role": "user", "content": "casefile doctor warmup"}
+    ],
+    "answer": "READY"
+  }
+]

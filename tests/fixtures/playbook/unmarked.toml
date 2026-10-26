@@ -1,0 +1,11 @@
+# Invented fixture. Missing SAMPLE markers are the deliberate defect.
+[[entry]]
+id = "sample-unmarked"
+kind = "question"
+sample = false
+rule = "Ask one question."
+why = "Invented text for a marker-refusal test."
+good = "What finding supports this?"
+bad = "Explain everything."
+added = 2026-10-25
+learned = "Invented refusal fixture"
