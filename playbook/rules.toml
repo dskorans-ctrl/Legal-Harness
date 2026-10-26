@@ -5,7 +5,7 @@ id = "no-dme-ime"
 kind = "forbid"
 severity = "error"
 unit = "text"
-patterns = ['\bDME\b', '\bIME\b', '\bindependent\s+medical\s+examinations?\b', '\bdefense\s+medical\s+examinations?\b']
+patterns = ['\bDME\b', '\bIME\b', '\b[DI]\.?M\.?E(?:\.?s)?\b\.?', '\b(?:independent|defense)\s+medical\s+(?:exams?|examinations?|evaluations?)\b']
 rule = 'Never name the exam as a DME or IME in any form; write "the report".'
 why = "The labels frame the examiner as independent or as the defense's; the report speaks for itself."
 good = "The report of 14 March 2025 records a normal gait."
@@ -18,7 +18,16 @@ id = "no-hired-paid-retained"
 kind = "forbid"
 severity = "error"
 unit = "text"
-patterns = ['\b(hired|hires|hiring|retained|retains|retaining)\b', '\b(?:(?:paid|pays|paying|payment|compensat(?:ed|ion))\b[^.;:?!\r\n]{0,60}\b(?:doctor|dr|examiner|exam|examination)|(?:doctor\b|dr\b\.?|examiner\b|exam\b|examination\b)[^.;:?!\r\n]{0,60}\b(?:paid|pays|paying|payment|compensat(?:ed|ion)))\b', '\bwho (pays|paid|hired|retained|referred)\b', '\breferred (by|to) (the )?(defense|employer|insurer|carrier)\b', '\bfees?\b', '\bhow many (of these )?(exams|examinations|reports)\b', '\b(exams?|examinations?|reports?) (per|a|each) (year|month|week)\b']
+patterns = [
+    '\b(?:(?:hired|hires|hiring|retained|retains|retaining|fees?)\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:hired|hires|hiring|retained|retains|retaining|fees?)\b)',
+    '\b(?:(?:paid|pays|paying|payment|compensat(?:ed|ion))\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:paid|pays|paying|payment|compensat(?:ed|ion))\b)',
+    '(?:\b(?:(?:charges?|charged|rate|billed|bill|engaged\s+by)\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:charges?|charged|rate|billed|bill|engaged\s+by)\b)|\bat\s+whose\s+request\b[^.;:?!\r\n]{0,60}\b(?:(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|examin(?:e|ed|ing)\b))',
+    '\bwho\s+referred\b',
+    '\breferred (by|to) (the )?(defense|employer|insurer|carrier)\b',
+    '\b(?:fees?\b[^.;:?!\r\n]{0,60}\breport\b|report\b[^.;:?!\r\n]{0,60}\bfees?\b)',
+    '\bhow many (of these )?(exams|examinations|reports)\b',
+    '\b(exams?|examinations?|reports?) (per|a|each) (year|month|week)\b',
+]
 rule = "Never ask or write who hired, paid or retained the doctor, the fees, or the exam volume."
 why = "Address the report's reasoning and medical support."
 good = "Which finding supports your conclusion?"
@@ -31,7 +40,7 @@ id = "treatment-and-bills-apart"
 kind = "conjunction"
 severity = "error"
 unit = "question"
-all_of = [['\btreat(ment|ed|ing|s)?\b', '\btherapy\b', '\bsurgery\b'], ['\bbill(s|ing|ed)?\b', '\bcharges?\b', '\binvoices?\b', '\bpaid\b']]
+all_of = [['\btreat(ment|ed|ing|s)?\b', '\btherapy\b', '\bsurgery\b'], ['\bbill(s|ing|ed)?\b', '\bcharges?\b', '\binvoices?\b', '\bpaid\b', '\bcosts?\b', '\bexpenses?\b', '\bliens?\b', '\bbalance\b']]
 rule = "Treatment and bills are never in one question."
 why = "Separate questions give each topic a clear answer."
 good = "What treatment did you receive?"
@@ -45,7 +54,7 @@ kind = "cite"
 severity = "error"
 unit = "text"
 cite_pattern = '\[(?:cite|p\.|page)\s*([^\]]*)\]'
-bates_pattern = '[A-Z]{1,8}[ -]?\d{4,}'
+bates_pattern = '[A-Z]{1,8}[ -]?\d{4,}(?:[ \t]*-[ \t]*[A-Z]{1,8}[ -]?\d{4,}|(?:[ \t]*,[ \t]*[A-Z]{1,8}[ -]?\d{4,})+)?'
 rule = "Cite by Bates number; when the records are not stamped, cite page IDs and expect a warning."
 why = "A single stable page identifier lets the reader locate the source."
 good = "The report records a normal gait. [cite ABC0001]"

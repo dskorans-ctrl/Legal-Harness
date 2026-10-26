@@ -207,13 +207,12 @@ def test_ocr_checks_both_versions(tmp_path, monkeypatch, codes):
     monkeypatch.setattr(doctor.subprocess, "run", version)
     config = setup_config(tmp_path)
     ok, reason = doctor.check_ocr(doctor.State(config, config=config))
-    assert ok is (codes == (0, 0))
+    assert ok is False
     assert calls == [["/invented/tesseract", "--version"], ["/invented/ocrmypdf", "--version"]]
-    assert reason == (f"versions only: tesseract --version exit={codes[0]}; "
-                      f"ocrmypdf --version exit={codes[1]}")
-    calls.clear()
-    assert ocr_expected_fail() is (codes != (0, 0))
-    assert calls == [["/invented/tesseract", "--version"], ["/invented/ocrmypdf", "--version"]]
+    status = "tools found" if codes == (0, 0) else "tools unavailable"
+    assert reason == (f"OCR not verified: {status} (tesseract exit={codes[0]}, "
+                      f"ocrmypdf exit={codes[1]}); smoke test arrives in stage 3")
+    assert ocr_expected_fail() is True
 
 
 @pytest.mark.parametrize("fields,reason", [

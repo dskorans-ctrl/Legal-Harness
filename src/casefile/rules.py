@@ -50,7 +50,7 @@ class Rules:
     version: int
     rules: tuple[Rule, ...]
 
-    def check(self, text, *, unit="text", stamped=True):
+    def check(self, text, *, unit, stamped=True):
         if not isinstance(text, str):
             raise TypeError("output text must be str")
         if unit not in {"text", "question"}:

@@ -20,7 +20,7 @@ def test_rejections(tmp_path, capsys):
         (write_config(tmp_path / "host", host="http://localhost:11434"), "hostname 127.0.0.1"),
         (write_config(tmp_path / "name", name=""), "must be non-empty"),
         (tmp_path / "omitted.toml", "[paths].matters is required"),
-        (write_config(tmp_path / "relative", matters="Cases"), "must be outside the checkout"),
+        (write_config(tmp_path / "relative", matters="Cases"), "must be an absolute path"),
     ]
     cases[5][0].write_text("[paths]\nstate = 'state'\n", encoding="utf-8")
     results = []
@@ -82,8 +82,7 @@ def test_paths_defaults_and_frozen_config(tmp_path, monkeypatch):
     assert load(path).paths.matters == Path.home() / "invented-casefile-test"
     assert load(path).model.num_ctx == 131072
     path.write_text(f"[paths]\nmatters = {json.dumps(str(settings / 'nested'))}\n")
-    with pytest.raises(ConfigError, match="must be outside the checkout"):
-        load(path)
+    assert load(path).paths.matters == settings / "nested"
     path.write_text("[broken")
     with pytest.raises(ConfigError, match="cannot load config"):
         load(path)

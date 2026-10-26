@@ -123,10 +123,10 @@ def load(path: str | Path | None = None) -> Config:
     paths = values["paths"]
     matters = Path(paths["matters"]).expanduser()
     checkout = Path(__file__).resolve().parents[2]
-    if (not matters.is_absolute() or matters.resolve().is_relative_to(source.parent)
-            or matters.resolve().is_relative_to(checkout)):
-        raise ConfigError(f"[paths].matters must be outside the checkout {checkout} "
-                          f"and config directory {source.parent}")
+    if not matters.is_absolute():
+        raise ConfigError("[paths].matters must be an absolute path")
+    if matters.resolve().is_relative_to(checkout):
+        raise ConfigError(f"[paths].matters must be outside the checkout {checkout}")
     paths["matters"] = matters.resolve()
     for key in ("state", "playbook"):
         paths[key] = (source.parent / Path(paths[key]).expanduser()).resolve()

@@ -42,8 +42,10 @@ def check_folders(state):
     for name in ("matters", "state", "playbook"):
         path = getattr(state.config.paths, name)
         try:
-            if name != "playbook":
+            if name == "state":
                 path.mkdir(parents=True, exist_ok=True)
+            elif name == "matters" and not path.is_dir():
+                return False, f"matters folder not found: {path}"
             probe = path / f".doctor-write-{os.getpid()}"
             with probe.open("x"):
                 pass
@@ -65,7 +67,7 @@ def check_runlog_schema(state):
     ).fetchone()[0]
     state.before = state.log.count_test_jobs()
     version = state.log.schema_version
-    return version == 1 and count == 15, f"schema={version} triggers={count} (counted, exercised by the test suite)"
+    return version == 1 and count == 15, f"schema={version} triggers={count} (counted)"
 
 
 def check_ollama_loopback(state):
@@ -164,12 +166,37 @@ def check_ocr(state):
             except (OSError, subprocess.TimeoutExpired) as exc:
                 code = f"error ({exc})"
         codes.append(code)
-        reasons.append(f"{name} --version exit={code}")
-    return codes == [0, 0], "versions only: " + "; ".join(reasons)
+        reasons.append(f"{name} exit={code}")
+    status = "tools found" if codes == [0, 0] else "tools unavailable"
+    return False, "OCR not verified: " + status + " (" + ", ".join(reasons) + "); smoke test arrives in stage 3"
 
 
 DEPENDENCIES = {"context": ("playbook", "runlog_schema", "ollama_loopback"),
-                "runlog_job": ("runlog_schema",)}
+                "runlog_job": ("runlog_schema", "context")}
+
+
+def next_step(name, reason, state):
+    if name == "context":
+        if "context_length" in reason or "model not loaded" in reason:
+            return f"set num_ctx in Ollama to {state.config.model.num_ctx} or reload the model"
+        return "rerun doctor; if it repeats, reload the model"
+    if name == "ollama_loopback":
+        if "listening on" in reason or "hostname=" in reason:
+            return "set Ollama to listen on 127.0.0.1 only"
+        if "lsof failed" in reason:
+            return "check lsof access and rerun doctor"
+        return "start the Ollama app"
+    if name == "ocr":
+        missing = [tool for tool in ("tesseract", "ocrmypdf")
+                   if f"{tool} exit=not-found" in reason]
+        if missing:
+            return f"install {' and '.join(missing)}; expected until stage 3"
+        return "expected until stage 3"
+    return {"config": "correct the config file and rerun doctor",
+            "folders": "check the configured folder paths and write access",
+            "playbook": "correct the playbook files and rerun doctor",
+            "runlog_schema": "check the state folder and run log schema",
+            "runlog_job": "rerun doctor and check the run log"}[name]
 
 
 def run(config=None, *, out=None, opener=None, lsof_runner=None) -> int:
@@ -190,6 +217,8 @@ def run(config=None, *, out=None, opener=None, lsof_runner=None) -> int:
             state.passed[name] = ok
             failed += not ok
             reason = " ".join(str(reason).splitlines())
+            if not ok:
+                reason += " | do: " + next_step(blocked or name, reason, state)
             print(f"doctor {name} {'PASS' if ok else 'FAIL'} {reason}", file=out)
         print(f"doctor failed={failed} of 8", file=out)
         return 0 if failed == 0 else 1
