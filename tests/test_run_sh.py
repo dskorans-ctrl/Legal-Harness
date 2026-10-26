@@ -145,6 +145,82 @@ def test_cap_kills_grandchild_in_group(tmp_path):
                 pass
 
 
+def reap(pid):
+    import signal
+
+    for kill in (os.killpg, os.kill):
+        try:
+            kill(pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+
+def run_holding_pipe(tmp_path, argv, timeout, keep=False):
+    """Run argv through run.sh; the child leaves a pid in a file. Returns (result, secs, pid).
+
+    The leftover process is killed afterwards unless keep is set (the caller then reaps it).
+    """
+    import time
+
+    pidfile = tmp_path / "invented-holder.pid"
+    started = time.monotonic()
+    try:
+        result = subprocess.run([str(ROOT / "scripts/run.sh"), *argv, str(pidfile)],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        pytest.fail(f"wrapper still waiting on a held output pipe after {timeout} seconds")
+    finally:
+        if pidfile.exists() and not keep:
+            reap(int(pidfile.read_text()))
+    return result, time.monotonic() - started, int(pidfile.read_text())
+
+
+@pytest.mark.parametrize("tail, expected", [("exit 3", 3), ('kill -KILL "$$"', 137)],
+                         ids=["exit", "sigkill"])
+def test_pipe_held_by_group_member_bounded(tmp_path, tail, expected):
+    pidfile = tmp_path / "invented-holder.pid"
+    try:
+        result, secs, pid = run_holding_pipe(
+            tmp_path, ["bash", "-c", f'sleep 30 & echo $! > "$0"; {tail}'], 10, keep=True)
+        print(f"\nheld_pipe_secs={secs:.2f}")
+        assert result.returncode == expected, result.stderr
+        assert b"pipe stayed open" in result.stderr
+        alive = 0 if wait_dead(pid) else 1
+        print(f"grandchild_alive={alive}")
+        assert secs < 10 and alive == 0
+    finally:
+        if pidfile.exists():
+            reap(int(pidfile.read_text()))
+
+
+def test_pipe_held_by_escaped_process_bounded(tmp_path):
+    child = ("import os,subprocess,sys; "
+             "p = subprocess.Popen(['sleep', '30'], start_new_session=True); "
+             "open(sys.argv[1], 'w').write(str(p.pid)); os._exit(3)")
+    try:
+        result, secs, pid = run_holding_pipe(tmp_path, [sys.executable, "-c", child], 10, keep=True)
+        print(f"\nheld_pipe_secs={secs:.2f}")
+        assert result.returncode == 3, result.stderr
+        assert b"pipe stayed open" in result.stderr
+        os.kill(pid, 0)   # a process that left the group is not reached
+    finally:
+        pidfile = tmp_path / "invented-holder.pid"
+        if pidfile.exists():
+            reap(int(pidfile.read_text()))
+
+
+def test_cap_from_escaped_holder_after_exit(tmp_path):
+    child = ("import os,subprocess,sys; "
+             f"p = subprocess.Popen(['bash', '-c', 'sleep 0.5; head -c {CAP + 1} /dev/zero'], "
+             "start_new_session=True); "
+             "open(sys.argv[1], 'w').write(str(p.pid)); os._exit(3)")
+    result, secs, _ = run_holding_pipe(tmp_path, [sys.executable, "-c", child], 5)
+    print(f"\nescaped_cap_exit={result.returncode}")
+    assert result.returncode == 97, result.stderr
+    assert b"output cap" in result.stderr and b"Traceback" not in result.stderr
+    assert secs < 5
+
+
 def test_missing_command_relays_127():
     command = "invented-casefile-command-that-does-not-exist"
     result = subprocess.run([str(ROOT / "scripts/run.sh"), command], cwd=ROOT,
