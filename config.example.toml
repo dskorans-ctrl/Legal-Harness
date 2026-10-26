@@ -1,0 +1,17 @@
+# Copy to config.toml and set matters to an absolute folder outside this checkout.
+# CASEFILE_CONFIG or --config selects a different file. No per-key env overrides.
+[paths]
+matters = "~/Cases" # Required. No default. User home is expanded.
+state = "state" # Run log and caches, relative to this config file.
+playbook = "playbook" # Relative to this config file.
+
+[model]
+host = "http://127.0.0.1:11434" # HTTP, numeric loopback only.
+name = "qwen3.8:27b" # Non-empty model tag.
+num_ctx = 65536 # Minimum 65536, sent on every model call.
+temperature = 0.1 # Finite number from 0 to 2.
+timeout_s = 600 # Positive integer seconds.
+
+[ocr]
+tesseract = "tesseract" # Executable name or path.
+ocrmypdf = "ocrmypdf" # Executable name or path.

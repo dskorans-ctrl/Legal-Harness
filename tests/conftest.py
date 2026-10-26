@@ -1,14 +1,14 @@
 """Keep all test configuration and writes inside temporary directories."""
 
-import importlib.util
 import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
-import tomllib
 
 import pytest
+
+from casefile import config
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,15 +106,8 @@ def isolated_config(tmp_path_factory, production_dirs_untouched):
     os.environ["CASEFILE_CONFIG"] = str(path)
     try:
         try:
-            # R1-4 adds the loader. R1-3 still enforces the path precondition alone.
-            if importlib.util.find_spec("casefile.config") is None:
-                with path.open("rb") as stream:
-                    paths = tomllib.load(stream)["paths"]
-            else:
-                from casefile import config
-
-                loaded = config.load(path)
-                paths = {name: getattr(loaded.paths, name) for name in ("matters", "state", "playbook")}
+            loaded = config.load(path)
+            paths = {name: getattr(loaded.paths, name) for name in ("matters", "state", "playbook")}
             for name in ("matters", "state", "playbook"):
                 target = Path(paths[name]).expanduser()
                 if not target.is_absolute():
