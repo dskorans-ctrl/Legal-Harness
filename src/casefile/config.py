@@ -125,7 +125,14 @@ def load(path: str | Path | None = None) -> Config:
     checkout = Path(__file__).resolve().parents[2]
     if not matters.is_absolute():
         raise ConfigError("[paths].matters must be an absolute path")
-    if matters.resolve().is_relative_to(checkout):
+    try:
+        inside = matters.resolve().is_relative_to(checkout) or any(
+            ancestor.exists() and os.path.samefile(ancestor, checkout)
+            for ancestor in (matters, *matters.parents)
+        )
+    except OSError as exc:
+        raise ConfigError(f"cannot verify [paths].matters is outside the checkout: {exc}") from exc
+    if inside:
         raise ConfigError(f"[paths].matters must be outside the checkout {checkout}")
     paths["matters"] = matters.resolve()
     for key in ("state", "playbook"):

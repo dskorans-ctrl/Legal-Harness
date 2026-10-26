@@ -131,3 +131,13 @@ def test_spelled_out_label_across_whitespace(label, space):
 ])
 def test_benefit_payment_prose_clean(text):
     assert load(RULES_PATH).check(text, unit="text") == []
+
+
+@pytest.mark.parametrize("text", [
+    "independent-medical-examination",
+    "defense-medical-exam",
+    "defense medical-examination",
+    "INDEPENDENT- MEDICAL--EXAMINATIONS",
+])
+def test_hyphenated_exam_labels_refused(text):
+    assert {f.rule_id for f in load(RULES_PATH).check(text, unit="text")} == {"no-dme-ime"}

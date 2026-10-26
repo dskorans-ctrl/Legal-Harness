@@ -8,37 +8,56 @@ import subprocess
 import sys
 
 
+def capture_failed(reason):
+    print(f"run.sh: capture stage failed: {reason}; exit 98", file=sys.stderr)
+    return 98
+
+
 def main():
+    if len(sys.argv) < 3 or not sys.argv[2] or not Path(sys.argv[2]).is_dir():
+        return capture_failed("capture directory must be a non-empty existing directory")
     cap, directory, *command = sys.argv[1:]
     cap = int(cap)
-    child = None
+    child = capture = None
     try:
-        with (Path(directory) / "out").open("wb") as capture:
+        try:
+            capture = (Path(directory) / "out").open("wb", buffering=0)
+        except OSError as exc:
+            return capture_failed(exc)
+        try:
             child = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                      start_new_session=True)
-            total = 0
-            while chunk := os.read(child.stdout.fileno(), min(65536, cap + 1 - total)):
+        except FileNotFoundError:
+            print(f"run.sh: command not found: {command[0]}", file=sys.stderr)
+            return 127
+        except OSError as exc:
+            print(f"run.sh: command not executable: {command[0]}: {exc}", file=sys.stderr)
+            return 126
+        total = 0
+        while chunk := os.read(child.stdout.fileno(), min(65536, cap + 1 - total)):
+            try:
                 capture.write(chunk)
-                sys.stdout.buffer.write(chunk[:max(0, cap - total)])
-                sys.stdout.buffer.flush()
-                total += len(chunk)
-                if total > cap:
-                    os.killpg(child.pid, signal.SIGKILL)
-                    child.wait()
-                    print(f"run.sh: output cap {cap} bytes hit (child status {child.returncode}); exit 97",
-                          file=sys.stderr)
-                    return 97
-            status = child.wait()
-            return status if status >= 0 else 128 - status
-    except OSError as exc:
-        print(f"run.sh: capture stage failed: {exc}; exit 98", file=sys.stderr)
-        return 98
+            except OSError as exc:
+                return capture_failed(exc)
+            sys.stdout.buffer.write(chunk[:max(0, cap - total)])
+            sys.stdout.buffer.flush()
+            total += len(chunk)
+            if total > cap:
+                os.killpg(child.pid, signal.SIGKILL)
+                child.wait()
+                print(f"run.sh: output cap {cap} bytes hit (child status {child.returncode}); exit 97",
+                      file=sys.stderr)
+                return 97
+        status = child.wait()
+        return status if status >= 0 else 128 - status
     finally:
         if child is not None:
             if child.poll() is None:
                 os.killpg(child.pid, signal.SIGKILL)
                 child.wait()
             child.stdout.close()
+        if capture is not None:
+            capture.close()
         shutil.rmtree(directory)
 
 

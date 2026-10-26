@@ -120,3 +120,39 @@ def test_external_config_cannot_put_matters_in_checkout(tmp_path):
     assert not path.is_relative_to(ROOT)
     with pytest.raises(ConfigError, match="must be outside the checkout"):
         load(path)
+
+
+@pytest.mark.parametrize("suffix", ["", "invented-matters/nested"])
+def test_case_swapped_checkout_matters_refused(tmp_path, suffix):
+    from conftest import ROOT
+
+    alias = ROOT.with_name(ROOT.name.swapcase())
+    # This disk must exercise the actual case alias, never a skipped probe.
+    assert alias != ROOT and os.path.samefile(alias, ROOT)
+    path = write_config(tmp_path, matters=alias / suffix)
+    result = subprocess.run(["casefile", "config", "show", "--config", str(path)],
+                            capture_output=True, text=True, timeout=30)
+    assert (result.returncode, result.stdout) == (2, ""), result.stdout + result.stderr
+    assert "must be outside the checkout" in result.stderr
+    with pytest.raises(ConfigError, match="must be outside the checkout"):
+        load(path)
+
+
+@pytest.mark.parametrize("suffix", ["", "invented-matters/nested"])
+def test_symlink_checkout_identity_refused(tmp_path, monkeypatch, suffix):
+    from conftest import ROOT
+
+    alias = tmp_path / "invented-checkout-alias"
+    alias.symlink_to(ROOT, target_is_directory=True)
+    assert os.path.samefile(alias, ROOT)
+    path = write_config(tmp_path, matters=alias / suffix)
+    # Force a lexical miss so this exercises identity even on a case-sensitive disk.
+    with pytest.raises(ConfigError, match="must be outside the checkout"):
+        with monkeypatch.context() as lexical:
+            lexical.setattr(Path, "is_relative_to", lambda self, *other: False)
+            load(path)
+
+
+def test_host_path_refused(tmp_path):
+    with pytest.raises(ConfigError, match="hostname 127.0.0.1"):
+        load(write_config(tmp_path, host="http://127.0.0.1:11434/x"))

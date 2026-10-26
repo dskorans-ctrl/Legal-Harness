@@ -71,3 +71,13 @@ def test_rows_fail_closed_and_continue(tmp_path, capsys):
     assert "gate broken FAIL error=[Errno 1] denied" in output
     assert "gate second FAIL n=1" in output
     assert output.splitlines()[-1] == "2"
+
+
+def test_rules_selftest_rejects_false_hits(tmp_path):
+    root = clean_repo(tmp_path)
+    path = root / "playbook" / "rules.toml"
+    text = path.read_text()
+    old = 'good = "The report of 14 March 2025 records a normal gait."'
+    assert text.count(old) == 1
+    path.write_text(text.replace(old, 'good = "The IME found a normal gait."'))
+    assert gate.rules_selftest_row(root) == (False, "misses=0 false_hits=1")

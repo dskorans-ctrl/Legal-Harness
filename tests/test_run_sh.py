@@ -97,3 +97,66 @@ def test_cap_terminates_sleeping_child(tmp_path):
                 os.kill(int(pidfile.read_text()), signal.SIGKILL)
             except ProcessLookupError:
                 pass
+
+
+def test_missing_command_relays_127():
+    command = "invented-casefile-command-that-does-not-exist"
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), command], cwd=ROOT,
+                            capture_output=True, timeout=30)
+    assert (result.returncode, result.stdout) == (127, b"")
+    assert f"run.sh: command not found: {command}".encode() in result.stderr
+
+
+def test_nonexecutable_command_relays_126(tmp_path):
+    command = tmp_path / "invented-nonexecutable"
+    command.write_text("#!/bin/sh\nexit 0\n")
+    command.chmod(0o600)
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), str(command)], cwd=ROOT,
+                            capture_output=True, timeout=30)
+    assert (result.returncode, result.stdout) == (126, b"")
+
+
+def test_python_capture_open_failure(tmp_path):
+    directory = tmp_path / "invented-capture"
+    (directory / "out").mkdir(parents=True)
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), sys.executable,
+                             str(ROOT / "scripts/run_capture.py"), "128", str(directory),
+                             sys.executable, "-c", "print('invented')"],
+                            cwd=tmp_path, capture_output=True, timeout=30)
+    assert result.returncode == 98
+    assert b"capture stage failed" in result.stdout + result.stderr
+
+
+@pytest.mark.parametrize("kind", ["missing-argument", "empty", "nonexistent", "file"])
+def test_capture_directory_required(tmp_path, kind):
+    sentinel = tmp_path / "invented-file"
+    sentinel.write_text("preserve invented bytes\n")
+    arguments = ["128"]
+    if kind != "missing-argument":
+        directory = {"empty": "", "nonexistent": str(tmp_path / "absent"),
+                     "file": str(sentinel)}[kind]
+        arguments += [directory, sys.executable, "-c", "print('invented')"]
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), sys.executable,
+                             str(ROOT / "scripts/run_capture.py"), *arguments],
+                            cwd=tmp_path, capture_output=True, timeout=30)
+    assert result.returncode == 98
+    assert b"capture directory" in result.stdout + result.stderr
+    assert not (tmp_path / "out").exists()
+    assert sentinel.read_bytes() == b"preserve invented bytes\n"
+
+
+@pytest.mark.parametrize("alias", ["literal", "case", "symlink"])
+def test_toolchain_inside_checkout_refused(tmp_path, alias):
+    base = ROOT
+    if alias == "case":
+        base = ROOT.with_name(ROOT.name.swapcase())
+        assert os.path.samefile(base, ROOT)
+    elif alias == "symlink":
+        base = tmp_path / "invented-checkout-alias"
+        base.symlink_to(ROOT, target_is_directory=True)
+    env = dict(os.environ, CASEFILE_TOOLCHAIN=str(base / "invented-toolchain"))
+    result = subprocess.run([str(ROOT / "scripts/run.sh"), "true"], cwd=ROOT,
+                            env=env, capture_output=True, timeout=30)
+    assert (result.returncode, result.stdout) == (98, b"")
+    assert b"toolchain must be outside the checkout" in result.stderr
+    assert not (ROOT / "invented-toolchain").exists()

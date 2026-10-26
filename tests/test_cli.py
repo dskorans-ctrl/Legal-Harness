@@ -44,3 +44,20 @@ def test_doctor_config_override(tmp_path):
     assert result.returncode == 1
     assert "doctor config FAIL no config file" in result.stdout
     assert result.stdout.count("FAIL blocked by config") == 7
+
+
+def test_bad_playbook_show_exits_2(tmp_path):
+    import shutil
+    from conftest import ROOT, write_config
+
+    config = write_config(tmp_path)
+    shutil.copytree(ROOT / "playbook", tmp_path / "playbook", dirs_exist_ok=True)
+    path = tmp_path / "playbook" / "rules.toml"
+    lines = path.read_text().splitlines(keepends=True)
+    index = next(i for i, line in enumerate(lines) if line.startswith("why = "))
+    del lines[index]
+    path.write_text("".join(lines))
+    result = subprocess.run(["casefile", "playbook", "show", "--config", str(config)],
+                            capture_output=True, text=True, timeout=30)
+    assert (result.returncode, result.stdout) == (2, ""), result.stdout + result.stderr
+    assert "PlaybookError:" in result.stderr and "why" in result.stderr

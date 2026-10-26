@@ -148,13 +148,13 @@ owner's devices over Tailscale with the page password; never on the public inter
 | D9 | Code in the private repo dskorans-ctrl/Legal-Harness; only `main` pushed, on the owner's word | owner | 2026-10-25 |
 | D10 | Obsidian: possible later, not decided | owner | 2026-10-25 |
 | D11 | No MLX work; Ollama is the engine | owner | 2026-10-25 |
-| D12 | `scripts/run.sh`: 50 MB combined cap; exit 96 no command, 97 cap hit, 98 capture failure, else the child's code | chair, pending veto | 2026-10-25 |
+| D12 | `scripts/run.sh`: 50 MB combined cap; exit 96 no command, 97 cap hit (child process group killed), 98 capture failure, 127 command not found, 126 not executable, else the child's code; toolchain outside the checkout (D23) | chair, pending veto | 2026-10-25, amended 2026-10-26 (CX-4, B2) |
 | D13 | Config: `$CASEFILE_CONFIG` or `./config.toml`, TOML; missing file, unknown key, bad type, `num_ctx` below 65536 or a host other than `http://127.0.0.1:<port>` fail closed; `[paths].matters` required and outside the checkout (owner Q17); model tag `qwen3.8:27b` (owner Q20) | chair, pending veto | 2026-10-25 |
 | D14 | Data root outside the checkout; `state/` (run log) in the checkout, gitignored; `Cases/` and `Bench/` forbidden repo prefixes | chair, pending veto | 2026-10-25 |
 | D15 | Run log SQLite schema v1 (`schema_meta`, `runs`, `answers`, `failures`, `approvals`), append-only by triggers; "a test job" is the doctor's warmup run with an `ok` answer | chair, pending veto | 2026-10-25 |
 | D16 | `rules.toml` schema; rule 5 on outputs only, blocking DME, IME and both spelled-out phrases (owner Q16); a Bates cite body must fully match the configurable pattern (owner Q21); "every fact has a cite" is gate 6 at stage 4 | chair, pending veto | 2026-10-25 |
 | D17 | Playbook entries in TOML with the six §6 fields; non-rules entries are SAMPLE until owner content (owner Q12), enforced by a gate row; version `pb-` plus a sha256 prefix | chair, pending veto | 2026-10-25 |
-| D18 | Stand-in model server: stdlib, Ollama native `/api/chat` and `/api/ps` shape, port 18434 (never 11434), modes replay, truncated, malformed, forbidden, short_context, empty | chair, pending veto | 2026-10-25 |
+| D18 | Stand-in model server: stdlib, Ollama native `/api/chat` and `/api/ps` shape, port 18434 (never 11434), modes replay, truncated, malformed, forbidden, short_context, empty, incomplete (done=false) | chair, pending veto | 2026-10-25, amended 2026-10-26 (CX-5) |
 | D19 | `casefile doctor`: eight checks, each PASS or FAIL with a reason, none skipped; loopback by hostname, `/api/version` and `lsof`; full context by a warmup answering `READY` and `/api/ps` context; OCR FAIL until stage 3 (owner Q11); exit 0 or 1 | chair, pending veto | 2026-10-25 |
 | D20 | Gate `python -m casefile.gate`: rows pytest, privacy (ignored files included), rules self-test, playbook, prose; prints and exits the failed-row count; the doctor is covered by the stage 1 exit test, not a gate row | chair, pending veto | 2026-10-25 |
 | D21 | Model client transport: no proxy, redirects refused, an empty answer is an error | chair, pending veto | 2026-10-25 |

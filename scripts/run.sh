@@ -2,6 +2,27 @@
 CAP=52428800                      # 50 MiB of combined stdout and stderr
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TOOLCHAIN="${CASEFILE_TOOLCHAIN:-$HOME/.casefile-dev}/$(basename "$ROOT")"
+if ! python3 - "$ROOT" "$TOOLCHAIN" <<'PYTHON'
+import os
+from pathlib import Path
+import sys
+
+root, toolchain = map(Path, sys.argv[1:])
+try:
+    inside = toolchain.resolve().is_relative_to(root.resolve()) or any(
+        ancestor.exists() and os.path.samefile(ancestor, root)
+        for ancestor in (toolchain, *toolchain.parents)
+    )
+except OSError as exc:
+    print(f"run.sh: cannot verify toolchain path: {exc}; exit 98", file=sys.stderr)
+    raise SystemExit(98)
+if inside:
+    print("run.sh: toolchain must be outside the checkout; exit 98", file=sys.stderr)
+    raise SystemExit(98)
+PYTHON
+then
+    exit 98
+fi
 export UV_PYTHON_INSTALL_DIR="$TOOLCHAIN/python" UV_CACHE_DIR="$TOOLCHAIN/cache" UV_PROJECT_ENVIRONMENT="$TOOLCHAIN/venv"
 [ -d "$TOOLCHAIN/venv/bin" ] && PATH="$TOOLCHAIN/venv/bin:$PATH"
 [ "$#" -ge 1 ] || { echo "run.sh: usage: scripts/run.sh <cmd> [args]" >&2; exit 96; }

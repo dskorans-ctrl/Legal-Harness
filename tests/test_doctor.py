@@ -231,3 +231,16 @@ def context_status_only(monkeypatch):
     # Keep unrelated and downstream failures from masking the context exit status.
     monkeypatch.setattr(doctor, "check_ocr", lambda state: (True, "isolated version check"))
     monkeypatch.setattr(doctor, "check_runlog_job", lambda state: (True, "isolated downstream check"))
+
+
+def test_runlog_job_fails_when_answer_not_recorded(tmp_path, monkeypatch):
+    config = setup_config(tmp_path)
+    monkeypatch.setattr(runlog.RunLog, "record_answer", lambda *args, **kwargs: None)
+    monkeypatch.setattr(doctor, "check_ocr", lambda state: (True, "isolated OCR check"))
+    code, output = invoke(config)
+    assert "doctor context PASS context_length=65536" in output, output
+    assert "doctor runlog_job FAIL test_jobs=+0" in output, output
+    assert verdicts(output) == {"runlog_job"}, output
+    assert code == 1, output
+    with runlog.open_db(config.paths.state / "runlog.sqlite") as log:
+        assert log.count_test_jobs() == 0
