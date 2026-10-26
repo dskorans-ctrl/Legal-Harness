@@ -3,12 +3,39 @@
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 CAP = 52428800
+
+
+def test_toolchain_outside_repo(tmp_path):
+    env = os.environ.copy()
+    env["CASEFILE_TOOLCHAIN"] = str(tmp_path)
+    probe = """
+import os
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1]).resolve()
+names = ("UV_PROJECT_ENVIRONMENT", "UV_PYTHON_INSTALL_DIR", "UV_CACHE_DIR")
+inside = sum(Path(os.environ[name]).resolve().is_relative_to(root) for name in names)
+print(f"toolchain_inside_repo={inside}")
+"""
+    result = subprocess.run(
+        [str(ROOT / "scripts/run.sh"), sys.executable, "-c", probe, str(ROOT)],
+        cwd=ROOT,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr
+    print(result.stdout, end="")
+    assert result.stdout == "toolchain_inside_repo=0\n", result.stdout
 
 
 @pytest.mark.parametrize(
