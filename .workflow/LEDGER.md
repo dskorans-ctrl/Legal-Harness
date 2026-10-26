@@ -77,6 +77,8 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Q22: tiers for round 1 session 2 (owner, 2026-10-26)? -> code review Codex gpt-6.1-sol (high);
   output critic and blind verifier fresh Opus 5.5, one each; fixes written by Codex gpt-6.1-sol
   (as Q14), chair commits and re-runs seeds.
+- Q23: cycle cap reached in round 1 (owner, 2026-10-26)? -> one extra fix cycle (exception to Q5),
+  limited to B1b and B3, then one focused fresh re-verify; if that fails, discard per Q5.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -189,6 +191,11 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Fix cycle 3 (Codex, last allowed): B1, B2, S2, S6, S9, S10, N1 to N3; spec D12 and D18 amended
   (chair rulings, pending veto). Commit f2023ae. Chair re-run `184 passed`, gate `0`, B1 `exit=2`,
   missing command `127`; SEED run_capture.py:13 `return 98` -> `return 0` -> `5 failed, 13 passed`, cmp, `18 passed`.
+
+- 8c re-verifier (fresh Opus 5.5): FAIL on B1b (R1-4) and B3 (R1-13); chair reproduced B1b (`exit=0`).
+  Owner Q23: one extra cycle.
+- Fix cycle 4 (Codex, Q23): B1b and B3. Chair re-run `192 passed`, gate `0`, B1b `exit=2`, toolchain alias
+  `exit=95`; SEED run_capture.py:46 `return capture_failed(exc)` -> `pass` -> `2 failed, 21 passed`, cmp, `23 passed`.
 
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.

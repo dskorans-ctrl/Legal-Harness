@@ -31,3 +31,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 13 | Fix cycle 2: critic findings | codex gpt-6.1-sol (workspace-write, high) | ~30 min | n/a | done; chair re-run 162 passed, gate 0; committed |
 | 14 | 8c blind verifier | opus | 12.7 min | 212 k | FAIL; 14 ticked, 4 deferred, 2 refused (B1 config case alias, B2 untested 98 guard); 27 code seeds, 22 red, 5 green |
 | 15 | Fix cycle 3: verifier findings | codex gpt-6.1-sol (workspace-write, high) | ~30 min | n/a | done; chair re-run 184 passed, gate 0; committed f2023ae |
+| 16 | 8c re-verifier after cycle 3 | opus | 9.3 min | 111 k | FAIL; R1-4 (B1b) and R1-13 (B3) refused again; 17 seeds, 15 red, 2 green; nothing unticked |
+| 17 | Fix cycle 4 (Q23): B1b, B3 | codex gpt-6.1-sol (workspace-write, high) | ~20 min | n/a | done; chair re-run 192 passed, gate 0 |
