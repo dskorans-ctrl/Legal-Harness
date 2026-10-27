@@ -314,12 +314,18 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   3d095c0 (W4: `fixture_pages=14 binders=3`; stamp seed -> `last line is not a Bates stamp`). Every page
   read against the bible; ten pages corrected by feedback (names, dates, unplanned conflicts).
 - [ ] R2-3b. W5 answer key loader and `key.json` (26 facts, 5 flags), validated against the pages.
+  Amended by fix cycle 2 (OR-7): the key holds 29 facts and 6 flags (F27 to F29, G6 added); key collisions
+  refused (fix cycle 1, R2-CX-5).
   Build note: b553411, Gemma G23 to G26. `key_refusals=10 of 10`, `key_facts=26 flags=5 pages=14`,
   firm rules over the key's prose `[]`; seeds a (found_in dropped) and b (one quote character) red.
 - [ ] R2-3c. W6 candidate parser and scorer; `flawed.json` scores exactly `found=23 of 26 missed=3
   invented=2 extra=2 flags=4 of 5 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`.
   Build note: 09ad98a, Gemma G27 to G32. `candidate_refusals=7 of 7`, `score_cases=11 of 11`, perfect and
   flawed lines exact; seeds a to e red (d fails with KeyError, not `6 of 7`).
+  Amended by fix cycle 2 (OR-7): flawed now scores exactly `found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6
+  flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14` (exit 1) followed by detail lines naming the missed
+  facts, invented facts, missed and extra flags and rule hits; ideal `found=29 of 29 ... extra=2 flags=6 of 6 ...`
+  (exit 0).
 - [ ] R2-3e. W7 `ModelError.raw` and the stage 2 runner (counts gate, every received reply an answer row).
   Build note: afed11b, Gemma G33, G34. test_model.py green, `card_version=092368692dd3`; model.py diff is
   `__init__` plus the five raw raises; seed W8 e (raw dropped) -> `answers_failed=5`, exit 1.
@@ -381,3 +387,5 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   extra=2 flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`, exit 1); M1 detail lines
   at d007821 (`  missed: F04 F15 F24` ... `  rules: no-dme-ime DEF0003`); `263 passed`, gate `0`; Gemma 11
   tasks, 11 calls, all first try, no fallback. Report: docs/loop/round-02/round02-fix2-report.md.
+  Chair re-run after fix cycle 2 (tip 0d5e0a0): `263 passed in 36.86s`; gate `0`; flawed bench exit 1 with
+  the amended line and six detail lines; ideal exit 0 `found=29 of 29 ... flags=6 of 6`; listeners 0.
