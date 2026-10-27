@@ -64,4 +64,4 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 7 | Cost control: Sonnet rebuilds W3, W5 code, W6, W9 in a throwaway worktree (Q29, OR-3) | sonnet | 5.9 min | 125 k | done; every CHECK 0, every seed red; branch control/r2-sonnet 43ef0d9, never merged |
 | 8 | Code-quality review, Gemma vs the Sonnet control (Q28) | fable | 10.1 min | 184 k | fit to merge after fixes; Gemma 7/8/7/5 vs Sonnet 7/9/7/9; no high, 2 med (both builds), lows |
 | 9 | Fix cycle 1 (R2-CH-1, CX-5, CX-6, CX-7, F2) | opus (orchestrator) + gemma4:e4b (local) | 29.7 min | 130 k Opus; Gemma 27.9 k prompt + 26.8 k answer, 926 s (local) | done; 11 tasks, 14 calls, 8 first try, 0 fallbacks; 260 passed, gate 0; chair re-run reproduced every fix |
-| 10 | 8b output critic | opus | running | | |
+| 10 | 8b output critic | opus | 5.3 min | 96 k | 6/10, high 2, med 5, low 6; H1 and H2 verified by the chair (OR-7); owner questions 24 to 29 |

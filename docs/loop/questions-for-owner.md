@@ -79,6 +79,24 @@ Held questions, numbered, with any interim ruling made while the owner was away 
     party prefix, or more than one per page? Interim: one stamp per page, last line; stage 3 reads the
     stamp from the page text with the configurable pattern (Q21).
 
+## Round 2 questions from the output critic (round02-critic.md)
+
+24. Benchmark key completeness (critic H1, Q1, Q5): should the answer key list every real conflict and
+    gap a careful reader would flag (for example the missing PT visit notes 2 to 5 and 7 to 12, the PT
+    letter, the ESI record and the 06/20/2025 re-evaluation), or should an extra flag stop failing the
+    run? Interim: the chair added the one clear cross-page conflict (radiculopathy, MED0007 vs DEF0002) and
+    three verbatim facts (OR-7); gaps beyond G4 and G5 wait for this answer and question 21.
+25. Should a flag's `about` text count toward a match, so that two different conflicts on the same pair
+    of pages (causation and MMI, MED0008 vs DEF0003) are scored separately (critic M2)? Interim: D25,
+    kind plus cite set.
+26. When the model server cannot be reached, should `casefile bench` exit 2 (cannot run) instead of
+    scoring the matter `found=0` with exit 1 (critic M3, Q3)? Interim: D25, exit 1 with the failure line.
+27. Should the bench line name the model it scored (critic M4, Q4)? Interim: D25's line; the model is in
+    the run log.
+28. Should a test matter include bills (for the billing memo) and a carrier file (critic Q6)?
+29. Outputs say "Dr. Marchetti's report" in the fixture prose; is that right, or always just "the
+    report" (critic Q7, Q16)?
+
 ## Round 2 overnight rulings (Q31: chair rulings while the owner is away, each pending veto or ratification)
 
 - OR-1 (2026-10-26 23:05): "Gemma is free" is judged from `~/local-worker/ollama-serve.log`: the last
@@ -110,3 +128,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
 - OR-6 (2026-10-27): fix cycle 1 choices ratified by the chair: `ModelError.raw` is a dict or the reply text
   as received (text stored as is, dict via json.dumps); collision messages name the later ID first. Carried
   to round 3: a non-200 reply still stores no answer row (model.py:59), outside the finding.
+- OR-7 (2026-10-27): output critic 8b (`OUTPUT CRITIC 6/10 · high 2 · med 5 · low 6`). Chair verified H1 and
+  H2 on the pages (MED0007 "left L5 radiculopathy" vs DEF0002 "No objective findings of radiculopathy";
+  MED0008 15 pound restriction vs DEF0003 "No work restrictions"). Fix cycle 2 (Gemma): add flag G6
+  (conflict MED0007, DEF0002, radiculopathy) and facts F27 (MED0008 restriction line), F28 (DEF0003 "No
+  further treatment is medically necessary."), F29 (MED0003 "Lumbar strain, likely work related."); update
+  ideal.json and flawed.json and every exact number; M1: the bench prints which fact IDs were missed, which
+  flags missed and extra, which candidate facts were invented and which rules fired. Owner questions 24 to
+  29 for the rest; M5 (truncation message detail) and the lows go to stage 4 and round 3.

@@ -370,3 +370,9 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   matter.toml) -> exit 2 `MatterError ... can't decode byte 0xff`; CX-5 repro (duplicate fact F99) -> exit 2
   `BenchKeyError ... fact F99: same cite and quote as fact F01`; CH-1 seed `c >= 0` -> `1 failed, 2 passed`,
   restored, cmp ok. Gemma: 11 tasks, 14 calls, 8 first try, 0 fallbacks.
+- 8b output critic (`round02-critic.md`): `OUTPUT CRITIC 6/10 · high 2 · med 5 · low 6`. Chair verified H1
+  (radiculopathy conflict MED0007 vs DEF0002 missing; a correct model fails on flags_extra) and H2 (MED0008
+  restriction, DEF0003 "No further treatment", MED0003 "likely work related" unkeyed). Rulings OR-7; owner
+  questions 24 to 29.
+- [ ] R2-7. Fix cycle 2 (Gemma): key G6, F27 to F29, ideal and flawed updated, exact numbers updated; bench
+  prints missed, invented, flag and rule detail (critic M1).
