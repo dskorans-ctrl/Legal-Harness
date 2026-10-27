@@ -100,3 +100,22 @@ foreground timeout (OR-7: key G6 and F27 to F29, ideal and flawed, pinned number
 ### Fix cycle 2 totals
 - Tasks: 11. First-try passes: 11. Retries: 0. Re-splits: 0. Sonnet fallbacks: 0.
 - Driver calls: 11. Gemma tokens: prompt 25001, answer 27815; model time 973 s (16 min).
+
+## Fix cycle 3
+
+Same model and driver, every call through `scripts/run.sh python3 scripts/gemma_task.py` with a 600 s
+foreground timeout (OR-8: V2-F1 and tests for the verifier's green seeds S1, S2, S4, S5, S6).
+
+| Task | Item | File | Attempts | Re-split | Fallback | Seconds | Prompt tokens | Answer tokens | Outcome |
+|---|---|---|---|---|---|---|---|---|---|
+| FC3-1t | V2-F1 | tests/test_benchrun.py::test_benchrun_non200_reply | 1 | n | n | 40 | 3128 | 954 | pass; identical to the task text |
+| FC3-1 | V2-F1 | src/casefile/model.py::ModelClient._request | 2 | n | n | 136 | 4252 | 3925 | a1 method indented 4 spaces, splice exit 6, nothing written (76 s, 2061/2160); pass a2; diff is the two dictated raises only |
+| FC3-2t | V2-S1 | tests/test_bench_discovery.py | 1 | n | n | 33 | 977 | 962 | pass; identical to the task text |
+| FC3-3t | V2-S2 | tests/test_benchscore_cite.py | 1 | n | n | 34 | 1258 | 968 | pass; identical to the task text |
+| FC3-4t | V2-S4 | tests/test_benchrun_done_reason.py | 1 | n | n | 36 | 1061 | 1039 | pass; identical to the task text |
+| FC3-5t | V2-S5 | tests/test_benchscore_flag_dedupe.py | 1 | n | n | 21 | 764 | 539 | pass; identical to the task text |
+| FC3-6t | V2-S6 | tests/test_bench_multi.py | 1 | n | n | 35 | 1189 | 1023 | pass; identical to the task text |
+
+### Fix cycle 3 totals
+- Tasks: 7. First-try passes: 6. Retries: 1 (one exit 6, the same indentation slip as FC1-3a). Re-splits: 0. Sonnet fallbacks: 0.
+- Driver calls: 8. Gemma tokens: prompt 12629, answer 9410; model time 335 s (6 min).

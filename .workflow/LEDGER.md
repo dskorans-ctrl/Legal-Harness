@@ -440,3 +440,9 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   the amended line and six detail lines; ideal exit 0 `found=29 of 29 ... flags=6 of 6`; listeners 0.
 - [ ] R2-8. Fix cycle 3 (Gemma; OR-8): V2-F1 (non-200 replies stored as failed answer rows with the body)
   and tests that turn the verifier's seeds S1, S2, S4, S5, S6 red.
+  Note (fix cycle 3, 2026-10-27, not a tick: the verifier ticks): V2-F1 RED on e637357 (`assert [] ==
+  [('failed', '...own model"}')]`), GREEN at 81c78ce (model.py passes the whole decoded body as `raw` at
+  both non-200 sites; seeds at each site and a 200-byte excerpt seed red, cmp ok). Seed tests, each green
+  on the tip and red under the verifier's exact mutation, cmp ok: S1 a1af3ac, S2 f2148ca, S4 12876e9, S5
+  73baa0c, S6 1e84c60. `269 passed in 37.13s`, gate `0` (`files=135`); Gemma 7 tasks, 8 calls, no
+  fallback. Report: docs/loop/round-02/round02-fix3-report.md.
