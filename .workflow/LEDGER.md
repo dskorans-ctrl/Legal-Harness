@@ -366,3 +366,7 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   Note (fix cycle 1, 2026-10-27, not a tick: the verifier ticks): all five red then green; commits 9c82349
   R2-CH-1, 0f2022d R2-CX-5, ba24d90 R2-CX-6, 408991c R2-CX-7, 365f1e0 F2; `260 passed`, gate `0`; Gemma 11
   tasks, 14 calls, no fallback. Report: docs/loop/round-02/round02-fix1-report.md.
+  Chair re-run after fix cycle 1 (tip 0025bb9): `260 passed in 37.62s`; gate `0`; CX-7 repro (0xff in
+  matter.toml) -> exit 2 `MatterError ... can't decode byte 0xff`; CX-5 repro (duplicate fact F99) -> exit 2
+  `BenchKeyError ... fact F99: same cite and quote as fact F01`; CH-1 seed `c >= 0` -> `1 failed, 2 passed`,
+  restored, cmp ok. Gemma: 11 tasks, 14 calls, 8 first try, 0 fallbacks.

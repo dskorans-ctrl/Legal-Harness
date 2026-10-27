@@ -107,3 +107,6 @@ Held questions, numbered, with any interim ruling made while the owner was away 
   reports a false duplicate stamp), F5 (validate names before reading), F6 (whitespace-only page text).
   Why: correctness first inside the three-cycle cap; lint rewrites of eight files by the small model cost
   more than they return this round.
+- OR-6 (2026-10-27): fix cycle 1 choices ratified by the chair: `ModelError.raw` is a dict or the reply text
+  as received (text stored as is, dict via json.dumps); collision messages name the later ID first. Carried
+  to round 3: a non-200 reply still stores no answer row (model.py:59), outside the finding.

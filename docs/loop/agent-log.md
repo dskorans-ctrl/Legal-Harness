@@ -62,4 +62,6 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 5 | Build orchestrator resumed, Gemma G8 to G43 | opus (orchestrator) + gemma4:e4b (local) | 95.4 min | 325 k Opus (resume); Gemma all tasks 131.3 k prompt + 137.7 k answer, 4988 s model time (local) | done; 43 of 43 by Gemma, 26 first try, 17 retried, 2 re-split, 0 Sonnet fallbacks; 28 seeds red; 253 passed, gate 0 |
 | 6 | 8a code review of round 2 | codex gpt-6.1-sol (read-only, high) | ~15 min | n/a | 7 findings (2 high, 5 med), all reproduced or traced; 3 in the chair's driver fixed; 4 to fix cycle 1, 1 deferred (OR-4) |
 | 7 | Cost control: Sonnet rebuilds W3, W5 code, W6, W9 in a throwaway worktree (Q29, OR-3) | sonnet | 5.9 min | 125 k | done; every CHECK 0, every seed red; branch control/r2-sonnet 43ef0d9, never merged |
-| 8 | Code-quality review, Gemma vs the Sonnet control (Q28) | fable | ~20 min | n/a (not in notice) | fit to merge after fixes; Gemma 7/8/7/5 vs Sonnet 7/9/7/9; no high, 2 med (both builds), lows |
+| 8 | Code-quality review, Gemma vs the Sonnet control (Q28) | fable | 10.1 min | 184 k | fit to merge after fixes; Gemma 7/8/7/5 vs Sonnet 7/9/7/9; no high, 2 med (both builds), lows |
+| 9 | Fix cycle 1 (R2-CH-1, CX-5, CX-6, CX-7, F2) | opus (orchestrator) + gemma4:e4b (local) | 29.7 min | 130 k Opus; Gemma 27.9 k prompt + 26.8 k answer, 926 s (local) | done; 11 tasks, 14 calls, 8 first try, 0 fallbacks; 260 passed, gate 0; chair re-run reproduced every fix |
+| 10 | 8b output critic | opus | running | | |
