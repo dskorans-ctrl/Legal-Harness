@@ -597,3 +597,16 @@ invented fixture under `tests/fixtures/`.
   OCR failure cases now assert exit 1 (seed: doctor returns 0 on OCR FAIL red). Sweep `350 passed in 63.42s`,
   gate `0`, `unused_imports=0`, stage3 exit line unchanged. Open: lookbehind is still upper-case only (a
   lowercase letter before a stamp is not refused); a signal between `mkdir` and `created.append` leaks one folder.
+- Fix cycle 2 notes (worker, 2026-10-27, code ab507e1; a note, not a tick; each test RED before the fix, seeded RED alone after):
+  H1 stamp match no longer continues into a joined token at either end: after, no letter or digit and no
+  `-./` plus letter or digit; before, two fixed-width lookbehinds (any-case letter or digit, or one then `-./`).
+  `QRL-2025-0418`, `MED0001-A`, `MED0001.2`, `MED0001/3`, `xMED0001`, `AB-MED0001`, `MED0001A` give nothing;
+  `MED 0001`, `MED0001.` ending a sentence, `(MED0001)`, `KMR23441`, `XKMR2344`, `MED 0001 Page 3` still match
+  (case_joined_tokens; seeds: drop lookahead clause, drop lookbehind clause, upper-case-only lookbehind, each red).
+  M1 G9 about (key, ideal, flawed) now names the L5-S1 mild degenerative disease; bench lines unchanged, rules
+  find nothing (test_g9_about_matches_the_pages...; seed: key.json at HEAD red). L1 re-intake names every
+  existing folder (records, pages, `.tmp`) and says to remove the old binder by hand (seed: keep only the last
+  folder red). L2 binder refusal in words (seed red). L3 `file not found: <path>` and pypdf's logger silenced
+  for every read (two seeds red; the warnings reach the log, so the test reads caplog). L4 empty page reason
+  `no text after OCR`, failed keeps `ocr timeout`, detail line shows it (two seeds red). Same-shape fix: the
+  real-tools fixture test expectation `  empty: scan/004` now carries the reason. Sweep `358 passed`, gate `0`.
