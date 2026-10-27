@@ -576,3 +576,12 @@ invented fixture under `tests/fixtures/`.
 - [~] R3-8. deferred: R2-CX-2 (prompt truncation detection) waits for stage 4 (OR-4, owner ratified).
   R1-20 (`bates-cites` sees only bracketed cites) waits for the stage that writes cited prose.
 - [ ] V. Fresh blind verification: every non-deferred R3 item `[x]` with the verifier's own evidence.
+- Build notes (orchestrator, 2026-10-27, tip 2f864a5): W0 77c7f56; lane A fd73d4b, 523b283, 77a5a61, 9e19eb6;
+  lane B df25349, fadd27a, 13b066a, 2668c48, merged c8bff68; chair tail 2f864a5 (one unused import). Merged:
+  `335 passed in 66.93s`, gate `0`, `unused_imports=0`. Flawed exit 1 `bench 9001.001 model=candidate
+  found=26 of 29 missed=3 invented=2 extra=2 flags=8 of 9 flags_missed=1 flags_extra=1 rules=1 pages_failed=0
+  of 14`; ideal exit 0 `... flags=9 of 9 ...`; chair seed G9 deleted from key -> ideal exit 1 `flags_extra=1`,
+  restored by cmp. `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6 text_ok=6 of 6 must_ok=5 of 5
+  empty=1 failed=0 min_ratio=1.000`; stage 1 `exit=0 verdicts=8 fails=set() test_jobs=1`. Chair driven intake
+  on the fixture: `intake 9002.001 scan pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit
+  1, page 3 two stamps, page 6 `mixed`, re-intake exit 2. 46 builder seeds red (lane reports).
