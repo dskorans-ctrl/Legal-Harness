@@ -86,3 +86,7 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 7 | 8a code review of round 3 | codex gpt-6.1-sol (read-only, high) | ~12 min | n/a | 8 findings (3 high, 5 med), all reproduced (2 by run, 6 by trace); all to fix cycle 1 |
 | 8 | Fix cycle 1 (CX-1 to CX-8) | sonnet | 10.6 min | 103 k | done; 4d615be, aada2a7; 15 tests, 8 seeds red; chair re-ran CX-1 (exit 2, nothing written) and CX-7; 350 passed in 63 to 87 s, gate 0 |
 | 9 | 8b output critic | opus | 5.8 min | 117 k | 7/10, high 1, med 1, low 6; H1 and M1 reproduced by the chair; H1, M1, L1 to L4 to fix cycle 2; L5 owner (question 40); L6 rejected (sidecar is an outcome record, D27) |
+| 10 | Fix cycle 2 (critic H1, M1, L1 to L4) | sonnet | 9.7 min | 98 k | done; ab507e1, b864faf; 8 tests, 10 seeds red; chair re-ran H1; 358 passed in 70 to 75 s, gate 0 |
+| 11 | 8c blind verifier | opus | 22.4 min | 141 k | PASS; R3-1 to R3-7 and V. ticked; 6 fresh seeds, 3 red, 3 green test gaps (S1, S2, S5; code right); N2 to N5 red |
+| 12 | Librarian close | sonnet | 2.7 min | 86 k | done; 14 entries, 7 pre-flight bullets; R1-19, OR-5 lows, N2 to N5 closed |
+| | **Round 3 total** | | **~6 h wall-clock incl. owner check-in and Homebrew install** | **Fable 664 k; Sonnet 779 k (W0 60 k, lanes 432 k, fixes 201 k, Librarian 86 k); Opus 258 k (critic 117 k, verifier 141 k), chair not counted; plus two Codex runs** | 12 runs; PASS after two fix cycles; merged |

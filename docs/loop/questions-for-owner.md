@@ -198,8 +198,9 @@ rulings.
 ## Held 2026-10-27 (round 3 critic, Codex CX-7; interim ruling by the chair, pending veto)
 38. Do your Bates stamps ever carry a suffix after the digits (`MED0001-A`, `MED0001A`, `MED0001.2`)? Today a
     stamp must end at a token boundary, so `MED0001A` is not recorded at all (before the fix it was recorded
-    as `MED0001` and merged with `MED0001B`). `MED0001-A` still records `MED0001`. Interim: boundary rule;
-    suffix forms wait for your answer.
+    as `MED0001` and merged with `MED0001B`). After fix cycle 2 (critic H1) a stamp also may not run on into
+    `-`, `.` or `/` plus a letter or digit, so `MED0001-A`, `MED0001.2` and claim numbers like `QRL-2025-0418`
+    record nothing. Interim: boundary rule; suffix forms wait for your answer.
 
 ## Held 2026-10-27 (round 3 output critic, round03-critic.md; interim rulings by the chair, pending veto)
 39. The stamp pattern (Q21) also records whole tokens that are not Bates stamps, such as `ABC 123456` or a

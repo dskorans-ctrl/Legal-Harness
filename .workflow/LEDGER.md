@@ -20,15 +20,20 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   red on a seeded defect before its pass counts.
 - Finish line (owner): spec §7 stages 1 to 8 done and verified in the loop; then stage 9 on the Studio.
 - Standing freezes: none.
+- OCR tools (Q39): ocrmypdf and tesseract under `/opt/homebrew/bin`; `scripts/run.sh` appends it to PATH.
 - Privacy: no real client record, name or fact in any loop session; fixtures are invented.
-- Regression baselines (set at the round 2 merge, 2026-10-27, tip of `loop/round-02`):
-  `scripts/run.sh pytest -q` -> `270 passed`; `scripts/run.sh python -m casefile.gate` -> `0`;
+- Regression baselines (set at the round 3 merge, 2026-10-27, tip of `loop/round-03`):
+  `scripts/run.sh pytest -q` -> `358 passed` (under 90 s, T-11); `scripts/run.sh python -m casefile.gate` -> `0`;
+  `scripts/run.sh python scripts/unused_imports.py src tests scripts` -> `unused_imports=0`;
   `casefile bench --config config.example.toml --matters tests/fixtures/matters --candidate
-  tests/fixtures/bench/flawed.json` -> exit 1, `bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2
-  flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`; the same with `--candidate
-  tests/fixtures/matters/9001.001/ideal.json` -> exit 0, `found=29 of 29 missed=0 invented=0 extra=2 flags=6
-  of 6 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`; stage 2 exit test `stage2 exit=0 runs=+1
-  answers_ok=+1 server_stopped=1`.
+  tests/fixtures/bench/flawed.json` -> exit 1, `bench 9001.001 model=candidate found=26 of 29 missed=3
+  invented=2 extra=2 flags=8 of 9 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`; the same with
+  `--candidate tests/fixtures/matters/9001.001/ideal.json` -> exit 0, `bench 9001.001 model=candidate found=29
+  of 29 missed=0 invented=0 extra=2 flags=9 of 9 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`;
+  stage 1 exit test `exit=0 verdicts=8 fails=set() test_jobs=1`; stage 2 exit test `stage2 exit=0 runs=+1
+  answers_ok=+1 server_stopped=1`; stage 3 exit test `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6
+  text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; intake of the fixture `intake 9002.001 scan
+  pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
 - Records: Librarian.md · docs/loop/round-NN/ · docs/loop/agent-log.md · docs/loop/questions-for-owner.md ·
   docs/loop/tuning-questions.md · docs/loop/HANDOFF.md · docs/loop/next-round.md.
 
@@ -558,24 +563,53 @@ Tiers: Q30 defaults (Fable brief and revision, Codex plan and code review, Opus 
 and blind verifier, Sonnet 5.5 code). OCR engine: ocrmypdf and Tesseract on this Mac (Q39).
 Exit test (spec §7 stage 3): a scanned PDF becomes page text with correct IDs. The scanned PDF is an
 invented fixture under `tests/fixtures/`.
-- [ ] R3-1. Stage 3 work items (defined by the round 3 brief, ruled by the chair before any code):
+- [x] R3-1. Stage 3 work items (defined by the round 3 brief, ruled by the chair before any code):
   intake of a PDF into page text; OCR where a page has no text layer; every page gets an ID (matter,
   binder, page) and the list of every Bates stamp found on it, none chosen (Q35).
-- [ ] R3-2. Doctor's OCR check turns PASS for real on this Mac (Q11, Q39); R1-19 OCR smoke test on an
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): hand-driven `casefile intake --config $D/config.toml --matter 9002.001 --binder scan
+    tests/fixtures/scanned/scanned.pdf` -> `intake 9002.001 scan pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2
+    ocr_added=4`, `  empty: scan/004 no text after OCR`, exit 1; records matter=9002.001, ids scan/001 to scan/006, page 3
+    stamps KMR2344 and TWP7731, page 6 `mixed`; text, dates, numbers and stamps match the rendered pages. Re-intake exit 2
+    naming both folders. Invented spaced page: `stamps=[{'raw': 'MED 0001', 'stamp': 'MED0001'}, {'raw': 'ABC-0042',
+    'stamp': 'ABC0042'}]`, `QRL-2025-0418` not a stamp, exit 0. Stage 3 exit `stage3 exit=1 pages=6 ids_ok=6 of 6
+    stamps_ok=6 of 6 text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`. Non-blocking test gaps: seeds S1
+    (record `matter` field wrong), S2 (sidecar with extra segments) stay green; see round03-verify.md.
+- [x] R3-2. Doctor's OCR check turns PASS for real on this Mac (Q11, Q39); R1-19 OCR smoke test on an
   invented fixture PDF.
-- [ ] R3-3. Bench: an unreachable model server exits 2 (Q26); the bench line names the model (Q27).
-- [ ] R3-4. Key completeness (Q36): the 9001.001 key lists every real gap and conflict a careful reader
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): `casefile doctor` -> `doctor ocr PASS smoke=ok stamps=SMOKE7342 ocrmypdf=17.13.0
+    tesseract=5.5.3 ms=3474`; suite `ocr_real=PASS`, `pdfsmoke text_ok=1 image_pages=1 image_text_layer=0`; stage 1
+    `exit=0 verdicts=8 fails=set() test_jobs=1`.
+- [x] R3-3. Bench: an unreachable model server exits 2 (Q26); the bench line names the model (Q27).
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): host 127.0.0.1:9 -> `bench: cannot run: no reply from the model server at
+    http://127.0.0.1:9: <urlopen error [Errno 61] Connection refused>`, exit 2; candidate line `bench 9001.001
+    model=candidate ...`; suite `bench 9001.001 model=qwen3.8:27b found=29 of 29 ...`, `no_reply_exit=2`.
+- [x] R3-4. Key completeness (Q36): the 9001.001 key lists every real gap and conflict a careful reader
   would flag (critic H1 list); every exact bench number updated.
-- [ ] R3-5. Model client carried items: empty-body 3xx test case (verifier 3, S5); a non-200 HTTPError with
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): key `facts 29 flags 9` (G7, G8 gaps; G9 conflict MED0006,DEF0002, about read
+    against both pages); flawed exit 1 `bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2
+    flags=8 of 9 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`; ideal exit 0 `found=29 of 29 missed=0
+    invented=0 extra=2 flags=9 of 9 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`.
+- [x] R3-5. Model client carried items: empty-body 3xx test case (verifier 3, S5); a non-200 HTTPError with
   no body stream stores an answer row.
-- [ ] R3-6. Matter loader carried items: duplicate matter numbers refused; OR-5 F3 (`.DS_Store` and other
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): suite lines `no_stream_row=1`, `empty_302_row=1`, `no_stream_error raw='' received=True`,
+    `redirect_truncated received=True raw='partial'`, `redirect_stall received=True raw=''`, `incomplete_read_row=1`.
+- [x] R3-6. Matter loader carried items: duplicate matter numbers refused; OR-5 F3 (`.DS_Store` and other
   hidden files in `records/`), F4 (binder listed twice), F5 (validate names before reading), F6
   (whitespace-only page text).
-- [ ] R3-7. Hygiene carried from OR-5: trailing whitespace, unused imports in test files, prompt-framing
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): `.DS_Store` in `records/` and in `records/medical/` -> exit 0 perfect line; binder
+    listed twice -> `binders must be distinct` exit 2; `records/BadName` -> `unlisted binder folder BadName` exit 2;
+    whitespace-only 002.txt -> `last line is not a Bates stamp` exit 2; suite `duplicate_numbers_exit=2`,
+    `dotfiles_ignored=2`. Low: a duplicate number is found only after the first matter has run (see report).
+- [x] R3-7. Hygiene carried from OR-5: trailing whitespace, unused imports in test files, prompt-framing
   comments, F7, F8; verifier test gaps N2 to N5.
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): `unused_imports=0`; trailing-whitespace lines in src tests scripts `0`; F7 false
+    comments and F8 `split('/')` grep `0`; gate prints `0`. Re-seeded N2 `2 failed`, N3 `3 failed`, N4 `2 failed`,
+    N5 `5 failed`, each restored by cmp. Suite `358 passed in 72.67s`.
 - [~] R3-8. deferred: R2-CX-2 (prompt truncation detection) waits for stage 4 (OR-4, owner ratified).
   R1-20 (`bates-cites` sees only bracketed cites) waits for the stage that writes cited prose.
-- [ ] V. Fresh blind verification: every non-deferred R3 item `[x]` with the verifier's own evidence.
+- [x] V. Fresh blind verification: every non-deferred R3 item `[x]` with the verifier's own evidence.
+    Verifier (blind, round 3, 2026-10-27, tip b864faf): PASS. R3-1 to R3-7 `[x]`, R3-8 deferred. Report:
+    docs/loop/round-03/round03-verify.md.
 - Build notes (orchestrator, 2026-10-27, tip 2f864a5): W0 77c7f56; lane A fd73d4b, 523b283, 77a5a61, 9e19eb6;
   lane B df25349, fadd27a, 13b066a, 2668c48, merged c8bff68; chair tail 2f864a5 (one unused import). Merged:
   `335 passed in 66.93s`, gate `0`, `unused_imports=0`. Flawed exit 1 `bench 9001.001 model=candidate

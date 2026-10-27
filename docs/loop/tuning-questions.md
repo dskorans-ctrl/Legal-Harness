@@ -30,3 +30,13 @@ benchmark says, and what to watch for.
   with the per-chunk pipeline; score both on the same key before the switch and record the difference.
 - T-10 (round 2 brief, §1.4): `matter.STAMP_PATTERN = r"[A-Z]{1,8}[ -]?\d{4,}"` (single stamp, Q21)
   becomes a config key at stage 3; owner question 23 decides where stamps sit on the page.
+- T-11 (round 3 brief, supersedes T-6): suite budget 90 s; measured 63 to 87 s at the round 3 close (five real
+  OCR runs). Fix if exceeded: fewer real OCR runs (cache the fixture intake per session), never a skip.
+- T-12 (round 3 brief, §1.8): OCR page text passes at `difflib` ratio >= 0.95 on `quotes.normalize` text plus
+  exact `must_contain` spans (`tests/test_stage3_exit.py`); measured min_ratio 1.000 on the fixture.
+- T-13 (round 3 brief): ocrmypdf flags `--redo-ocr --output-type pdf -l eng` (`intake.OCR_FLAGS`); no `--deskew`,
+  `--clean` or `--rotate-pages` until a real binder shows the need (stage 9 benchmark).
+- T-14 (round 3 brief): `[ocr].timeout_s` 3600 per PDF; `intake.PAGE_TIMEOUT_S` 180 (`--tesseract-timeout`);
+  doctor smoke timeout 120 s.
+- T-15 (round 3 brief): fixture rendering 300 dpi, body 44 px, stamps 60 px, JPEG quality 90, fixed PDF dates
+  (`tests/fixtures/scanned/make_scanned.py`); `scanned.pdf` 895 KB.

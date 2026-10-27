@@ -49,7 +49,8 @@ UI mockup: https://claude.ai/artifact/TcvRDeJAfG3B5MnvEnoQnk
 ## §3 How a file moves
 
 1. A file arrives (web page or inbox folder).
-2. Intake: OCR where needed; every page gets an ID (matter, binder, page, Bates if stamped).
+2. Intake: OCR where needed; every page gets an ID (matter, binder, page) and the list of every Bates stamp
+   found on it; hearing prep asks which stamp to cite (owner Q35).
 3. Cards: pages are split into chunks well inside the context; the right card runs on each chunk.
 4. Gates (§4) on every answer.
 5. Merge into the append-only case file: a repeated fact adds a cite; added detail adds a version;
@@ -77,7 +78,7 @@ items. Never saved as empty.
 | Part | Built with |
 |---|---|
 | Job runner, one job at a time, Cancel stops model call and OCR together | Python, SQLite |
-| Intake and OCR | Docling (layout, tables), ocrmypdf and Tesseract |
+| Intake and OCR | ocrmypdf and Tesseract, page text by pypdf (stage 3, D27); Docling for layout and tables when a stage needs them, kept only if the benchmark says so |
 | Model client | Ollama native API (`/api/chat`, never the OpenAI-compatible route), Qwen3.8-27B, `num_ctx` 65536 in the Modelfile and on every call, low temperature, thinking mode per card, stable prompt order (rules and card first, page text last) |
 | Extraction | LangExtract with fuzzy matching off or marked unverified, kept only if it beats direct calls on the benchmark |
 | Gates | Python (§4) |
@@ -254,5 +255,6 @@ and read-only Outbox shares for the operations computer; D16 no local agent loop
 |---|---|
 | Stage 1 (round 1, merged 2026-10-26) | built and verified: `scripts/run.sh` and `scripts/run_capture.py` (D12), `src/casefile/` config (D13), pathguard (D24), rules and `playbook/rules.toml` (§4, Q16), playbook loader, append-only run log, model client (loopback, no proxy), doctor (D19, eight checks), privacy scan and gate; stand-in model server `tests/fakemodel/` (D18); 233 tests, gate prints 0; stage 1 exit test `exit=1 verdicts=8 fails={'ocr'} test_jobs=1` (OCR FAIL until stage 3, Q11) |
 | Stage 2 (round 2, merged 2026-10-27) | built and verified: quote normalisation (`quotes.py`), matter loader (`matter.py`), answer key (`benchkey.py`), candidate parser (`benchcandidate.py`), scorer (`benchscore.py`), stage 2 runner with fixed card `bench.extract` (`benchrun.py`, every received reply an answer row), `casefile bench` (`bench.py`, D25: exit 0 perfect, 1 imperfect, 2 cannot run, with detail lines); invented matter `tests/fixtures/matters/9001.001` (14 pages, three binders) with `key.json` (29 facts, 6 flags), `ideal.json` and `tests/fixtures/bench/flawed.json`; stand-in bench recording; prose gate covers fixtures (D26); code by gemma4:e4b-it-qat (Q28), the V2b-F1 fix by Sonnet (Q33); 270 tests, gate prints 0; stage 2 exit test `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`; flawed `found=26 of 29 ... flags=5 of 6 ...` exit 1, ideal `found=29 of 29 ... flags=6 of 6 ...` exit 0. Deferred: prompt truncation detection (R2-CX-2) to stage 4 |
+| Stage 3 (round 3, merged 2026-10-27) | built and verified: `casefile intake` (`intake.py`, D27), `stamps.py` (every stamp raw and normalised, none chosen, whole tokens only; Q35, Q40), doctor OCR on a generated image-only smoke page (D29), `pdfsmoke.py`, invented scanned binder `tests/fixtures/scanned/` (matter 9002.001, 6 pages); bench exit 2 on no reply and `model=` on the line (D28, D30); key 29 facts, 9 flags (Q36, Q41); 358 tests, gate prints 0; stage 3 exit test `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6 text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 1 exit test now `exit=0 verdicts=8 fails=set() test_jobs=1` |
 | Rest of §5 | not built |
 | Cards and schemas | written for the earlier two-model plan; updates listed in §7 |
