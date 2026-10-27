@@ -280,7 +280,8 @@ def test_toolchain_inside_checkout_refused(tmp_path, alias):
     result = subprocess.run([str(ROOT / "scripts/run.sh"), "true"], cwd=ROOT,
                             env=env, capture_output=True, timeout=30)
     assert (result.returncode, result.stdout) == (95, b"")
-    assert result.stderr == b"run.sh: toolchain must be outside the checkout; exit 95\n"
+    assert result.stderr.startswith(b"run.sh: toolchain ") and b" is inside the checkout " in result.stderr
+    assert result.stderr.endswith(b"; exit 95\n")
     assert not (ROOT / "invented-toolchain").exists()
 
 
@@ -294,7 +295,8 @@ def test_toolchain_symlink_case_swapped_subdirectory_refused(tmp_path, suffix):
     result = subprocess.run([str(ROOT / "scripts/run.sh"), "true"], cwd=ROOT,
                             env=env, capture_output=True, timeout=30)
     assert (result.returncode, result.stdout) == (95, b"")
-    assert result.stderr == b"run.sh: toolchain must be outside the checkout; exit 95\n"
+    assert result.stderr.startswith(b"run.sh: toolchain ") and b" is inside the checkout " in result.stderr
+    assert result.stderr.endswith(b"; exit 95\n")
     assert not (target / suffix / ROOT.name).exists()
 
 
@@ -315,7 +317,7 @@ def run_toolchain(toolchain, cwd=ROOT, env=None):
 def toolchain_refusal_ok(result, expected):
     if expected == "outside":
         return result.returncode == 0 and result.stdout == b""
-    prefix = (b"run.sh: toolchain must be outside the checkout; exit 95\n" if expected == "inside"
+    prefix = (b"run.sh: toolchain " if expected == "inside"
               else b"run.sh: cannot verify toolchain path")
     return (result.returncode, result.stdout) == (95, b"") and result.stderr.startswith(prefix)
 

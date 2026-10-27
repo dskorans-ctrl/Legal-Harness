@@ -2,8 +2,8 @@
 # CASEFILE_CONFIG or --config selects a different file. No per-key env overrides.
 [paths]
 matters = "~/Cases" # Required. No default. User home is expanded.
-state = "state" # Run log and caches, relative to this config file.
-playbook = "playbook" # Relative to this config file.
+state = "state" # Run log and caches. Relative: inside the checkout (not beside this file).
+playbook = "playbook" # Relative: inside the checkout (not beside this file).
 
 [model]
 host = "http://127.0.0.1:11434" # HTTP, numeric loopback only.

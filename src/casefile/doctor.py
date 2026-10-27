@@ -30,6 +30,7 @@ class State:
     log: object = None
     before: int = 0
     passed: dict = field(default_factory=dict)
+    root: dict = field(default_factory=dict)   # check name -> the check whose own failure caused it
 
 
 def check_config(state):
@@ -209,6 +210,7 @@ def run(config=None, *, out=None, opener=None, lsof_runner=None) -> int:
             blocked = next((dep for dep in dependencies if not state.passed[dep]), None)
             if blocked:
                 ok, reason = False, f"blocked by {blocked}"
+                state.root[name] = state.root.get(blocked, blocked)
             else:
                 try:
                     ok, reason = globals()[f"check_{name}"](state)
@@ -218,7 +220,10 @@ def run(config=None, *, out=None, opener=None, lsof_runner=None) -> int:
             failed += not ok
             reason = " ".join(str(reason).splitlines())
             if not ok:
-                reason += " | do: " + next_step(blocked or name, reason, state)
+                root = state.root.get(name)
+                hint = (f"fix the {root} line above" if root and root != blocked
+                        else next_step(blocked or name, reason, state))
+                reason += " | do: " + hint
             print(f"doctor {name} {'PASS' if ok else 'FAIL'} {reason}", file=out)
         print(f"doctor failed={failed} of 8", file=out)
         return 0 if failed == 0 else 1

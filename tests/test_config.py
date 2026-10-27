@@ -62,8 +62,8 @@ def test_paths_defaults_and_frozen_config(tmp_path, monkeypatch):
     path.write_text(f"[paths]\nmatters = {json.dumps(str(tmp_path / 'matters'))}\n")
     config = load(path)
     assert config.paths.matters == tmp_path / "matters"
-    assert config.paths.state == settings / "state"
-    assert config.paths.playbook == settings / "playbook"
+    assert config.paths.state == ROOT / "state"
+    assert config.paths.playbook == ROOT / "playbook"
     assert config.model.num_ctx == 65536
     assert config.model.name == "qwen3.8:27b"
     assert config.sources["paths.matters"] == "file"

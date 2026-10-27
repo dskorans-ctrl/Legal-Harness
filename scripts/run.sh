@@ -12,7 +12,11 @@ verdict="$("$PY" -I "$ROOT/src/casefile/pathguard.py" "$ROOT" "$TOOLCHAIN" "$TOO
 # The token is the last line; an interpreter may print a warning above it.
 case "${verdict##*$'\n'}" in
     "pathguard outside "*) ;;
-    "pathguard inside "*) echo "run.sh: toolchain must be outside the checkout; exit 95" >&2; exit 95 ;;
+    "pathguard inside "*)
+        hint=""
+        case "${CASEFILE_TOOLCHAIN:-}" in "~"*) hint=" (~ is not expanded inside quotes; use \$HOME)" ;; esac
+        echo "run.sh: toolchain $TOOLCHAIN is inside the checkout $ROOT; set CASEFILE_TOOLCHAIN to a folder outside it (e.g. ~/.casefile-dev)$hint; exit 95" >&2
+        exit 95 ;;
     *) echo "run.sh: cannot verify toolchain path: ${verdict:-no verdict}; exit 95" >&2; exit 95 ;;
 esac
 export UV_PYTHON_INSTALL_DIR="$TOOLCHAIN/python" UV_CACHE_DIR="$TOOLCHAIN/cache" UV_PROJECT_ENVIRONMENT="$TOOLCHAIN/venv"

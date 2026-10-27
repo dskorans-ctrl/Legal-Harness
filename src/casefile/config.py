@@ -128,6 +128,9 @@ def load(path: str | Path | None = None) -> Config:
     except Exception as exc:   # e.g. ValueError for a NUL in the user name
         raise ConfigError(f"cannot expand ~ in [paths].matters: {exc}") from exc
     if expanded.startswith("~"):
+        user = expanded.split("/", 1)[0]
+        if len(user) > 1:
+            raise ConfigError(f"unknown user in [paths].matters: {user}")
         raise ConfigError("cannot expand ~ in [paths].matters: no home directory")
     checkout = Path(__file__).resolve().parents[2]
     verdict, detail = classify(expanded, checkout)
@@ -139,6 +142,6 @@ def load(path: str | Path | None = None) -> Config:
         raise ConfigError(f"cannot verify [paths].matters is outside the checkout: {detail}")
     paths["matters"] = Path(detail)
     for key in ("state", "playbook"):
-        paths[key] = (source.parent / Path(paths[key]).expanduser()).resolve()
+        paths[key] = (checkout / Path(paths[key]).expanduser()).resolve()   # D14: state/ lives in the checkout
     return Config(Paths(**paths), Model(**model), OCR(**values["ocr"]), source,
                   MappingProxyType(sources))

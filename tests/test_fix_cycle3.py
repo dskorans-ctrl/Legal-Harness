@@ -185,7 +185,7 @@ def test_venv_link_masked_by_venv_bin(tmp_path):
                             timeout=30, env=dict(os.environ, CASEFILE_TOOLCHAIN=str(tmp_path / "tc"),
                                                  TMPDIR=str(tmp_path)))
     assert (result.returncode, result.stdout) == (95, b""), result
-    assert result.stderr.startswith(b"run.sh: toolchain must be outside the checkout")
+    assert result.stderr.startswith(b"run.sh: toolchain ")
     assert sorted(str(p) for p in fake.rglob("*")) == before
     # the module sees the same split: venv alone is inside, venv/bin alone is outside
     assert classify(str(toolchain / "venv"), fake)[0] == "inside"

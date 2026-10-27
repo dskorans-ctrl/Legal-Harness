@@ -12,6 +12,14 @@ import time
 GRACE_S = 2.0   # how long the output pipe may stay open after the child has exited
 
 
+class Interrupted(Exception):
+    """The wrapper was told to stop (hangup, terminate or interrupt)."""
+
+
+def on_signal(number, frame):
+    raise Interrupted(number)
+
+
 def capture_failed(reason):
     print(f"run.sh: capture stage failed: {reason}; exit 98", file=sys.stderr)
     return 98
@@ -24,6 +32,8 @@ def main():
     cap = int(cap)
     child = capture = None
     exit_at = None
+    for number in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+        signal.signal(number, on_signal)
     queue = select.kqueue()   # macOS: no descriptor-number limit, and an exit is told from a stop
     try:
         try:
@@ -97,7 +107,14 @@ def main():
                 return 97
         status = child.wait()
         return status if status >= 0 else 128 - status
+    except Interrupted as exc:
+        for number in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+            signal.signal(number, signal.SIG_IGN)   # a second signal must not skip the cleanup
+        print(f"run.sh: interrupted by {signal.Signals(exc.args[0]).name}; job stopped", file=sys.stderr)
+        return 128 + exc.args[0]
     finally:
+        for number in (signal.SIGHUP, signal.SIGTERM, signal.SIGINT):
+            signal.signal(number, signal.SIG_IGN)
         queue.close()
         if child is not None:
             if child.poll() is None:
