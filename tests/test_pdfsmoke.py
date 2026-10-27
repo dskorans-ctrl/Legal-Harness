@@ -1,7 +1,6 @@
 """The generated PDFs: a stdlib text page and Pillow image-only pages."""
 
 import io
-from pathlib import Path
 
 import pytest
 from pypdf import PdfReader
