@@ -43,7 +43,7 @@ def load(path, matter: Matter) -> Key:
     try:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise BenchKeyError(f"{path}: {exc}")
+        raise BenchKeyError(f"{path}: {exc}") from exc
 
     if not isinstance(data, dict) or set(data) != {"facts", "flags"}:
         raise BenchKeyError(f"{path}: expected object with keys facts and flags")

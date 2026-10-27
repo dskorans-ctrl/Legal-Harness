@@ -55,7 +55,7 @@ def load(root) -> Matter:
         with meta.open("rb") as stream:
             data = tomllib.load(stream)
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
-        raise MatterError(f"{meta}: {exc}")
+        raise MatterError(f"{meta}: {exc}") from exc
 
     # 4. Check keys.
     if set(data) != {"number", "binders"}:
@@ -76,7 +76,7 @@ def load(root) -> Matter:
     try:
         names = sorted(p.name for p in records.iterdir())
     except OSError as exc:
-        raise MatterError(f"{records}: {exc}")
+        raise MatterError(f"{records}: {exc}") from exc
 
     for name in names:
         if name not in binders:
@@ -96,7 +96,7 @@ def load(root) -> Matter:
         try:
             entries = sorted(p.name for p in folder.iterdir())
         except OSError as exc:
-            raise MatterError(f"{folder}: {exc}")
+            raise MatterError(f"{folder}: {exc}") from exc
 
         # Check file names
         for index, name in enumerate(entries, start=1):
@@ -110,7 +110,7 @@ def load(root) -> Matter:
             try:
                 text = path.read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError) as exc:
-                raise MatterError(f"{path}: {exc}")
+                raise MatterError(f"{path}: {exc}") from exc
 
             lines = text.rstrip().splitlines()
 
