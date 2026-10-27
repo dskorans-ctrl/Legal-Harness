@@ -363,3 +363,6 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   F1b = CX-7 (both builds); F2 `from exc`. Rulings OR-5.
 - [ ] R2-6. Fix cycle 1 (Gemma, Opus orchestrating): R2-CH-1, R2-CX-5, R2-CX-6, R2-CX-7, F2; each seed red
   before the fix, green after.
+  Note (fix cycle 1, 2026-10-27, not a tick: the verifier ticks): all five red then green; commits 9c82349
+  R2-CH-1, 0f2022d R2-CX-5, ba24d90 R2-CX-6, 408991c R2-CX-7, 365f1e0 F2; `260 passed`, gate `0`; Gemma 11
+  tasks, 14 calls, no fallback. Report: docs/loop/round-02/round02-fix1-report.md.

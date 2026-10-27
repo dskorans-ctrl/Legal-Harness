@@ -55,3 +55,25 @@ Model `gemma4:e4b-it-qat` through `scripts/gemma_task.py`. Tokens and seconds co
 - R14 probe (not a task): exit 3, nothing written, 93 s, prompt 309, answer 64.
 - Sonnet fallback tokens: 0 (no fallback ran).
 - Opus orchestration tokens are not in this table; the session's own usage is the chair's to read.
+
+## Fix cycle 1
+
+Same model and driver. Every call except FC1-1 ran through `scripts/run.sh python3 scripts/gemma_task.py`; FC1-1 ran with the system `python3` directly (as the build did). Refused attempts (exit 4, exit 6) are counted: their tokens were spent and nothing was written.
+
+| Task | Finding | File | Attempts | Re-split | Fallback | Seconds | Prompt tokens | Answer tokens | Outcome |
+|---|---|---|---|---|---|---|---|---|---|
+| FC1-1 | R2-CH-1 | tests/test_benchrun.py::test_benchrun_zero_counts | 1 | n | n | 37 | 1985 | 980 | pass |
+| FC1-2t | R2-CX-5 | tests/test_benchkey.py | 1 | n | n | 97 | 2226 | 2809 | pass |
+| FC1-2 | R2-CX-5 | src/casefile/benchkey.py | 1 | n | n | 150 | 2218 | 4411 | pass; one blank line with trailing spaces |
+| FC1-3t | R2-CX-6 | tests/test_benchrun.py::test_benchrun_unparsed_reply | 2 | n | n | 121 | 4974 | 3496 | a1 FILE answer on a function task, exit 4 (89 s, 2425/2564); pass a2 |
+| FC1-3a | R2-CX-6 | src/casefile/model.py::ModelClient._request | 2 | n | n | 115 | 3876 | 3377 | a1 method indented 4 spaces, splice exit 6 (55 s, 1882/1564); pass a2 |
+| FC1-3b | R2-CX-6 | src/casefile/benchrun.py::run | 1 | n | n | 55 | 1883 | 1575 | pass |
+| FC1-4t | R2-CX-7 | tests/test_matter.py | 1 | n | n | 92 | 2275 | 2652 | pass |
+| FC1-4 | R2-CX-7 | src/casefile/matter.py::load | 1 | n | n | 38 | 1784 | 1058 | pass |
+| FC1-5t | F2 | tests/test_exc_chain.py | 1 | n | n | 27 | 1086 | 779 | pass; identical to the task text |
+| FC1-5a | F2 | src/casefile/matter.py::load | 2 | n | n | 145 | 3701 | 4261 | a1 FILE answer on a function task, exit 4 (79 s, 1778/2313); pass a2 |
+| FC1-5b | F2 | src/casefile/benchkey.py::load | 1 | n | n | 49 | 1936 | 1359 | pass |
+
+### Fix cycle 1 totals
+- Tasks: 11. First-try passes: 8. Retries: 3 (two exit 4, one exit 6; the new driver guard CX-4 caught both FILE answers, nothing written). Re-splits: 0. Sonnet fallbacks: 0.
+- Driver calls: 14. Gemma tokens: prompt 27944, answer 26757; model time 926 s (15 min).
