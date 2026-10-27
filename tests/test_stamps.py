@@ -34,7 +34,16 @@ def case_first_raw():
     return [(s.raw, s.stamp) for s in found] == [("MED 0001", "MED0001")]
 
 
-CASES = [case_main, case_whole_tokens, case_nothing, case_normalize, case_first_raw]
+def case_token_end():
+    # A match must end at a token boundary: a truncated prefix is never recorded (CX-7).
+    refused = ("MED0001A and MED0001B", "MED0001a", "MED00012A", "KMR2344x", "MED 0001B")
+    kept = {"MED 0001": ["MED0001"], "MED-0001, next": ["MED0001"], "see KMR2344.": ["KMR2344"],
+            "end MED0001": ["MED0001"], "(TWP7731)": ["TWP7731"], "KMR2344\nTWP7731": ["KMR2344", "TWP7731"]}
+    return (all(stamps(text) == [] for text in refused)
+            and all(stamps(text) == want for text, want in kept.items()))
+
+
+CASES = [case_main, case_whole_tokens, case_nothing, case_normalize, case_first_raw, case_token_end]
 
 
 def test_stamps(capsys):

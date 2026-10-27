@@ -34,6 +34,8 @@ case "$(cat "$D/mode")" in
   fail) echo "boom from the stub" >&2; exit 7;;
   hang) sleep 60 >/dev/null 2>&1 & echo $! > "$D/grandchild.pid"; wait;;
   nooutput) exit 0;;
+  leak0|leak7) sleep 60 >/dev/null 2>&1 & echo $! > "$D/grandchild.pid"
+     cp "$IN" "$OUT"; cp "$D/sidecar.fixture" "$SIDE"; [ "$(cat "$D/mode")" = leak7 ] && exit 7; exit 0;;
   *) if [ -f "$D/output.fixture" ]; then cp "$D/output.fixture" "$OUT"; else cp "$IN" "$OUT"; fi
      cp "$D/sidecar.fixture" "$SIDE";;
 esac
@@ -307,6 +309,98 @@ def test_signal_kills_group_and_removes_work(tmp_path, signum):
     proc.communicate(timeout=30)
     assert proc.returncode == 128 + signum
     assert wait_dead(int(pidfile.read_text())), "the OCR process group survived"
+    assert env.leftovers() == [], "client bytes were left in the matter folder"
+
+
+@pytest.mark.parametrize("kind", ["records", "pages"])
+@pytest.mark.parametrize("target", ["other matter", "checkout", "dangling"])
+def test_parent_folder_alias_is_refused_and_nothing_is_written(tmp_path, kind, target):
+    env = Env(tmp_path, sidecar="", pages=1)
+    cleanup = []
+    if target == "other matter":
+        real = env.config.paths.matters / "9002.002" / kind
+        real.mkdir(parents=True)
+    elif target == "checkout":
+        real = Path(tempfile.mkdtemp(dir=ROOT, prefix=".intake-test-"))
+        cleanup.append(real)
+    else:
+        real = env.base / "no-such-folder"
+    try:
+        (env.matter / kind).symlink_to(real, target_is_directory=True)
+        code, _, err = env.run()
+        written = sorted(p.name for p in real.rglob("*")) if real.exists() else []
+        assert (code, written) == (2, []), (code, written, err)
+        assert "records or pages folder" in err, err
+        assert not (real / "scan.tmp").exists() and not (real / "scan").exists()
+    finally:
+        for folder in cleanup:
+            shutil.rmtree(folder, ignore_errors=True)
+
+
+@pytest.mark.parametrize("theirs", ["records", "pages"])
+def test_failed_mkdir_does_not_remove_another_invocations_workspace(tmp_path, monkeypatch, theirs):
+    env = Env(tmp_path, sidecar="", pages=1)
+    original = intake._check_destination
+
+    def racing(config, number, binder):
+        matter_dir = original(config, number, binder)
+        other = matter_dir / theirs / f"{binder}.tmp"
+        other.mkdir(parents=True)
+        (other / "client.txt").write_text("invented bytes of the first invocation")
+        return matter_dir
+
+    monkeypatch.setattr(intake, "_check_destination", racing)
+    code, _, err = env.run()
+    assert code == 2 and "cannot write" in err, (code, err)
+    assert (env.matter / theirs / "scan.tmp" / "client.txt").read_text() == "invented bytes of the first invocation"
+    mine = "pages" if theirs == "records" else "records"
+    assert not (env.matter / mine / "scan.tmp").exists(), "this invocation left its own folder behind"
+
+
+def test_interrupt_between_the_two_renames_rolls_back(tmp_path, monkeypatch):
+    env = Env(tmp_path, sidecar="", pages=1)
+    real_rename, calls = os.rename, []
+
+    def interrupting(src, dst):
+        calls.append(dst)
+        if len(calls) == 2:
+            raise KeyboardInterrupt
+        return real_rename(src, dst)
+
+    monkeypatch.setattr(intake.os, "rename", interrupting)
+    with pytest.raises(KeyboardInterrupt):
+        env.run()
+    assert len(calls) >= 2 and env.leftovers() == [], env.leftovers()
+    monkeypatch.undo()
+    assert env.run()[0] == 0, "re-intake is refused after the interrupt"
+    assert env.leftovers() == ["scan", "scan"]
+
+
+@pytest.mark.parametrize("mode", ["leak0", "leak7"])
+def test_ocr_group_is_killed_after_a_normal_return(tmp_path, mode):
+    env = Env(tmp_path, sidecar="", pages=1, mode=mode)
+    code, _, err = env.run()
+    assert code == (0 if mode == "leak0" else 2), (code, err)
+    pid = int((env.stubs / "grandchild.pid").read_text())
+    assert wait_dead(pid), "a detached child of ocrmypdf outlived intake"
+
+
+@pytest.mark.parametrize("phase", ["page_texts", "write_json"])
+def test_term_after_ocr_removes_both_tmp_folders(tmp_path, phase):
+    env = Env(tmp_path, sidecar="", pages=1)
+    code = ("import os, signal, sys, time\nfrom casefile import cli, intake\n"
+            "phase = %r\ncalls = []\n"
+            "def hit():\n    os.kill(os.getpid(), signal.SIGTERM)\n    time.sleep(10)\n"
+            "orig_texts, orig_write = intake.page_texts, intake._write_json\n"
+            "def texts(path):\n    calls.append(1)\n"
+            "    if phase == 'page_texts' and len(calls) == 2: hit()\n    return orig_texts(path)\n"
+            "def write(path, data):\n    if phase == 'write_json': hit()\n    return orig_write(path, data)\n"
+            "intake.page_texts, intake._write_json = texts, write\n"
+            "sys.argv = ['casefile', 'intake', '--matter', '9002.001', '--binder', 'scan', %r]\n"
+            "raise SystemExit(cli.main())\n") % (phase, str(env.pdf))
+    proc = subprocess.run([sys.executable, "-c", code], cwd=ROOT, capture_output=True, timeout=60,
+                          env=dict(os.environ, CASEFILE_CONFIG=str(env.config_path)))
+    assert proc.returncode == 128 + signal.SIGTERM, (proc.returncode, proc.stderr[-300:])
     assert env.leftovers() == [], "client bytes were left in the matter folder"
 
 

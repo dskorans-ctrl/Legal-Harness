@@ -243,7 +243,7 @@ def test_ocr_unit_cases(tmp_path, capsys, monkeypatch):
         if name != "tool missing":
             line = ocr_line(output)
             assert ("PASS" in line) is want_ok and text in line, (name, line)
-            assert code == (0 if want_ok else 1) or not want_ok, output
+            assert code == (0 if want_ok else 1), (name, code, output)
         good += 1
     with capsys.disabled():
         print(f"ocr_unit={good} of 6")

@@ -7,6 +7,7 @@ record is built, then two folders are renamed into place.
 """
 
 from dataclasses import asdict, dataclass
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -108,6 +109,9 @@ def popen_runner(command, env, timeout_s):
             raise
         return proc.returncode, err.decode("utf-8", errors="replace")
     finally:
+        # A normal return does not end the group: a child with redirected streams may outlive its
+        # parent (CX-5). The pid is the group id and was only just reaped, so this is safe to send.
+        _kill_group(proc)
         for number, handler in previous.items():
             signal.signal(number, handler)
 
@@ -150,11 +154,30 @@ def _write_json(path: Path, data) -> None:
     path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
+@contextmanager
+def _exit_on_signals():
+    """INT, TERM and HUP become SystemExit(128+n) for the whole intake, so cleanup always runs (CX-6)."""
+    def stop(number, frame):
+        raise SystemExit(128 + number)
+
+    try:
+        previous = {n: signal.signal(n, stop) for n in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)}
+    except ValueError:                       # not the main thread: the caller owns signals
+        yield
+        return
+    try:
+        yield
+    finally:
+        for number, handler in previous.items():
+            signal.signal(number, handler)
+
+
 def _publish(tmp_records, tmp_pages, records, pages):
     os.rename(tmp_records, records)
     try:
         os.rename(tmp_pages, pages)
-    except OSError:
+    except BaseException:
+        # Any exit between the two renames (an interrupt included) puts records back (CX-3).
         os.rename(records, tmp_records)
         raise
 
@@ -170,6 +193,13 @@ def _check_destination(config, number, binder):
         raise IntakeError("matter folder resolves outside the matters root")
     matter_dir = matter_dir.resolve()
     for kind in ("records", "pages"):
+        parent = matter_dir / kind
+        # The parent must be this matter's own plain folder: a link would carry the write into
+        # another matter or the checkout, and a dangling one would be written through (CX-1).
+        if os.path.lexists(parent) and (parent.is_symlink() or not parent.is_dir()
+                                        or parent.resolve() != parent):
+            raise IntakeError(f"{parent} is not a plain folder inside the matter; "
+                              "the records or pages folder must not be a link")
         for name in (binder, binder + ".tmp"):
             target = matter_dir / kind / name
             if os.path.lexists(target):
@@ -186,6 +216,11 @@ def intake(config, number, binder, file, *, out, err, runner=None) -> int:
 
 
 def _intake(config, number, binder, file, out, runner) -> int:
+    with _exit_on_signals():
+        return _intake_body(config, number, binder, file, out, runner)
+
+
+def _intake_body(config, number, binder, file, out, runner) -> int:
     if not re.fullmatch(NUMBER_PATTERN, number):
         raise IntakeError(f"matter number must look like 9002.001, got {number!r}")
     if not re.fullmatch(BINDER_PATTERN, binder):
@@ -204,10 +239,12 @@ def _intake(config, number, binder, file, out, runner) -> int:
                               matter_dir / "pages" / f"{binder}.tmp")
     final_records, final_pages = matter_dir / "records" / binder, matter_dir / "pages" / binder
     published = False
+    created = []          # only the folders this invocation made; another one's are never removed (CX-2)
     try:
         for folder in (tmp_records, tmp_pages):
             folder.parent.mkdir(exist_ok=True)
             folder.mkdir()
+            created.append(folder)
         work = tmp_records / "work"
         work.mkdir()
         (tmp_records / "source.pdf").write_bytes(data)
@@ -262,8 +299,8 @@ def _intake(config, number, binder, file, out, runner) -> int:
         raise IntakeError(f"cannot write: {exc}") from exc
     finally:
         if not published:
-            shutil.rmtree(tmp_records, ignore_errors=True)
-            shutil.rmtree(tmp_pages, ignore_errors=True)
+            for folder in created:
+                shutil.rmtree(folder, ignore_errors=True)
     print(f"intake {number} {binder} pages={count} ok={counts['ok']} empty={counts['empty']} "
           f"failed={counts['failed']} stamps={sum(len(r.stamps) for r in records)} "
           f"had_text={sum(r.had_text_layer for r in records)} "

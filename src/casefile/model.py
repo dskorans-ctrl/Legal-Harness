@@ -18,7 +18,13 @@ class ModelError(RuntimeError):
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        reply = b"" if fp is None else fp.read()
+        # The status line arrived, so a body that fails to read still counts as a received reply.
+        try:
+            reply = b"" if fp is None else fp.read()
+        except http.client.IncompleteRead as short:
+            reply = short.partial
+        except (OSError, http.client.HTTPException):
+            reply = b""
         raise ModelError(f"redirect refused: {code} to {newurl}", reply.decode("utf-8", errors="replace"),
                          received=True)
 

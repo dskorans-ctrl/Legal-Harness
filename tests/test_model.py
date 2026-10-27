@@ -4,6 +4,7 @@ from http.client import BadStatusLine, IncompleteRead, RemoteDisconnected
 from io import BytesIO
 import json
 import socket
+import time
 from threading import Thread
 from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler
@@ -189,3 +190,54 @@ def test_redirect_with_an_empty_body_is_received_and_stored(tmp_path):
     response.read = lambda *a: b""
     err = caught(tmp_path, Transport(response))
     assert (err.raw, err.received) == ("", True)
+
+
+def redirect_server(mode):
+    """A loopback server that sends 302 headers, then a short body (truncated) or nothing (stall)."""
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+    release = []
+
+    def serve_one():
+        conn, _ = listener.accept()
+        seen = b""
+        while b"\r\n\r\n" not in seen:
+            seen += conn.recv(65536)
+        length = int(seen.lower().split(b"content-length:")[1].split(b"\r\n")[0])
+        while len(seen.split(b"\r\n\r\n", 1)[1]) < length:    # unread request bytes would reset the socket
+            seen += conn.recv(65536)
+        head = b"HTTP/1.1 302 Found\r\nLocation: http://127.0.0.1:1/\r\nContent-Length: 50\r\n\r\n"
+        conn.sendall(head + (b"partial" if mode == "truncated" else b""))
+        if mode == "truncated":
+            conn.close()
+        else:
+            deadline = 5
+            while deadline and not release:
+                deadline -= 0.1
+                time.sleep(0.1)
+            conn.close()
+
+    thread = Thread(target=serve_one, daemon=True)
+    thread.start()
+    return listener, thread, release
+
+
+@pytest.mark.socket
+@pytest.mark.parametrize("mode,raw", [("truncated", "partial"), ("stall", "")])
+def test_redirect_body_failure_is_received(tmp_path, capsys, mode, raw):
+    listener, thread, release = redirect_server(mode)
+    try:
+        config = load(write_config(tmp_path, host=f"http://127.0.0.1:{listener.getsockname()[1]}",
+                                   timeout_s=1)).model
+        with pytest.raises(ModelError) as info:
+            ModelClient(config).chat(MESSAGES)
+    finally:
+        release.append(1)
+        thread.join(timeout=10)
+        listener.close()
+    err = info.value
+    with capsys.disabled():
+        print(f"redirect_{mode} received={err.received} raw={err.raw!r}")
+    assert "redirect refused" in str(err)
+    assert (err.received, err.raw) == (True, raw)
