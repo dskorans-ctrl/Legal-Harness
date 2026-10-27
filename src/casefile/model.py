@@ -57,12 +57,13 @@ class ModelClient:
             raise ModelError(str(exc)) from exc
         if status != 200:
             raise ModelError(f"status={status}: {payload[:200]!r}")
+        text = payload.decode("utf-8", errors="replace")
         try:
             result = json.loads(payload)
         except (ValueError, UnicodeError) as exc:
-            raise ModelError(f"status={status} non-JSON: {payload[:200]!r}") from exc
+            raise ModelError(f"status={status} non-JSON: {payload[:200]!r}", text) from exc
         if not isinstance(result, dict):
-            raise ModelError(f"status={status} expected JSON object: {payload[:200]!r}")
+            raise ModelError(f"status={status} expected JSON object: {payload[:200]!r}", text)
         return result
 
     def chat(self, messages, *, options=None):

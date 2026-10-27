@@ -67,7 +67,8 @@ def run(matter: Matter, config, log, playbook_version: str, opener=None) -> RunR
         answer = client.chat(msgs, options={"num_ctx": config.model.num_ctx})
     except ModelError as exc:
         if exc.raw is not None:
-            log.record_answer(run_id, raw_answer=json.dumps(exc.raw), status="failed")
+            raw_answer = exc.raw if isinstance(exc.raw, str) else json.dumps(exc.raw)
+            log.record_answer(run_id, raw_answer=raw_answer, status="failed")
         log.record_failure(run_id, "bench.model", str(exc))
         return RunResult(EMPTY, n, f"bench.model: {exc}")
 

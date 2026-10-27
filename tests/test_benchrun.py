@@ -139,3 +139,34 @@ def test_benchrun_zero_counts(tmp_path):
         assert gates == ["bench.counts", "bench.counts"]
     finally:
         log.close()
+
+
+def test_benchrun_unparsed_reply(tmp_path):
+    """A 200 reply that is not a JSON object is still stored as a failed answer row (D25)."""
+    from io import BytesIO
+
+    class OneReply:
+        def __init__(self, body):
+            self.body = body
+
+        def open(self, request, timeout=None):
+            response = BytesIO(self.body)
+            response.getcode = lambda: 200
+            return response
+
+    config = config_mod.load(write_config(tmp_path))
+    log = runlog.open_db(tmp_path / "runlog.sqlite")
+    matter = matters.load(MATTER)
+    try:
+        for text in ("invented reply that is not JSON", '["invented", "array"]'):
+            r = benchrun.run(matter, config, log, "pb-test", OneReply(text.encode("utf-8")))
+            assert r.failure is not None and r.failure.startswith("bench.model"), r.failure
+            assert r.pages_failed == 14
+            row = log.connection.execute(
+                "SELECT status, raw_answer FROM answers ORDER BY id DESC LIMIT 1").fetchone()
+            assert row is not None, text
+            assert (row[0], row[1]) == ("failed", text)
+        count = log.connection.execute("SELECT COUNT(*) FROM answers").fetchone()[0]
+        assert count == 2
+    finally:
+        log.close()
