@@ -376,3 +376,8 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   questions 24 to 29.
 - [ ] R2-7. Fix cycle 2 (Gemma): key G6, F27 to F29, ideal and flawed updated, exact numbers updated; bench
   prints missed, invented, flag and rule detail (critic M1).
+  Note (fix cycle 2, 2026-10-27, not a tick: the verifier ticks): items 1 to 4 red then green at 6c1968c
+  (perfect `found=29 of 29 ... flags=6 of 6 ... rules=0`, exit 0; flawed `found=26 of 29 missed=3 invented=2
+  extra=2 flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`, exit 1); M1 detail lines
+  at d007821 (`  missed: F04 F15 F24` ... `  rules: no-dme-ime DEF0003`); `263 passed`, gate `0`; Gemma 11
+  tasks, 11 calls, all first try, no fallback. Report: docs/loop/round-02/round02-fix2-report.md.

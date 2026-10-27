@@ -77,3 +77,26 @@ Same model and driver. Every call except FC1-1 ran through `scripts/run.sh pytho
 ### Fix cycle 1 totals
 - Tasks: 11. First-try passes: 8. Retries: 3 (two exit 4, one exit 6; the new driver guard CX-4 caught both FILE answers, nothing written). Re-splits: 0. Sonnet fallbacks: 0.
 - Driver calls: 14. Gemma tokens: prompt 27944, answer 26757; model time 926 s (15 min).
+
+## Fix cycle 2
+
+Same model and driver, every call through `scripts/run.sh python3 scripts/gemma_task.py` with a 600 s
+foreground timeout (OR-7: key G6 and F27 to F29, ideal and flawed, pinned numbers, critic M1 detail lines).
+
+| Task | Item | File | Attempts | Re-split | Fallback | Seconds | Prompt tokens | Answer tokens | Outcome |
+|---|---|---|---|---|---|---|---|---|---|
+| FC2-1t | 1 | tests/test_fixture_matter.py | 1 | n | n | 56 | 1151 | 1660 | pass |
+| FC2-1 | 1 | tests/fixtures/matters/9001.001/key.json | 1 | n | n | 126 | 3268 | 3577 | pass; diff is the four added objects only |
+| FC2-2t | 4 | tests/test_benchscore.py | 1 | n | n | 84 | 2468 | 2407 | pass |
+| FC2-3t | 4 | tests/test_bench_cli.py | 1 | n | n | 62 | 1990 | 1767 | pass |
+| FC2-4t | 4 | tests/test_stage2_exit.py | 1 | n | n | 58 | 1752 | 1645 | pass |
+| FC2-2 | 2 | tests/fixtures/matters/9001.001/ideal.json | 1 | n | n | 142 | 3132 | 4033 | pass; first 29 facts equal the key's, flags equal |
+| FC2-3 | 3 | tests/fixtures/bench/flawed.json | 1 | n | n | 118 | 2914 | 3344 | pass; diff against ideal is the same eight hunks |
+| FC2-5t | 4 | tests/test_benchrun.py::test_benchrun_modes | 1 | n | n | 82 | 2451 | 2347 | pass; 28 -> 31 replayed facts (found by the full suite) |
+| FC2-6t | 5 | tests/test_bench_detail.py | 1 | n | n | 48 | 1849 | 1338 | pass; identical to the task text |
+| FC2-6a | 5 | src/casefile/benchscore.py | 1 | n | n | 147 | 2460 | 4258 | pass; flags_extra counted from the new list (same value), one unused local, one whitespace-only line |
+| FC2-6b | 5 | src/casefile/bench.py::main | 1 | n | n | 50 | 1566 | 1439 | pass |
+
+### Fix cycle 2 totals
+- Tasks: 11. First-try passes: 11. Retries: 0. Re-splits: 0. Sonnet fallbacks: 0.
+- Driver calls: 11. Gemma tokens: prompt 25001, answer 27815; model time 973 s (16 min).
