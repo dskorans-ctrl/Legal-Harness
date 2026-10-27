@@ -4,7 +4,8 @@ from pathlib import Path
 
 
 PATTERNS = ("*.md", "docs/**/*.md", ".workflow/LEDGER.md", "playbook/**/*.toml",
-            "src/**/*.py", "tests/**/*.py", "scripts/*", "config.example.toml", "pyproject.toml")
+            "src/**/*.py", "tests/**/*.py", "tests/fixtures/**/*.txt", "tests/fixtures/**/*.json",
+            "tests/fixtures/**/*.toml", "scripts/*", "config.example.toml", "pyproject.toml")
 
 
 def files(root):
