@@ -90,6 +90,14 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Q27: tiers for the re-brief (owner, 2026-10-26, supersedes Q22's coding tier)? -> Opus 5.5 orchestrates
   (the chair); Sonnet 5.5 writes all code, builds and fixes; Codex gpt-6.1-sol keeps the plan review and
   code review. Fable brief, Opus output critic and blind verifier unchanged.
+- Q28: tiers for round 2 (owner, 2026-10-26, supersedes Q27's coding tier)? -> the local model
+  `gemma4:e4b-it-qat` (Ollama on this Mac, localhost:11434) writes all code and fixes, driven by the Opus
+  orchestrator with small, fully specified tasks; Opus adapts its builder instructions to that model.
+  Codex gpt-6.1-sol keeps plan and code review. Fallback: a task Gemma fails after 3 attempts with test
+  feedback plus one re-split goes to Sonnet 5.5, logged as a deviation. An extra Fable agent reviews the
+  round's code for quality and errors against what Sonnet 5.5 would produce, placed after 8a Codex and
+  before 8b; its reproduced findings join fix cycle 1. Fable brief, Opus critic and verifier unchanged.
+  Additional instructions: none.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -278,3 +286,23 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.
   Verifier 3 (blind, focused per Q23, 2026-10-26, tip 6db09cb): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify3.md`.
   Verifier 4 (blind, re-brief, 2026-10-26, tip 4db60e2): every non-deferred item R1-2 to R1-23 is `[x]` with this verifier's evidence (R1-1, R1-12, R1-19, R1-20, R1-21 deferred). `docs/loop/round-01/round01r-verify.md`.
+
+## Round 2: stage 2 benchmark and invented test matter (opened 2026-10-26 on `loop/round-02` at b167fbd)
+Tiers: Q28 (Gemma 4 e4b codes, Opus orchestrates, Codex reviews, extra Fable code review, Sonnet fallback).
+Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter against its answer key.
+- [ ] R2-1. VF-1: a test that the newline join at pathguard.py:55 is load-bearing (seed: drop the join
+  -> red).
+- [ ] R2-2. VF-2: config.py:67 and :145 refusals raise ConfigError (exit 2), never a traceback.
+- R2-3. Stage 2 work items (brief `docs/loop/round-02/round02-build-brief.md`, ruled by the chair 2026-10-26:
+  all §1 decisions 1 to 18 accepted; D25 and D26 in spec §9, pending veto):
+- [ ] R2-3a. W3 quote normalisation and matter loader (11 refusals) and W4 invented matter 9001.001 (14 pages).
+- [ ] R2-3b. W5 answer key loader and `key.json` (26 facts, 5 flags), validated against the pages.
+- [ ] R2-3c. W6 candidate parser and scorer; `flawed.json` scores exactly `found=23 of 26 missed=3
+  invented=2 extra=2 flags=4 of 5 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`.
+- [ ] R2-3e. W7 `ModelError.raw` and the stage 2 runner (counts gate, every received reply an answer row).
+- [ ] R2-3d. W8 stand-in bench recording and runner tests (`benchrun_modes=7 of 7`).
+- [ ] R2-3f. W9 `casefile bench` CLI (exit 0 perfect, 1 imperfect, 2 cannot run).
+- [ ] R2-3g. W10 stage 2 exit test (`stage2 exit=0 ... server_stopped=1`) and W11 prose gate on fixtures.
+- [ ] R2-4. Regression baselines set in `## Project` from measured numbers.
+- [ ] R2-5. Close: report, Librarian, agent log, spec §11 as-built, handoff, next-round prompt.
+- [ ] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.

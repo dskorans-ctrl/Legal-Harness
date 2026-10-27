@@ -20,3 +20,13 @@ benchmark says, and what to watch for.
   Dr. Lane released him"). Measure false hits on the benchmark memos before widening or narrowing.
 - T-6 (round 1 re-brief, R5): full suite rose from 12.9 s to 32 s (pathguard rows run /usr/bin/python3
   per row, about 8 s; three 2 s grace waits). Revisit if the suite passes 60 s.
+- T-7 (round 2 brief, §1.2): the benchmark's quote match is exact after normalisation (casefold,
+  straight quotes, collapsed whitespace), `src/casefile/quotes.py`. The spec §4 ladder (OCR faults,
+  line-break hyphens, running headers) replaces `quotes.found_in` at stage 4; measure missed counts on
+  the real model's answers before loosening.
+- T-8 (round 2 brief, §1.7): `casefile bench` exits 0 only on a perfect score. Whether the real model
+  gets a pass mark below perfect is decided by the stage 9 benchmark, never by a flag.
+- T-9 (round 2 brief, §1.3): the stage 2 runner makes one model call per matter. Stage 5 replaces it
+  with the per-chunk pipeline; score both on the same key before the switch and record the difference.
+- T-10 (round 2 brief, §1.4): `matter.STAMP_PATTERN = r"[A-Z]{1,8}[ -]?\d{4,}"` (single stamp, Q21)
+  becomes a config key at stage 3; owner question 23 decides where stamps sit on the page.

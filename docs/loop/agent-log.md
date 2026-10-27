@@ -50,3 +50,10 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 26 | Re-brief fix cycle 2: F1 to F6 | sonnet | 5.8 min | 80 k | done; 233 passed, gate 0; committed 9f86d07 |
 | 27 | Re-brief blind verifier | opus | 15.2 min | 146 k | PASS; V1 ticked; 52 alias probes, every D12 exit; 8 seeds, 7 red |
 | | **Round 1 re-brief total** | | **~2.5 h wall-clock** | **~932 k Fable + Opus + Sonnet, plus Codex** | 9 runs: brief, plan review, revision, build, 8a, 2 fix cycles, 8b, 8c; PASS |
+
+## Round 2, 2026-10-26 (opened ~21:35; tiers Q28: gemma4:e4b-it-qat codes, Opus orchestrates, Codex reviews, extra Fable code review, Sonnet fallback)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 1 | Round 2 build brief | fable | 25.9 min | 256 k | done; 962 lines, 31 Gemma tasks, owner questions 21 to 23 |
+| 2 | Plan review of the brief | codex gpt-6.1-sol (read-only, high) | ~12 min | n/a | 16 findings (10 high); finding 2 on the chair's driver fixed and proven by the chair |

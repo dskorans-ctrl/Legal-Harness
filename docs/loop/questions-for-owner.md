@@ -62,3 +62,19 @@ Held questions, numbered, with any interim ruling made while the owner was away 
     output would briefly live there. Should the wrapper refuse such a TMPDIR (a new limit, D12), or is
     "TMPDIR is never inside the checkout" a setup-guide rule? Interim: no new limit; the setup guide says
     it; the test suite's TMPDIR is outside (sandbox).
+
+## Held 2026-10-26 (round 2 brief; interim rulings by the chair, pending veto)
+21. What must the medical chronology, and so a benchmark answer key, contain at minimum per encounter:
+    date of service, provider and facility, mechanism of injury as stated, pain scores, prior history,
+    exam findings, imaging results, diagnosis, treatment and plan, restrictions and work status,
+    causation and MMI statements, referrals and records referenced? The stage 2 key holds 26 facts and 5
+    flags of these kinds for the invented matter 9001.001 (brief §2 W4). Which categories are missing or
+    unnecessary for your practice? Interim: the 26 as listed.
+22. On the Studio, where do the benchmark matters and their `key.json` live: beside the closed matters
+    under `[paths].matters` (one `key.json` per matter folder), or in a separate folder outside the
+    checkout passed with `casefile bench --matters`? Interim: a separate folder outside the checkout,
+    same layout as `tests/fixtures/matters/`.
+23. In the firm's scanned records, is the Bates stamp always one stamp per page at the bottom (the
+    stage 2 fixture puts it alone on the last line), or do stamps appear top right, with a producing
+    party prefix, or more than one per page? Interim: one stamp per page, last line; stage 3 reads the
+    stamp from the page text with the configurable pattern (Q21).
