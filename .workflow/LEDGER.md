@@ -164,6 +164,10 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   stamp rule and G9 RATIFIED. Additional instructions: none.
 - Q43: question 7, Ollama on the Studio (owner, 2026-10-27, round 4 check-in; closes Q19)? -> the login-user app
   (Ollama.app). The doctor's listener check stays `lsof` as the login user; a listener it cannot see is FAIL, never skip.
+- Q44: round 4 brief questions 42 to 46 (owner, 2026-10-27)? -> 42 a page that fails both attempts stays open until the
+  model reads it; no manual read. 43 firm rules check our words only; a verbatim record quote is exempt. 44 only a stamp
+  alone on a line and "Page N of M" lines are ignored by the quote ladder. 45 an OCR-rung match counts as verified; the
+  rung is in the run log only. 46 punctuation repairs are in the run log only. Additional instructions: none; proceed.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 

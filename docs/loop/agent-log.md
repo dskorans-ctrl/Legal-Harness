@@ -90,3 +90,11 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 11 | 8c blind verifier | opus | 22.4 min | 141 k | PASS; R3-1 to R3-7 and V. ticked; 6 fresh seeds, 3 red, 3 green test gaps (S1, S2, S5; code right); N2 to N5 red |
 | 12 | Librarian close | sonnet | 2.7 min | 86 k | done; 14 entries, 7 pre-flight bullets; R1-19, OR-5 lows, N2 to N5 closed |
 | | **Round 3 total** | | **~6 h wall-clock incl. owner check-in and Homebrew install** | **Fable 664 k; Sonnet 779 k (W0 60 k, lanes 432 k, fixes 201 k, Librarian 86 k); Opus 258 k (critic 117 k, verifier 141 k), chair not counted; plus two Codex runs** | 12 runs; PASS after two fix cycles; merged |
+
+## Round 4 (stage 4 model client and gates, opened 2026-10-27 on `loop/round-04`; session 1 stopped by the owner)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 1 | Build brief | fable | 37.0 min | 322 k | done; 628 lines, 12 decisions, D31 to D37 pending, owner questions 42 to 46 (answered, Q44) |
+| 2 | Adversarial plan review | codex gpt-6.1-sol (read-only, high) | under 1 min | n/a | stopped by the owner before it reported; rerun in session 2 |
+| | **Round 4 session 1 total** | | **~45 min** | **Fable 322 k; chair not counted** | brief written, check-in done; session ended at the owner's request |

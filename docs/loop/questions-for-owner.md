@@ -215,3 +215,24 @@ rulings.
 
 ANSWERED 2026-10-27 at the round 3 close (ledger Q42): 38 no suffixes, rule stands; 39 no position; 40 first
 spelling enough; 41 lowercase accepted. D27 to D30, the whole-token rule and G9 ratified.
+
+## Held 2026-10-27 (round 4 brief)
+
+42. When a chunk of pages fails both attempts, should you be able to mark those pages as read by hand (an approval
+    row in the run log, with your name) so the memo can proceed with them, or must a failed page stay open until the
+    model reads it on a later run? Interim: open until the model reads it; no manual read.
+43. A quote copied from a defense report may itself say "IME" or "retained by the employer". The firm rule check
+    skips quoted spans (they are the record's words, not ours) and checks everything we write around them. Is that
+    right, or should a quote holding those labels never appear in an output either? Interim: quotes are exempt.
+44. Do your scanned binders carry a repeated line on every page besides the Bates stamp (firm name, "CONFIDENTIAL",
+    a fax header, a date), which the quote check should ignore when a quoted passage runs across it? If so, what
+    does it look like (shape only, no example from a file)? Interim: only a stamp alone on a line and "Page N of M"
+    lines are ignored.
+45. When a quote matches the page only through the OCR-fault rung (a ligature, a hyphen at a line end, a header
+    inside the passage), should the memo mark it (for example "[OCR]") so you check the page by eye, or treat it as
+    verified like an exact match? Interim: counted as verified; the rung is recorded in the run log only.
+46. Repairs to an answer's punctuation (a trailing comma, a missing final brace) are logged and the answer is used.
+    Should any output tell you that its source answer was repaired, or is the log enough? Interim: the log only.
+
+ANSWERED 2026-10-27 (round 4 check-in, ledger Q44): 42 to 46, every interim ruling kept (42 stays open, 43 quotes
+exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged, 46 log only).
