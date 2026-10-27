@@ -440,10 +440,78 @@ def test_intake_fixture_with_real_tools(tmp_path, capsys):
         print(summary)
     assert code == 1, err.getvalue()
     assert summary == ("intake 9002.001 scan pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2 ocr_added=4")
-    assert out.getvalue().splitlines()[1:] == ["  empty: scan/004"]
+    assert out.getvalue().splitlines()[1:] == ["  empty: scan/004 no text after OCR"]
     assert [r["id"] for r in records] == [f"scan/{n:03d}" for n in range(1, 7)]
     assert work_removed and tmp_left == 0
     assert hashlib.sha256((root / "records" / "scan" / "source.pdf").read_bytes()).hexdigest() == binder["sha256"]
     assert all(set(s) == {"raw", "stamp"} for r in records for s in r["stamps"])
     assert [r["source"] for r in records] == ["ocr", "ocr", "ocr", "none", "text", "mixed"]
     assert binder["open_ids"] == ["scan/004"]
+
+
+def blank_pdf(path: Path, pages: int) -> Path:
+    writer = PdfWriter()
+    for _ in range(pages):
+        writer.add_blank_page(width=200, height=200)
+    with path.open("wb") as handle:
+        writer.write(handle)
+    return path
+
+
+def test_empty_page_has_a_reason_and_the_detail_line_shows_it(tmp_path):
+    env = Env(tmp_path, sidecar="\f".join([""] * 2), pages=2)
+    blank_pdf(env.stubs / "output.fixture", 2)
+    code, out, err = env.run()
+    record = json.loads((env.matter / "pages" / "scan" / "001.json").read_text(encoding="utf-8"))
+    assert code == 1, err
+    assert (record["status"], record["reason"]) == ("empty", "no text after OCR")
+    assert out.splitlines()[1:] == ["  empty: scan/001 no text after OCR", "  empty: scan/002 no text after OCR"]
+
+
+def test_failed_page_keeps_ocr_timeout_reason(tmp_path):
+    env = Env(tmp_path, sidecar="text one\f[skipped page]", pages=2)
+    blank_pdf(env.stubs / "output.fixture", 2)
+    _, out, _ = env.run()
+    assert out.splitlines()[1:] == ["  empty: scan/001 no text after OCR", "  failed: scan/002 ocr timeout"]
+
+
+def test_reintake_names_every_existing_folder(tmp_path):
+    env = Env(tmp_path)
+    for kind, name in (("records", "scan"), ("pages", "scan"), ("pages", "scan.tmp")):
+        (env.matter / kind / name).mkdir(parents=True)
+    code, out, err = env.run()
+    assert code == 2 and out == ""
+    for kind, name in (("records", "scan"), ("pages", "scan"), ("pages", "scan.tmp")):
+        assert str(env.matter / kind / name) in err, err
+    assert "re-intake is refused" in err and "remove the old binder by hand" in err, err
+    assert env.leftovers() == ["scan", "scan", "scan.tmp"]
+
+
+def test_bad_binder_name_is_said_in_words(tmp_path):
+    env = Env(tmp_path)
+    for bad in ("Medical", "1scan", "scan one", "a" * 41, ""):
+        code, _, err = env.run(binder=bad)
+        assert code == 2
+        assert ("binder name must be lowercase letters, digits and hyphens, starting with a letter "
+                "(up to 40 characters)") in err, err
+        assert "[a-z]" not in err and "\\d" not in err, err
+
+
+def test_missing_input_file_says_file_not_found(tmp_path):
+    env = Env(tmp_path)
+    missing = env.base / "no-such.pdf"
+    code, _, err = env.run(file=missing)
+    assert code == 2
+    assert err.strip() == f"intake: cannot run: file not found: {missing}", err
+
+
+@pytest.mark.parametrize("kind", ["junk_header", "truncated"])
+def test_pypdf_warnings_do_not_print(tmp_path, capfd, caplog, kind):
+    env = Env(tmp_path, pages=1)
+    good = env.pdf.read_bytes()
+    bad = env.base / "bad.pdf"
+    bad.write_bytes(b"junk\n" + good if kind == "junk_header" else good[: len(good) // 2])
+    code, _, err = env.run(file=bad)
+    assert capfd.readouterr().err == ""
+    assert [r.getMessage() for r in caplog.records if r.name.startswith("pypdf")] == []
+    assert code == (0 if kind == "junk_header" else 2), err

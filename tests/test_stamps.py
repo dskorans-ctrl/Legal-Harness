@@ -43,7 +43,21 @@ def case_token_end():
             and all(stamps(text) == want for text, want in kept.items()))
 
 
-CASES = [case_main, case_whole_tokens, case_nothing, case_normalize, case_first_raw, case_token_end]
+def case_joined_tokens():
+    # A match never continues into a joined token at either end (H1): ids, suffixes, prefixes.
+    refused = ("QRL-2025-0418", "MED0001-A", "MED0001.2", "MED0001/3", "xMED0001", "AB-MED0001",
+               "MED0001A", "a.MED0001", "7/MED0001", "x-MED0001")
+    kept = {"MED 0001": ["MED0001"], "MED-0001": ["MED0001"], "MED0001,": ["MED0001"],
+            "Ends at MED0001.": ["MED0001"], "(MED0001)": ["MED0001"], "MED0001": ["MED0001"],
+            "KMR23441": ["KMR23441"], "XKMR2344": ["XKMR2344"], "MED 0001 Page 3": ["MED0001"],
+            "see MED0001. Next": ["MED0001"], "MED0001 - A": ["MED0001"]}
+    mixed = stamps("Claim Number: QRL-2025-0418  MED0001-A  MED 0001") == ["MED0001"]
+    return (all(stamps(text) == [] for text in refused)
+            and all(stamps(text) == want for text, want in kept.items()) and mixed)
+
+
+CASES = [case_main, case_whole_tokens, case_nothing, case_normalize, case_first_raw, case_token_end,
+         case_joined_tokens]
 
 
 def test_stamps(capsys):

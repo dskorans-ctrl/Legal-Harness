@@ -36,3 +36,18 @@ def test_key_loads(capsys):
     assert [f.id for f in key.facts] == expected_fact_ids
     assert [f.id for f in key.flags] == expected_flag_ids
     assert findings == []
+
+
+G9_ABOUT = ("The defense report says the L4-L5 disc changes are degenerative, while the MRI reports a 4 mm "
+            "posterior central disc protrusion at L4-L5 and places the mild degenerative disc disease at L5-S1.")
+
+
+def test_g9_about_matches_the_pages_in_key_ideal_and_flawed():
+    # The MRI (MED0006) puts the mild degenerative disease at L5-S1; the old text implied none (M1).
+    import json
+    book = rules.load(ROOT / "playbook" / "rules.toml")
+    for path in (MATTER / "key.json", MATTER / "ideal.json", ROOT / "tests" / "fixtures" / "bench" / "flawed.json"):
+        data = json.loads(path.read_text(encoding="utf-8"))
+        flags = [f for f in data.get("flags", []) if set(f["cites"]) == {"MED0006", "DEF0002"}]
+        assert [f["about"] for f in flags] == [G9_ABOUT], path.name
+        assert book.check(G9_ABOUT, unit="text", stamped=True) == []

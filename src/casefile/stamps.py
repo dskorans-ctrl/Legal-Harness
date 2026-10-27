@@ -15,10 +15,12 @@ def normalize(raw: str) -> str:
 
 
 def find(text: str, pattern: str) -> list[Stamp]:
-    # The lookbehind refuses a match that starts inside a longer letter or digit run; the lookahead
-    # refuses one that stops inside it (any case), so a truncated token is never recorded (CX-7).
+    # A stamp is a whole token. It must not run on into a joined token at either end: after the match,
+    # no letter or digit (any case), and no "-", "." or "/" followed by a letter or digit; before it,
+    # the same two tests mirrored, so "QRL-2025-0418", "MED0001-A", "xMED0001" and "AB-MED0001" give
+    # nothing while "MED0001." at the end of a sentence still matches (CX-7, H1).
     found: dict[str, Stamp] = {}
-    for m in re.finditer(r"(?<![A-Z0-9])(?:" + pattern + ")(?![A-Za-z0-9])", text):
+    for m in re.finditer((r"(?<![A-Za-z0-9])(?<![A-Za-z0-9][-./])(?:" + pattern + r")(?![A-Za-z0-9])(?![-./][A-Za-z0-9])"), text):
         stamp = normalize(m.group(0))
         if stamp not in found:
             found[stamp] = Stamp(m.group(0), stamp)

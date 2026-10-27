@@ -11,6 +11,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -30,6 +31,7 @@ BINDER_PATTERN = r"[a-z][a-z0-9-]{0,39}"
 SKIPPED_PAGE = "[skipped page]"
 SKIPPED_RANGE = "[OCR skipped on page(s)"
 OCR_TIMEOUT_REASON = "ocr timeout"
+EMPTY_REASON = "no text after OCR"
 
 
 class IntakeError(Exception):
@@ -52,14 +54,27 @@ class PageRecord:
     sha256: str
 
 
+@contextmanager
+def quiet_pypdf():
+    """pypdf logs its repair notes as warnings; they must not print above casefile's own line (L3)."""
+    log = logging.getLogger("pypdf")
+    was = log.level
+    log.setLevel(logging.CRITICAL + 1)      # child loggers (pypdf._reader) inherit this level
+    try:
+        yield
+    finally:
+        log.setLevel(was)
+
+
 def squash(text: str) -> str:
     return " ".join(text.split())
 
 
 def page_texts(pdf_path) -> list[str]:
     """The text pypdf extracts from each page, as extracted."""
-    reader = PdfReader(str(pdf_path))
-    return [page.extract_text() or "" for page in reader.pages]
+    with quiet_pypdf():
+        reader = PdfReader(str(pdf_path))
+        return [page.extract_text() or "" for page in reader.pages]
 
 
 def sidecar_outcomes(sidecar_text: str, pages: int) -> list:
@@ -192,6 +207,7 @@ def _check_destination(config, number, binder):
     if verdict != "outside" or matter_dir.resolve() != matters / number:
         raise IntakeError("matter folder resolves outside the matters root")
     matter_dir = matter_dir.resolve()
+    existing = []
     for kind in ("records", "pages"):
         parent = matter_dir / kind
         # The parent must be this matter's own plain folder: a link would carry the write into
@@ -203,7 +219,10 @@ def _check_destination(config, number, binder):
         for name in (binder, binder + ".tmp"):
             target = matter_dir / kind / name
             if os.path.lexists(target):
-                raise IntakeError(f"{target} already exists; re-intake is refused")
+                existing.append(str(target))
+    if existing:
+        raise IntakeError(f"re-intake is refused; these folders already exist: {', '.join(existing)}; "
+                          "remove the old binder by hand before intake runs again")
     return matter_dir
 
 
@@ -224,11 +243,15 @@ def _intake_body(config, number, binder, file, out, runner) -> int:
     if not re.fullmatch(NUMBER_PATTERN, number):
         raise IntakeError(f"matter number must look like 9002.001, got {number!r}")
     if not re.fullmatch(BINDER_PATTERN, binder):
-        raise IntakeError(f"binder name must match {BINDER_PATTERN}, got {binder!r}")
+        raise IntakeError("binder name must be lowercase letters, digits and hyphens, starting with "
+                          f"a letter (up to 40 characters), got {binder!r}")
     source = Path(file)
+    if not source.exists():
+        raise IntakeError(f"file not found: {source}")
     try:
         data = source.read_bytes()
-        count = len(PdfReader(str(source)).pages)
+        with quiet_pypdf():
+            count = len(PdfReader(str(source)).pages)
     except Exception as exc:
         raise IntakeError(f"not a readable PDF: {source}: {exc}") from exc
     if count == 0:
@@ -273,7 +296,7 @@ def _intake_body(config, number, binder, file, out, runner) -> int:
             if outcome is not None:
                 status, reason, text = "failed", outcome, ""
             elif not squash(new):
-                status, reason, text = "empty", "", ""
+                status, reason, text = "empty", EMPTY_REASON, ""
             else:
                 status, reason, text = "ok", "", new
             found = [{"raw": s.raw, "stamp": s.stamp}
@@ -307,7 +330,7 @@ def _intake_body(config, number, binder, file, out, runner) -> int:
           f"ocr_added={sum(r.ocr_added for r in records)}", file=out)
     for record in records:
         if record.status == "empty":
-            print(f"  empty: {record.id}", file=out)
+            print(f"  empty: {record.id} {record.reason}", file=out)
         elif record.status == "failed":
             print(f"  failed: {record.id} {record.reason}", file=out)
     return 0 if counts["ok"] == count else 1
