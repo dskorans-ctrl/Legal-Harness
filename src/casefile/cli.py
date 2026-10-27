@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 
-from casefile import __version__, doctor, playbook
+from casefile import __version__, bench, doctor, playbook
 from casefile.config import ConfigError, load
 
 
@@ -25,6 +25,10 @@ def main() -> int:
     config_commands = config_parser.add_subparsers(dest="config_command", required=True)
     show = config_commands.add_parser("show", help="Print effective values and their sources")
     show.add_argument("--config", type=Path)
+    bench_parser = subcommands.add_parser("bench", help="Score invented matters against their answer keys")
+    bench_parser.add_argument("--matters", type=Path, required=True)
+    bench_parser.add_argument("--candidate", type=Path)
+    bench_parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     if args.command == "version":
         print(f"casefile {__version__}")
@@ -39,6 +43,8 @@ def main() -> int:
         print(f"version={book.version} entries={len(book.entries)}")
         for entry in book.entries:
             print(f"{entry.id}: {entry.rule}")
+    elif args.command == "bench":
+        return bench.main(args.matters, args.config, args.candidate)
     elif args.command == "config":
         try:
             config = load(args.config)
