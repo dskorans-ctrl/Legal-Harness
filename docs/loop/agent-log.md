@@ -44,3 +44,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 20 | Plan review of the re-brief | codex gpt-6.1-sol (read-only, high) | ~12 min | n/a | done; 19 findings (7 high, 12 med) |
 | 21 | Re-brief revision with dispositions | fable | 16.1 min | 159 k | done; 17 accepted, 1 rejected (PR-4), 1 owner (Q18); 349 lines |
 | 22 | Re-brief build W1 to W6 | sonnet | 14.5 min | 142 k | done; 214 passed; 25 seeds red; 7 deviations, all accepted |
+| 23 | 8a code review of the re-brief | codex gpt-6.1-sol (read-only, high) | ~10 min | n/a | done; 8 findings (1 high, 4 med, 3 low); RX-1 reproduced |
+| 24 | Re-brief fix cycle 1: RX-1 to RX-8 | sonnet | 7.1 min | 95 k | done; 223 passed, gate 0; committed 22d0125 |

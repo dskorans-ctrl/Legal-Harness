@@ -237,6 +237,12 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   (6: suite 12.9 s -> 32 s, over the brief's 20 percent R5 line; accepted as the cost of real
   interpreter and grace tests, T-6).
 
+- Re-brief 8a Codex code review: 8 findings (1 high, 4 med, 3 low), RX-1 reproduced at runtime (stop and
+  continue -> `exit=137 secs=2`). Fix cycle 1 (Sonnet, Q27, 22d0125): kqueue NOTE_EXIT replaces SIGCHLD
+  and select; run.sh execs the guard's python3. Chair re-run `223 passed`, gate `0`, RX-1 probe `exit=3
+  secs=4`, held pipe `exit=3 secs=3`, `run.sh false` -> 1. Carried low: state/playbook expanduser in
+  config.py can still traceback on a bad `~user` (fails closed, exit 1).
+
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.
   Verifier 3 (blind, focused per Q23, 2026-10-26, tip 6db09cb): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify3.md`.
