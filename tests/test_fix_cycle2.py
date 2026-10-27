@@ -9,7 +9,7 @@ import pytest
 from casefile import doctor
 from casefile.config import ConfigError, load
 from casefile.rules import load as load_rules
-from conftest import ROOT, write_config
+from conftest import ROOT
 from fakemodel.core import FakeModel
 from test_doctor import invoke, passing_smoke, setup_config
 

@@ -79,3 +79,7 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 |---|---|---|---|---|---|
 | 1 | Build brief | fable | 64.4 min | 284 k | done; 645 lines, 18 decisions, owner questions 31 to 36 (answered, Q40) |
 | 2 | Adversarial plan review | codex gpt-6.1-sol (read-only, high) | ~10 min | n/a | 18 findings (11 high, 7 med); 10 CONFIRMED, 8 PLAUSIBLE |
+| 3 | Brief revision after Codex | fable | 40.9 min | 380 k | done; 16 accepted, 1 rejected (measured), 1 owner (Q41: keyed as G9); chair accepted all decisions with G9 |
+| 4 | W0 `stamps.py` | sonnet | 2.4 min | 60 k | done; 77c7f56; `stamps_cases=5 of 5`, seeds a and b red; chair re-ran seed a red; 271 passed |
+| 5 | Lane A: W2, W3, W4 (with G9), W8 | sonnet | 18.3 min | 205 k | done; fd73d4b, 523b283, 77a5a61, 9e19eb6; 22 seeds red; 303 passed, gate 0; chair re-ran bench lines and seeded G9 out (red); unused_imports=1 left in lane B file |
+| 6 | Lane B: W1, W5, W6, W7 | sonnet | 30.5 min | 227 k | done; df25349, fadd27a, 13b066a, 2668c48; 24 seeds red; min_ratio=1.000; doctor ocr PASS; merged c8bff68; 335 passed in 67 s, gate 0 |
