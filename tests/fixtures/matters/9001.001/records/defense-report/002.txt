@@ -1,0 +1,38 @@
+Northgate Medical Evaluations
+Independent Medical Evaluation, page 2 of 3
+Patient: Morgan Ashby-Vale
+Date of Birth: 02/17/1981
+Date of Service: 06/20/2025
+Provider: Dr. Theodore Marchetti
+
+Subjective:
+Patient reports persistent low back discomfort, primarily localized to the lumbar spine.
+Symptoms are described as dull aching, exacerbated by prolonged sitting.
+Pain level is rated 3 out of 10 at rest, increasing to 6 during activity.
+Patient reports morning stiffness that eases with movement.
+
+Objective:
+General appearance is unremarkable. Patient is cooperative and oriented.
+Posture assessment reveals mild compensatory lumbar curvature.
+Gait is steady, though slightly antalgic when walking across the room.
+Range of motion (ROM) in the lumbar spine is limited in flexion.
+Strength testing of lower extremities is 5/5 bilaterally.
+Reflexes are 2+ and symmetric in all tested segments.
+Sensation is intact to light touch throughout the dermatomes.
+
+Neurological Examination:
+Straight leg raise negative bilaterally.
+No objective findings of radiculopathy on today's examination.
+The patient was instructed to perform a modified slump test.
+No reproduction of symptoms was noted during this maneuver.
+
+Imaging Review:
+Review of MRI dated 04/18/2025 performed by Dr. Ansgar Velloso-Krantz.
+The study demonstrates degenerative changes consistent with chronic wear.
+The L4-L5 disc changes are described as degenerative.
+These findings are noted for context only.
+
+Conclusion:
+Physical examination today is stable. No acute findings are present.
+Opinions are given on page 3.
+DEF0002

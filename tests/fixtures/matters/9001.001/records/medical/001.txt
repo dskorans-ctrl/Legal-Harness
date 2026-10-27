@@ -1,0 +1,30 @@
+Fennimore County Hospital
+Emergency Department Record
+Patient: Morgan Ashby-Vale
+DOB: 02/17/1981
+Date of Service: 03/11/2025
+Provider: Dr. Halvard Quist-Benning, MD
+Arrival Time: 12:15 PM
+Chief Complaint: Low back pain
+Vitals: BP 120/80, HR 78, Temp 98.6 F, RR 16
+History of Present Illness:
+Patient presents with acute onset of low back pain.
+Date of service: 03/11/2025
+Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.
+The pain started suddenly during the lifting activity.
+Pain 7/10 in the low back, no radiation.
+The pain is localized to the lower back region.
+Patient denies any prior back injury or back pain.
+Pain is exacerbated by movement and sitting.
+Past Medical History:
+No significant chronic conditions reported.
+Medications:
+None currently taking.
+Allergies:
+No known drug allergies.
+Social History:
+Works as an order picker at Quarry Ridge Logistics LLC.
+Lives with family. Non-smoker.
+Physical exam reveals tenderness in the lumbar spine.
+No neurological deficits noted on initial assessment.
+MED0001

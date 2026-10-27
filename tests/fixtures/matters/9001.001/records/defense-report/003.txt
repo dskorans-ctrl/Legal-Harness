@@ -1,0 +1,33 @@
+Northgate Medical Evaluations
+Report of Examination and Medical Opinion
+Patient: Morgan Ashby-Vale
+Date of Birth: 02/17/1981
+Date of Service: 06/20/2025
+Provider: Dr. Theodore Marchetti
+
+Subject: Evaluation of Low Back Pain following Incident on 03/11/2025.
+
+The examinee presented for a comprehensive evaluation regarding chronic low back pain.
+The history provided indicates an injury sustained on 03/11/2025.
+The patient reports pain primarily localized to the lumbar region.
+Review of prior records from Lakeshore Imaging and Ridgeline Physical Therapy
+was completed as part of this assessment.
+
+Physical examination revealed mild tenderness in the lower back musculature.
+Range of motion was slightly limited but within acceptable parameters for the
+patient's reported complaints. Neurological testing was unremarkable.
+
+The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.
+The examinee is at maximum medical improvement as of today's examination.
+No work restrictions are indicated.
+No further treatment is medically necessary.
+
+The overall clinical picture suggests that the current symptoms are consistent with
+underlying degenerative changes rather than acute work-related injury.
+The patient understands the limitations of their condition.
+
+Signed:
+Dr. Theodore Marchetti
+Northgate Medical Evaluations
+
+DEF0003

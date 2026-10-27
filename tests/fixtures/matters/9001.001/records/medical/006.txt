@@ -1,0 +1,36 @@
+Lakeshore Imaging
+MRI Lumbar Spine Without Contrast
+Patient: Morgan Ashby-Vale
+Date of Birth: 02/17/1981
+Date of Service: 04/18/2025
+Ordering Provider: Dr. Ines Castellanos-Reyes
+
+CLINICAL HISTORY:
+Patient is a 44 year old male presenting with complaints of low back pain and left calf numbness.
+The symptoms began following an injury sustained at his place of employment.
+He reports pain radiating down the left leg.
+
+TECHNIQUE:
+Multiplanar, multisequence MRI of the lumbar spine was performed without the use of intravenous contrast.
+The examination included axial, sagittal, and coronal views of the L1 through S1 levels.
+The patient was adequately prepared and positioned for the study.
+
+COMPARISON:
+No prior relevant imaging was available for comparison.
+
+FINDINGS:
+The overall alignment of the lumbar spine appears maintained.
+There is mild degenerative change noted at the lower vertebral levels.
+The L1-L2 intervertebral disc shows normal disc height and signal.
+L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.
+L5-S1: mild disc desiccation without protrusion.
+No evidence of significant spinal canal stenosis at any level.
+No fracture or listhesis.
+
+IMPRESSION:
+1. Central disc protrusion at L4-L5 causing contact with the thecal sac.
+2. Mild degenerative disc disease at L5-S1.
+3. No acute osseous abnormality identified.
+
+Radiologist: Dr. Ansgar Velloso-Krantz, MD
+MED0006

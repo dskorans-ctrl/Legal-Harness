@@ -1,0 +1,25 @@
+Ridgeline Physical Therapy
+Initial Evaluation
+Patient: Morgan Ashby-Vale
+Date of Birth: 02/17/1981
+Date of Service: 03/24/2025
+Provider: Odalys Ferro-Lindqvist, PT, DPT
+Referral from Dr. Ines Castellanos-Reyes dated 03/14/2025.
+Subjective: Patient reports low back pain following an injury on 03/11/2025.
+Patient states the pain started while lifting a plastic tote.
+Pain 5/10 at rest, 7/10 with bending.
+Patient describes stiffness in the lower back region.
+Objective: Physical examination performed today.
+Range of motion testing was conducted.
+Lumbar flexion 40 degrees, extension 10 degrees.
+Gait is slightly antalgic, favoring the right side.
+Strength testing shows mild weakness in the hip flexors.
+Functional limits include prolonged sitting and bending.
+Assessment: Patient presents with mechanical low back pain.
+Goals are to improve mobility and reduce pain.
+Plan: Initiate physical therapy.
+Plan details: Two visits per week for six weeks.
+Home exercise program provided.
+Next appointment scheduled for 04/07/2025.
+Therapist Signature: Odalys Ferro-Lindqvist, PT, DPT
+MED0004

@@ -1,0 +1,28 @@
+Fennimore County Hospital
+Emergency Department Record
+Patient Name: Morgan Ashby-Vale
+Date of Birth: 02/17/1981
+Date of Service: 03/11/2025
+Attending Physician: Dr. Halvard Quist-Benning
+
+Arrival Time: 12:15 PM
+Chief Complaint: Low back pain, onset Tuesday 03/11/2025.
+Vitals: BP 120/80, HR 78, Temp 98.6 F.
+Initial assessment reveals localized tenderness in the lumbar region.
+Patient resting comfortably after medication.
+Physical examination of the back and legs reveals mild muscle spasm.
+Straight leg raise negative bilaterally.
+No signs of cauda equina syndrome or neurological deficit noted.
+Lumbar spine x-ray, three views, ordered; report to follow.
+Initial treatment includes oral pain management.
+Medications administered: Ibuprofen 600mg PO.
+Prescribed: Cyclobenzaprine 5mg PO every 8 hours PRN.
+Further imaging is pending review of initial X-ray results.
+Diagnosis: acute lumbar strain.
+Patient advised to avoid heavy lifting and prolonged sitting.
+Discharge instructions: Rest, ice application, and gentle stretching.
+Follow up with a family doctor within one week for re-evaluation.
+Off work for 3 days, then return as tolerated.
+Patient stable and discharged at 03/11/2025 03:45 PM.
+Physician Signature: Dr. Halvard Quist-Benning
+MED0002

@@ -1,0 +1,31 @@
+Brightwater Family Medicine
+Office Visit Note
+Patient: Morgan Ashby-Vale
+DOB: 02/17/1981
+Date of Service: 03/14/2025
+Provider: Dr. Ines Castellanos-Reyes
+
+Subjective:
+Patient presents for follow up regarding low back pain following an incident at work on 03/11/2025.
+Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.
+Current pain level is 4/10, localized to the lower back.
+Patient denies fever, chills, or neurological symptoms.
+Review of systems is otherwise negative.
+
+Objective:
+Vitals: Temp 98.6 F, BP 120/78, HR 72, RR 16.
+Physical exam reveals mild tenderness in the lumbar paraspinal muscles.
+Range of motion is slightly restricted in flexion and extension.
+No signs of radiculopathy noted.
+
+Assessment:
+Lumbar strain, likely work related.
+Restrictions: no lifting over 10 pounds and no repetitive bending through 04/11/2025.
+Referred to physical therapy, two visits per week for six weeks.
+Plan:
+Continue conservative management.
+Follow up in four weeks or sooner if symptoms worsen.
+
+Dr. Ines Castellanos-Reyes
+
+MED0003
