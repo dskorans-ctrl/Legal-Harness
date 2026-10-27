@@ -85,3 +85,4 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 6 | Lane B: W1, W5, W6, W7 | sonnet | 30.5 min | 227 k | done; df25349, fadd27a, 13b066a, 2668c48; 24 seeds red; min_ratio=1.000; doctor ocr PASS; merged c8bff68; 335 passed in 67 s, gate 0 |
 | 7 | 8a code review of round 3 | codex gpt-6.1-sol (read-only, high) | ~12 min | n/a | 8 findings (3 high, 5 med), all reproduced (2 by run, 6 by trace); all to fix cycle 1 |
 | 8 | Fix cycle 1 (CX-1 to CX-8) | sonnet | 10.6 min | 103 k | done; 4d615be, aada2a7; 15 tests, 8 seeds red; chair re-ran CX-1 (exit 2, nothing written) and CX-7; 350 passed in 63 to 87 s, gate 0 |
+| 9 | 8b output critic | opus | 5.8 min | 117 k | 7/10, high 1, med 1, low 6; H1 and M1 reproduced by the chair; H1, M1, L1 to L4 to fix cycle 2; L5 owner (question 40); L6 rejected (sidecar is an outcome record, D27) |

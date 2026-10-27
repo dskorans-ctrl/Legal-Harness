@@ -200,3 +200,13 @@ rulings.
     stamp must end at a token boundary, so `MED0001A` is not recorded at all (before the fix it was recorded
     as `MED0001` and merged with `MED0001B`). `MED0001-A` still records `MED0001`. Interim: boundary rule;
     suffix forms wait for your answer.
+
+## Held 2026-10-27 (round 3 output critic, round03-critic.md; interim rulings by the chair, pending veto)
+39. The stamp pattern (Q21) also records whole tokens that are not Bates stamps, such as `ABC 123456` or a
+    billing code like `CPT 99213`. Since every match is recorded (Q35) and you pick the stamp at hearing prep,
+    should each page record also say where each stamp sits (bottom centre, top right), so hearing prep can
+    offer your firm's bottom-centre stamp first? Interim: no position recorded (OCR text carries none).
+40. When one page shows the same stamp in two spellings (`MED 0001` and `MED-0001`), keep both raw forms, or
+    is the first enough since they are one stamp (Q40 item 31)? Interim: first raw kept (critic L5).
+41. Binder names are lowercase only, because macOS folders ignore case and `Medical` and `medical` would be
+    one folder. Is that acceptable? Interim: lowercase, with a plain-words message (critic L2).
