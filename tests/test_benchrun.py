@@ -4,6 +4,8 @@ import json
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from casefile import benchrun, config as config_mod, matter as matters, runlog
 from conftest import ROOT, write_config
 from fakemodel.bench import recordings_for
@@ -211,3 +213,72 @@ def test_benchrun_non200_reply(tmp_path):
         assert gates == ["bench.model", "bench.model"]
     finally:
         log.close()
+
+
+@pytest.mark.socket
+def test_benchrun_redirect_reply(tmp_path):
+    """A received 3xx reply is stored as a failed answer row holding the body, on all three paths (D25, OR-8, V2b-F1)."""
+    from http.client import HTTPMessage
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from io import BytesIO
+    from threading import Thread
+    from urllib.error import HTTPError
+
+    class Located:
+        def __init__(self, response):
+            self.response = response
+
+        def open(self, request, timeout=None):
+            return self.response()
+
+    def status_response():
+        response = BytesIO(b"invented status redirect body")
+        response.getcode = lambda: 302
+        response.headers = {"Location": "http://127.0.0.1:1/status"}
+        return response
+
+    def error_response():
+        headers = HTTPMessage()
+        headers["Location"] = "http://127.0.0.1:1/error"
+        raise HTTPError("http://127.0.0.1:1/api/chat", 307, "Temporary Redirect", headers,
+                        BytesIO(b"invented error redirect body"))
+
+    class Redirecting(BaseHTTPRequestHandler):
+        def do_POST(self):
+            body = b"invented opener redirect body"
+            self.send_response(302)
+            self.send_header("Location", "http://127.0.0.1:1/opener")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, *args):
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), Redirecting)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    log = runlog.open_db(tmp_path / "runlog.sqlite")
+    matter = matters.load(MATTER)
+    try:
+        config = config_mod.load(write_config(tmp_path))
+        live = config_mod.load(write_config(tmp_path, host=f"http://127.0.0.1:{server.server_port}"))
+        cases = [
+            (config, Located(status_response), "invented status redirect body"),
+            (config, Located(error_response), "invented error redirect body"),
+            (live, None, "invented opener redirect body"),
+        ]
+        for cfg, opener, body in cases:
+            r = benchrun.run(matter, cfg, log, "pb-test", opener)
+            assert r.failure is not None and r.failure.startswith("bench.model: redirect refused"), (body, r.failure)
+            assert r.pages_failed == 14
+            row = log.connection.execute(
+                "SELECT status, raw_answer FROM answers ORDER BY id DESC LIMIT 1").fetchone()
+            assert row is not None, body
+            assert (row[0], row[1]) == ("failed", body)
+        assert log.connection.execute("SELECT COUNT(*) FROM answers").fetchone()[0] == 3
+    finally:
+        log.close()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)

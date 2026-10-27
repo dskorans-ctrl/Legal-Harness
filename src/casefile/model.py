@@ -15,7 +15,8 @@ class ModelError(RuntimeError):
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        raise ModelError(f"redirect refused: {code} to {newurl}")
+        reply = b"" if fp is None else fp.read()
+        raise ModelError(f"redirect refused: {code} to {newurl}", reply.decode("utf-8", errors="replace"))
 
 
 def build_opener():
@@ -47,12 +48,15 @@ class ModelClient:
             with self.opener.open(req, timeout=self.config.timeout_s) as response:
                 status = response.getcode()
                 if 300 <= status < 400:
-                    raise ModelError(f"redirect refused: {status} to {response.headers.get('Location', '')}")
+                    reply = response.read()
+                    raise ModelError(f"redirect refused: {status} to {response.headers.get('Location', '')}",
+                                     reply.decode("utf-8", errors="replace"))
                 payload = response.read()
         except error.HTTPError as exc:
-            if 300 <= exc.code < 400:
-                raise ModelError(f"redirect refused: {exc.code} to {exc.headers.get('Location', '')}") from exc
             reply = exc.read()
+            if 300 <= exc.code < 400:
+                raise ModelError(f"redirect refused: {exc.code} to {exc.headers.get('Location', '')}",
+                                 reply.decode("utf-8", errors="replace")) from exc
             raise ModelError(f"status={exc.code}: {reply[:200]!r}", reply.decode("utf-8", errors="replace")) from exc
         except (OSError, error.URLError) as exc:
             raise ModelError(str(exc)) from exc
