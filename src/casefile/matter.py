@@ -54,7 +54,7 @@ def load(root) -> Matter:
     try:
         with meta.open("rb") as stream:
             data = tomllib.load(stream)
-    except (OSError, tomllib.TOMLDecodeError) as exc:
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise MatterError(f"{meta}: {exc}")
 
     # 4. Check keys.

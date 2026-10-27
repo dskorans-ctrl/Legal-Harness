@@ -1,4 +1,4 @@
-"""The stage 2 matter loader: pages, stamps and its eleven refusals."""
+"""The stage 2 matter loader: pages, stamps and its twelve refusals."""
 
 import pytest
 from pathlib import Path
@@ -96,6 +96,12 @@ def setup_page_not_utf8(base):
     (root / "records/medical/002.txt").write_bytes(b"\xff\xfe text\nMED0002\n")
     return root
 
+def setup_toml_not_utf8(base):
+    root = make(base, GOOD)
+    with (root / "matter.toml").open("ab") as stream:
+        stream.write(b"\xff")
+    return root
+
 def test_refusals(tmp_path, capsys):
     CASES = [
         (setup_missing_toml, "matter.toml not found"),
@@ -108,7 +114,8 @@ def test_refusals(tmp_path, capsys):
         (setup_trailing_text, "last line is not a Bates stamp"),
         (setup_duplicate_stamp, "duplicate Bates stamp MED0001"),
         (setup_page_is_folder, "002.txt"),
-        (setup_page_not_utf8, "002.txt")
+        (setup_page_not_utf8, "002.txt"),
+        (setup_toml_not_utf8, "can't decode byte 0xff")
     ]
 
     ok = 0
@@ -128,5 +135,5 @@ def test_refusals(tmp_path, capsys):
         happy_root.mkdir()
         happy_root = make(happy_root, GOOD)
         matter = load(happy_root)
-        print(f"matter_pages={len(matter.pages)} refusals={ok} of 11")
-    assert ok == 11
+        print(f"matter_pages={len(matter.pages)} refusals={ok} of 12")
+    assert ok == 12
