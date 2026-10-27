@@ -194,3 +194,9 @@ rulings.
     model that does. Interim: not keyed (only unambiguous disagreements are in the key).
 ANSWERED 2026-10-27 (ledger Q40): 31 same stamp (raw kept plus a normalised form); 32 to 36 as the interim
 rulings.
+
+## Held 2026-10-27 (round 3 critic, Codex CX-7; interim ruling by the chair, pending veto)
+38. Do your Bates stamps ever carry a suffix after the digits (`MED0001-A`, `MED0001A`, `MED0001.2`)? Today a
+    stamp must end at a token boundary, so `MED0001A` is not recorded at all (before the fix it was recorded
+    as `MED0001` and merged with `MED0001B`). `MED0001-A` still records `MED0001`. Interim: boundary rule;
+    suffix forms wait for your answer.

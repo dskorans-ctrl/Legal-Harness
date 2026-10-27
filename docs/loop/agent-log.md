@@ -83,3 +83,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 4 | W0 `stamps.py` | sonnet | 2.4 min | 60 k | done; 77c7f56; `stamps_cases=5 of 5`, seeds a and b red; chair re-ran seed a red; 271 passed |
 | 5 | Lane A: W2, W3, W4 (with G9), W8 | sonnet | 18.3 min | 205 k | done; fd73d4b, 523b283, 77a5a61, 9e19eb6; 22 seeds red; 303 passed, gate 0; chair re-ran bench lines and seeded G9 out (red); unused_imports=1 left in lane B file |
 | 6 | Lane B: W1, W5, W6, W7 | sonnet | 30.5 min | 227 k | done; df25349, fadd27a, 13b066a, 2668c48; 24 seeds red; min_ratio=1.000; doctor ocr PASS; merged c8bff68; 335 passed in 67 s, gate 0 |
+| 7 | 8a code review of round 3 | codex gpt-6.1-sol (read-only, high) | ~12 min | n/a | 8 findings (3 high, 5 med), all reproduced (2 by run, 6 by trace); all to fix cycle 1 |
+| 8 | Fix cycle 1 (CX-1 to CX-8) | sonnet | 10.6 min | 103 k | done; 4d615be, aada2a7; 15 tests, 8 seeds red; chair re-ran CX-1 (exit 2, nothing written) and CX-7; 350 passed in 63 to 87 s, gate 0 |
