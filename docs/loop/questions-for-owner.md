@@ -99,3 +99,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
   cached prompt tokens, so "tokens read = tokens sent" is not a one-line test). Deferred to the stage 4
   brief as a carried item; D25 gets a known-limit sentence. Stage 2's 14-page matter is about 5 k tokens
   against a 65 k context, so it cannot fire in the loop today.
+- OR-5 (2026-10-27): fix cycle 1 (Gemma) takes the correctness findings R2-CH-1, R2-CX-5 (= Fable F1),
+  R2-CX-6, R2-CX-7 (= Fable F1b) and Fable F2 (`from exc` dropped at 5 sites, a brief-fidelity miss).
+  Deferred to round 3 (Sonnet, Q30): Fable's cosmetic findings (33 trailing-whitespace lines, unused imports
+  in 8 test files, prompt-framing comments, F7, F8) and the design lows F3 (`.DS_Store` in `records/`
+  refuses the matter; likely on a Mac, needs a ruling on which files to ignore), F4 (binder listed twice
+  reports a false duplicate stamp), F5 (validate names before reading), F6 (whitespace-only page text).
+  Why: correctness first inside the three-cycle cap; lint rewrites of eight files by the small model cost
+  more than they return this round.

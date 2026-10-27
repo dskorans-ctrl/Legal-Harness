@@ -60,5 +60,6 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 3 | Brief revision after Codex | fable | 13.5 min | 178 k | done; 16 accepted, 0 rejected, 0 owner; 43 Gemma tasks, 27 seeds; chair accepted all decisions (D25, D26 pending veto) |
 | 4 | Build orchestrator, Gemma G1 to G7 (paused by the owner) | opus (orchestrator) + gemma4:e4b (local) | 17.6 min | 150 k Opus; Gemma 13.9 k prompt + 17.8 k answer (local) | paused; W1 94f6a3b, W2 cad2779 committed; G4 to G7 written, W3 CHECK green, W3 seeds not run; 6 of 7 first try, 0 Sonnet fallbacks |
 | 5 | Build orchestrator resumed, Gemma G8 to G43 | opus (orchestrator) + gemma4:e4b (local) | 95.4 min | 325 k Opus (resume); Gemma all tasks 131.3 k prompt + 137.7 k answer, 4988 s model time (local) | done; 43 of 43 by Gemma, 26 first try, 17 retried, 2 re-split, 0 Sonnet fallbacks; 28 seeds red; 253 passed, gate 0 |
-| 6 | 8a code review of round 2 | codex gpt-6.1-sol (read-only, high) | running | n/a | |
-| 7 | Cost control: Sonnet rebuilds W3, W5 code, W6, W9 in a throwaway worktree (Q29, OR-3) | sonnet | running | | never merged |
+| 6 | 8a code review of round 2 | codex gpt-6.1-sol (read-only, high) | ~15 min | n/a | 7 findings (2 high, 5 med), all reproduced or traced; 3 in the chair's driver fixed; 4 to fix cycle 1, 1 deferred (OR-4) |
+| 7 | Cost control: Sonnet rebuilds W3, W5 code, W6, W9 in a throwaway worktree (Q29, OR-3) | sonnet | 5.9 min | 125 k | done; every CHECK 0, every seed red; branch control/r2-sonnet 43ef0d9, never merged |
+| 8 | Code-quality review, Gemma vs the Sonnet control (Q28) | fable | ~20 min | n/a (not in notice) | fit to merge after fixes; Gemma 7/8/7/5 vs Sonnet 7/9/7/9; no high, 2 med (both builds), lows |

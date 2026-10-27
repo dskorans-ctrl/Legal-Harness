@@ -358,3 +358,8 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   byte in matter.toml -> `UnicodeDecodeError`, exit 1 (repro, D25 wants 2); R2-CH-1 zero token counts.
   R2-CX-2 (prompt truncation not detected: spec §4 gate 1 "read as many tokens as were sent"): deferred to
   stage 4 (model client and gates) by the chair, OR-4, pending veto.
+- Fable code-quality review (Q28, `round02-fable-review.md`): fit to merge after fixes; Gemma 7/8/7/5 vs
+  Sonnet control 7/9/7/9 (correctness, brief fidelity, test strength, readability); no high; F1 = CX-5,
+  F1b = CX-7 (both builds); F2 `from exc`. Rulings OR-5.
+- [ ] R2-6. Fix cycle 1 (Gemma, Opus orchestrating): R2-CH-1, R2-CX-5, R2-CX-6, R2-CX-7, F2; each seed red
+  before the fix, green after.
