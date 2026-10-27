@@ -25,7 +25,7 @@ sys.path.insert(0, str(HERE.parents[2] / "src"))
 
 from pypdf import PdfReader, PdfWriter  # noqa: E402
 
-from casefile import pdfsmoke, quotes, stamps as stamp_finder  # noqa: E402
+from casefile import intake, pdfsmoke, quotes, stamps as stamp_finder  # noqa: E402
 
 MATTER = "9002.001"
 BINDER = "scan"
@@ -33,9 +33,6 @@ PDF_NAME = "scanned.pdf"          # the basename is the PDF /Title, so it is fix
 MANIFEST_NAME = "scanned.json"
 STAMP_PATTERN = r"[A-Z]{1,8}[ -]?\d{4,}"
 RATIO_FLOOR = 0.95
-PAGE_TIMEOUT_S = 180
-# Same flags as casefile.intake (stage 3); --tesseract-timeout is last so a probe override wins.
-OCR_FLAGS = ["--redo-ocr", "--output-type", "pdf", "-l", "eng"]
 
 HEADER = ["Harrowgate Occupational Clinic", "Progress Note", ""]
 PATIENT = "Patient: Delphine Okafor-Brandt   DOB 09/03/1979"
@@ -204,8 +201,8 @@ def probe(extra_args):
         (work / "tmp").mkdir()
         env = dict(os.environ, TMPDIR=str(work / "tmp"),
                    PATH=str(Path(tesseract).resolve().parent) + os.pathsep + os.environ.get("PATH", ""))
-        command = [ocrmypdf, *OCR_FLAGS, "--sidecar", str(side),
-                   "--tesseract-timeout", str(PAGE_TIMEOUT_S), *extra_args, str(src), str(dst)]
+        # Intake's own command line; extra arguments come last so a probe override wins.
+        command = intake.ocr_command(ocrmypdf, src, dst, side, extra_args)
         result = subprocess.run(command, env=env, capture_output=True, text=True, timeout=900)
         segments = skipped = 0
         if result.returncode != 0 or not dst.exists():
