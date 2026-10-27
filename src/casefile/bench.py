@@ -98,6 +98,8 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
             # Score
             s = benchscore.score(key, candidate, matter, book.rules, pages_failed)
             print(s.line(matter.number), file=out)
+            for detail in s.details():
+                print(detail, file=out)
             imperfect += not s.perfect
 
     finally:

@@ -23,6 +23,9 @@ class Score:
     missed_ids: tuple[str, ...]
     invented_quotes: tuple[str, ...]
     flags_missed_ids: tuple[str, ...]
+    invented_facts: tuple[tuple[str, str], ...] = ()
+    flags_extra_items: tuple[tuple[str, tuple[str, ...]], ...] = ()
+    rule_hits: tuple[tuple[str, str], ...] = ()
 
     @property
     def missed(self) -> int:
@@ -43,15 +46,33 @@ class Score:
                 f"{self.flags_total} flags_missed={self.flags_missed} flags_extra={self.flags_extra} "
                 f"rules={self.rules} pages_failed={self.pages_failed} of {self.pages_in}")
 
+    def details(self) -> list[str]:
+        """Detail lines for a bench run, only the non-empty ones (critic M1)."""
+        out = []
+        if self.missed_ids:
+            out.append("  missed: " + " ".join(self.missed_ids))
+        for cite, quote in self.invented_facts:
+            out.append(f'  invented: {cite} "{quote}"')
+        if self.flags_missed_ids:
+            out.append("  flags_missed: " + " ".join(self.flags_missed_ids))
+        for kind, cites in self.flags_extra_items:
+            out.append(f"  flags_extra: {kind} {','.join(cites)}")
+        for rule_id, where in self.rule_hits:
+            out.append(f"  rules: {rule_id} {where}")
+        return out
+
 
 def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: int) -> Score:
     matched = set()
     invented = []
+    invented_facts = []
     extra = 0
+    flags_extra_items = []
 
     for fact in candidate.facts:
         page = matter.page(fact.cite)
         if page is None or not found_in(fact.quote, page.text):
+            invented_facts.append((fact.cite, fact.quote[:60]))
             invented.append(fact.quote[:60])
             continue
 
@@ -70,10 +91,24 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
     cand_sets = {(f.kind, frozenset(f.cites)) for f in candidate.flags}
 
     flags_found = len(set(key_sets) & cand_sets)
-    flags_extra = len(cand_sets - set(key_sets))
+    
+    flags_extra_items_list = []
+    seen = set()
+    for flag in candidate.flags:
+        flag_key = (flag.kind, frozenset(flag.cites))
+        if flag_key in key_sets or flag_key in seen:
+            continue
+        seen.add(flag_key)
+        flags_extra_items_list.append((flag.kind, tuple(sorted(set(flag.cites)))))
+    flags_extra = len(flags_extra_items_list)
 
-    texts_to_check = [f.text for f in candidate.facts] + [f.about for f in candidate.flags]
-    rules_count = sum(len(rules.check(t, unit="text", stamped=True)) for t in texts_to_check)
+    checks = [(f.text, f.cite) for f in candidate.facts]
+    checks += [(f.about, "flag " + ",".join(sorted(set(f.cites)))) for f in candidate.flags]
+    rule_hits = []
+    for text, where in checks:
+        for finding in rules.check(text, unit="text", stamped=True):
+            rule_hits.append((finding.rule_id, where))
+    rules_count = len(rule_hits)
 
     missed_ids = tuple(k.id for k in key.facts if k.id not in matched)
 
@@ -94,5 +129,8 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
         pages_failed=pages_failed,
         missed_ids=missed_ids,
         invented_quotes=tuple(invented),
-        flags_missed_ids=flags_missed_ids
+        flags_missed_ids=flags_missed_ids,
+        invented_facts=tuple(invented_facts),
+        flags_extra_items=tuple(flags_extra_items_list),
+        rule_hits=tuple(rule_hits)
     )
