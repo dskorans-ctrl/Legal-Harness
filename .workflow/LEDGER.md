@@ -158,6 +158,10 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   a conflict to flag, even where one record does not expressly exclude the other. The anonymized excerpt
   around each conflict is a new requirement for the anonymization stage (spec §2 brief package, §10),
   not stage 3.
+- Q42: round 3 close check-in (owner, 2026-10-27)? -> question 38: no suffixes; a stamp is letters plus digits and
+  a token that runs on is not a stamp (whole-token rule stands). 39: no stamp position recorded. 40: the first
+  raw spelling of a stamp is enough. 41: lowercase binder names accepted. Spec D27 to D30, the whole-token
+  stamp rule and G9 RATIFIED. Additional instructions: none.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 

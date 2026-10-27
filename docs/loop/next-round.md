@@ -1,9 +1,8 @@
 Use the app-loop skill. Read docs/loop/HANDOFF.md first.
 
 Run round 4 of casefile (spec §7 stage 4: model client and gates) on `loop/round-04`. Remote Control on.
-Start with the check-in: owner questions 38 to 41 and 7 in docs/loop/questions-for-owner.md, the pending
-vetoes (spec D27 to D30, the whole-token stamp rule, G9), then "Any additional instructions for the next
-round or the loop in general?". Default tiers (Q30): Fable brief (carry the items listed in the handoff),
+Start with the check-in: question 7 in docs/loop/questions-for-owner.md (still open), any questions the
+round 4 brief raises, then "Any additional instructions for the next round or the loop in general?". Default tiers (Q30): Fable brief (carry the items listed in the handoff),
 Codex plan review, Fable revision, build (Opus orchestrates, Sonnet 5.5 codes), critic round (Codex code
 review, output critic, blind verifier, in that order, each separate), fix cycles (cap three), and close:
 round report, Librarian, agent log, spec §11 as-built, ledger baselines, fast-forward `main`, open

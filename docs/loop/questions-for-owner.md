@@ -211,3 +211,6 @@ rulings.
     is the first enough since they are one stamp (Q40 item 31)? Interim: first raw kept (critic L5).
 41. Binder names are lowercase only, because macOS folders ignore case and `Medical` and `medical` would be
     one folder. Is that acceptable? Interim: lowercase, with a plain-words message (critic L2).
+
+ANSWERED 2026-10-27 at the round 3 close (ledger Q42): 38 no suffixes, rule stands; 39 no position; 40 first
+spelling enough; 41 lowercase accepted. D27 to D30, the whole-token rule and G9 ratified.

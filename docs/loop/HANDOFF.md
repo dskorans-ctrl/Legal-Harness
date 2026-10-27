@@ -24,9 +24,8 @@ Read this page, then `.workflow/LEDGER.md` (`## Project`, `## Clarified` Q1 to Q
   budget (T-11). R1-20 waits for the stage that writes cited prose.
 
 ## Held owner questions
-- `docs/loop/questions-for-owner.md`: 38 (stamp suffixes), 39 (stamp position), 40 (two spellings of one
-  stamp), 41 (lowercase binder names), 7 (Ollama user or daemon, still open). Pending veto: spec D27 to D30,
-  the whole-token stamp rule, G9. Ask them at the round 4 check-in.
+- Answered at the round 3 close (ledger Q42): 38 to 41 settled; D27 to D30, the whole-token stamp rule and
+  G9 ratified. Still open: question 7 (Ollama user or daemon, Q19). Nothing else is held.
 - New requirement for a later stage (Q41, spec §10): anonymized excerpts around each conflict for Claude review.
 
 ## Machine rules

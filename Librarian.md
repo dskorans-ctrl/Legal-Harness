@@ -484,7 +484,7 @@ configuration allows.
 - **Verifier lows** (#R03-V-L1): bench finds a duplicate matter number only after the first matter ran;
   `normalize` strips only spaces and hyphens; leftover step comments in `bench.py` and `benchcandidate.py`.
 - **Owner questions 38 to 41**: stamp suffixes, stamp position, two spellings of one stamp, lowercase
-  binder names (#R03-OC-L5). Question 38's text was corrected at close for H1.
+  binder names (#R03-OC-L5). Answered at the round 3 close (ledger Q42).
 - **Suite wall time** 63 to 87 s against the 90 s budget (T-11).
 - **Pending owner veto**: the stamp lookbehind case and the joined-token rule (CX-7, H1; #R03-CX-5).
 - **Conflict excerpts for Claude review**: owner Q41, a later stage.
