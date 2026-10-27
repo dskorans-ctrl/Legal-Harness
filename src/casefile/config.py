@@ -64,7 +64,10 @@ class Config:
 
 def load(path: str | Path | None = None) -> Config:
     source = Path(path if path is not None else os.environ.get("CASEFILE_CONFIG", "config.toml"))
-    source = source.expanduser().resolve()
+    try:
+        source = source.expanduser().resolve()
+    except (RuntimeError, OSError, ValueError) as exc:
+        raise ConfigError(f"cannot resolve config path {source}: {exc}") from exc
     try:
         with source.open("rb") as stream:
             data = tomllib.load(stream)
@@ -142,6 +145,9 @@ def load(path: str | Path | None = None) -> Config:
         raise ConfigError(f"cannot verify [paths].matters is outside the checkout: {detail}")
     paths["matters"] = Path(detail)
     for key in ("state", "playbook"):
-        paths[key] = (checkout / Path(paths[key]).expanduser()).resolve()   # D14: state/ lives in the checkout
+        try:
+            paths[key] = (checkout / Path(paths[key]).expanduser()).resolve()   # D14: in the checkout
+        except (RuntimeError, OSError, ValueError) as exc:
+            raise ConfigError(f"cannot resolve [paths].{key}: {exc}") from exc
     return Config(Paths(**paths), Model(**model), OCR(**values["ocr"]), source,
                   MappingProxyType(sources))
