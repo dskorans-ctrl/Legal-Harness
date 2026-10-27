@@ -1,16 +1,17 @@
 # Round 2 report: stage 2, benchmark and invented test matter (Gemma trial, Q28)
 
-**Verdict: HELD at the fix-cycle cap, not merged.** The second blind verifier refused R2-3e and R2-8 on one
-narrow finding, V2b-F1: a 302 or 307 reply from the model server stores no answer row (`model.py:18`,
-`:50`, `:54` raise without `raw`), against the chair's own OR-8 ruling that every received reply, any
-status, is stored. Every other item is verified. Three fix cycles are spent (Q5), so the chair stopped
-(owner Q31: rule while away, but no re-brief and no merge without the owner). Owner question 30 asks
-what to do; the chair recommends one extra fix cycle limited to V2b-F1, as Q23 allowed in round 1.
+**Verdict: PASS, merged to `main` (2026-10-27).** The round was held at the fix-cycle cap on V2b-F1 (a 302 or
+307 model reply stored no answer row). The owner chose one extra fix cycle limited to that finding (Q32,
+question 30 (a)); Sonnet wrote it because the owner's other Gemma job was running (Q33, a deviation from
+Q28). Fix 695b97b: the body is stored on all three redirect refusals; the new test is red on the old code
+and under each of three seeds. Verifier 3 (fresh, blind) PASS: `probe_v3 bad=0 runs=13 answers=13
+target_hits=0` (301, 302, 303, 307, 308 and an empty body through the real opener; redirects still
+refused). The owner ratified OR-1 to OR-9, D25 and D26.
 
-Branch `loop/round-02` at the tip of this report; `main` unchanged at b167fbd.
+Branch `loop/round-02` fast-forwarded into `main`; `loop/round-03` opened from it.
 
 ## Measured on the tip (chair re-runs, inside the session sandbox)
-- `scripts/run.sh pytest -q` -> `269 passed in 36.54s` (round 1: 233).
+- `scripts/run.sh pytest -q` -> `270 passed in 36.99s` after the extra cycle (269 before it; round 1: 233).
 - `scripts/run.sh python -m casefile.gate` -> `0` (`gate prose PASS dashes=0 files=136`).
 - Stage 1 exit test unchanged: `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`.
 - Stage 2 exit test: `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1` and the perfect line.
@@ -18,7 +19,7 @@ Branch `loop/round-02` at the tip of this report; `main` unchanged at b167fbd.
   tests/fixtures/bench/flawed.json` -> exit 1:
   `bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`
   then six detail lines (missed F04 F15 F24; two invented; flags_missed G3; one extra flag; rule no-dme-ime).
-- Same with `ideal.json` -> exit 0: `found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 ... pages_failed=0 of 14`.
+- Same with `tests/fixtures/matters/9001.001/ideal.json` -> exit 0: `found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 ... pages_failed=0 of 14`.
 - Proposed regression baselines (R2-4, set at merge): the two bench lines above, `269 passed`, gate `0`.
 
 ## What was built (all code, tests and fixture data written by gemma4:e4b-it-qat)
@@ -41,6 +42,8 @@ exit test; the prose gate over fixture text. Spec §9 D25 and D26 (pending veto)
 - 8c verifier 1: FAIL on V2-F1 (non-200 replies unstored); 8 fresh seeds, 5 green test gaps. Fixed in cycle 3.
 - 8c verifier 2: FAIL on V2b-F1 (3xx replies unstored); 20 reply cases probed, 19 correct; 6 fresh seeds,
   4 green test gaps where the code is right (non-blocking).
+- Extra fix cycle (Q32) and verifier 3: PASS; 8 seeds, 7 red; S5 (truthiness test of `raw` in benchrun.py:69)
+  green because the test has no empty-body 3xx case; code right by probe (carried).
 
 ## Cost: Gemma build against a Sonnet build (owner Q29)
 | | Gemma route (measured) | Sonnet route |
@@ -71,12 +74,11 @@ lower readability. 26 of 43 build tasks passed first try, 2 needed a re-split, n
 driver's fail-closed checks caught 5 bad answers (truncated, wrong format, a whole file on a function
 task) before anything was written.
 
-## Design calls pending owner veto
-D25 (bench contract), D26 (prose gate covers fixtures; Q28 builder), OR-1 to OR-8 in
-`docs/loop/questions-for-owner.md` ("Round 2 overnight rulings"); owner questions 21 to 30.
+## Design calls
+D25, D26 and OR-1 to OR-9: ratified by the owner 2026-10-27 (Q32). Owner questions 21 to 29 remain held.
 
 ## Carried to round 3 (with the default tiers, Q30)
-V2b-F1 if not fixed in an extra cycle; OR-5's cosmetic and design lows (whitespace, unused imports,
+The empty-body 3xx test case (verifier 3, S5); OR-5's cosmetic and design lows (whitespace, unused imports,
 `.DS_Store` refusing a matter, F4 to F6); a non-200 HTTPError with no body stream (fix 3 report);
 duplicate matter numbers not refused (OR-8); verifier test gaps N2 to N5 and the brief's anchored greps;
 R2-CX-2 to stage 4; R1-20 still open; owner questions 24 to 29.

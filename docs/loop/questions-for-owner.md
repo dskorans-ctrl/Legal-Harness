@@ -102,8 +102,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
     (recommended; the fix is three arguments and one test; Q23 precedent); (b) rule that a refused
     redirect is not a received reply (amend D25 and OR-8), then close and merge; (c) discard and re-brief
     per Q5.
+    ANSWERED 2026-10-27: (a).
 
 ## Round 2 overnight rulings (Q31: chair rulings while the owner is away, each pending veto or ratification)
+
+Owner, 2026-10-27: OR-1 to OR-9 RATIFIED, D25 and D26 RATIFIED; question 30 answered (a) (ledger Q32).
 
 - OR-1 (2026-10-26 23:05): "Gemma is free" is judged from `~/local-worker/ollama-serve.log`: the last
   POST /api/chat or /api/generate at least 15 minutes old and the server's last slot line "all slots are

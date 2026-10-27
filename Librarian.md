@@ -36,6 +36,15 @@ Cross-project failure classes live in the app-loop skill's catalog
   lingers in a temp folder? (#R01R-OC-F1)
 - Is a relative path resolved against the root the spec names (D14: the checkout), not the config's folder? (#R01R-OC-F2)
 - Is the interpreter that runs a step the same one the guard ran under? (#R01R-RX-2)
+- Does every path that receives a reply (200, non-200, 3xx refused, non-JSON, wrong shape) store it,
+  and does a test drive each path, including the real opener's redirect handler? (#R02-V-F1)
+- Does a loader refuse two entries that would collide (same id, or same cite and quote), so a key can
+  never be unreachable? (#R02-CX-5)
+- Does every input read as text name its encoding and turn a decode error into the documented exit? (#R02-CX-7)
+- Does a positive-number gate have a test at zero, not only at None? (#R02-CH-1)
+- Is an answer key checked against the pages by a reader, not only by the loader (a key missing a fact
+  on the page fails a correct model)? (#R02-OC-H1)
+- When the orchestrator copies a review record into the tree, did the gate run before the commit? (#R02-P-1)
 
 ## Round 1 (2026-10-25 to 2026-10-26)
 
@@ -230,13 +239,68 @@ spellings; one alias table drives the module, config and run.sh tests; final ver
 **Countermeasure:** relative state and playbook resolve against the checkout.
 **Status:** fixed (9f86d07).
 
+## Round 2 (2026-10-26 to 2026-10-27; Gemma trial, Q28)
+
+### R02-CX-5: duplicate facts in the answer key made a perfect score impossible
+**What broke:** `src/casefile/benchkey.py`: two facts with the same cite and quote; one candidate fact
+matched only one of them (`found=26 of 27`, never perfect).
+**Why:** a loader that accepted entries the scorer cannot tell apart.
+**Caught by:** 8a Codex review; chair repro with fact F99.
+**Countermeasure:** key refuses id collisions and same cite and quote (exit 2).
+**Status:** fixed (0f2022d).
+
+### R02-CX-6 and R02-V-F1: received replies stored no answer row (non-JSON 200, then non-200)
+**What broke:** `src/casefile/model.py:62-65` (non-JSON 200), then `:52-60` (404, 503) raised `ModelError`
+without `raw`, so `benchrun.py:69` stored nothing; D25 says every received reply is a row.
+**Why:** the store rule was enforced per raise, not per path; each review found the next raise.
+**Caught by:** 8a Codex (CX-6), verifier 1 (V2-F1, probe404 answers=0).
+**Countermeasure:** whole decoded body as `raw` at each raise; tests per path.
+**Status:** fixed (ba24d90, 81c78ce). Third member: #R02-V-F1b.
+
+### R02-V-F1b: a 302 or 307 reply stored no answer row
+**What broke:** `src/casefile/model.py:18` (`NoRedirect.redirect_request`), `:50`, `:54` refused redirects
+without `raw`.
+**Why:** same class as #R02-V-F1; the redirect paths were written (G33) before OR-8 made "any status" explicit.
+**Caught by:** verifier 2 through the real opener on a loopback socket (`real_opener status=302 answers=[]`).
+**Countermeasure:** body as `raw` on all three paths; one test per path, each seeded red alone.
+**Status:** fixed (695b97b), extra fix cycle (Q32).
+
+### R02-CX-7: a bad byte in matter.toml gave a traceback, exit 1
+**What broke:** `src/casefile/matter.py`: `UnicodeDecodeError` escaped; D25 wants exit 2.
+**Why:** the except listed OSError and TOMLDecodeError; `tomllib.load` raises UnicodeDecodeError on bad bytes.
+**Caught by:** 8a Codex review; chair repro (0xff).
+**Countermeasure:** UnicodeDecodeError added to the refusal; test_refusals case 12.
+**Status:** fixed (408991c).
+
+### R02-CH-1: zero token counts passed the counts gate untested
+**What broke:** `src/casefile/benchrun.py:43`: seed `c > 0` -> `c >= 0` stayed green.
+**Why:** a gate tested at None but not at its boundary.
+**Caught by:** chair seed after the build.
+**Countermeasure:** test_benchrun_zero_counts.
+**Status:** fixed (9c82349).
+
+### R02-OC-H1: the answer key missed a conflict and three facts that are on the pages
+**What broke:** `tests/fixtures/matters/9001.001/key.json`: radiculopathy conflict MED0007/DEF0002 and facts
+at MED0008, DEF0003, MED0003 absent; a correct model would score flags_extra and fail.
+**Why:** a key validated by the loader (every quote on its page) but never read for completeness.
+**Caught by:** 8b output critic (H1, H2); chair verified on the pages.
+**Countermeasure:** G6, F27 to F29; ideal and flawed updated; bench prints detail lines (M1).
+**Status:** fixed (6c1968c, d007821). Key completeness rule: owner question 26.
+
+### R02-P-1: process notes
+- The chair committed a copied review record with em dashes without running the gate (Mistakes Log).
+- One chair seed did not apply (`raw` positional); caught by `cmp -s` before it counted.
+- Gemma hygiene (dropped `from exc`, whitespace, unused imports, prompt text in comments): Fable review;
+  `from exc` fixed (365f1e0), the rest carried (OR-5).
+- R2-CX-2 (prompt truncation not detectable): deferred to stage 4 (OR-4).
+
 ## Open items a future pass must not re-discover
 
 - **R1-19**: OCR smoke test on an invented fixture PDF: stage 3 (#R01-CX-9).
 - **R1-20**: `bates-cites` sees only bracketed cites; "See page 12" passes: the stage that writes cited prose.
 - **Owner questions 7 to 14** (`docs/loop/questions-for-owner.md`): interim rulings in force.
 - **run.sh needs python3 on PATH** before `uv sync` on a fresh checkout (#R01-CX-4; owner question 16).
-- **VF-1**: pathguard.py:55 newline join has no test; a seed lets a forged last line pass (tip correct). Round 2.
-- **VF-2**: config.py:67 and :145 traceback (exit 1, not ConfigError) on `--config` through a loop and on a
-  bad `~user` or loop in state/playbook. Round 2.
+- **R2-CX-2**: prompt truncation not detectable (spec §4 gate 1): stage 4 (OR-4).
+- **OR-5 lows**: Gemma whitespace, unused imports, prompt comments; `.DS_Store` refuses a matter; F4 to F6.
+- **Non-200 HTTPError with no body stream**, duplicate matter numbers not refused, test gaps N2 to N5.
 - **Leftover capture folders** from killed test runs before 9f86d07 sit in the shared TMPDIR (invented text).

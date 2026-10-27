@@ -21,7 +21,14 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Finish line (owner): spec §7 stages 1 to 8 done and verified in the loop; then stage 9 on the Studio.
 - Standing freezes: none.
 - Privacy: no real client record, name or fact in any loop session; fixtures are invented.
-- Regression baselines: set in round 2.
+- Regression baselines (set at the round 2 merge, 2026-10-27, tip of `loop/round-02`):
+  `scripts/run.sh pytest -q` -> `270 passed`; `scripts/run.sh python -m casefile.gate` -> `0`;
+  `casefile bench --config config.example.toml --matters tests/fixtures/matters --candidate
+  tests/fixtures/bench/flawed.json` -> exit 1, `bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2
+  flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`; the same with `--candidate
+  tests/fixtures/matters/9001.001/ideal.json` -> exit 0, `found=29 of 29 missed=0 invented=0 extra=2 flags=6
+  of 6 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`; stage 2 exit test `stage2 exit=0 runs=+1
+  answers_ok=+1 server_stopped=1`.
 - Records: Librarian.md · docs/loop/round-NN/ · docs/loop/agent-log.md · docs/loop/questions-for-owner.md ·
   docs/loop/tuning-questions.md · docs/loop/HANDOFF.md · docs/loop/next-round.md.
 
@@ -108,6 +115,11 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Q31: owner away overnight (owner, 2026-10-26 ~23:05)? -> keep the loop running until the owner returns;
   the chair makes the calls, each logged in `docs/loop/questions-for-owner.md` under "Round 2 overnight
   rulings" as pending veto or ratification.
+- Q32: round 2 hold, question 30 (owner, 2026-10-27)? -> (a) one extra fix cycle limited to V2b-F1, then a
+  focused fresh blind re-verify, then close. Overnight rulings OR-1 to OR-9 ratified; spec D25 and D26
+  ratified.
+- Q33: coder for the V2b-F1 fix (owner, 2026-10-27; the owner's other Gemma job was running)? -> Sonnet
+  writes it; a deviation from Q28, logged in the round report.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -344,7 +356,7 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
     -> `found=29 of 29 ... extra=2 flags=6 of 6 ... rules=0 pages_failed=0 of 14`, exit 0; `candidate_refusals=7
     of 7`, `score_cases=11 of 11`. Unseeded test gaps (code correct by direct probe): V2-S2 (cite not compared)
     and V2-S5 (duplicate extra flag) stay green; see round02-verify.md.
-- [ ] R2-3e. W7 `ModelError.raw` and the stage 2 runner (counts gate, every received reply an answer row).
+- [x] R2-3e. W7 `ModelError.raw` and the stage 2 runner (counts gate, every received reply an answer row).
   Build note: afed11b, Gemma G33, G34. test_model.py green, `card_version=092368692dd3`; model.py diff is
   `__init__` plus the five raw raises; seed W8 e (raw dropped) -> `answers_failed=5`, exit 1.
     Verifier (blind, round 2, 2026-10-27, tip 2099304): REFUSED. `card_version=092368692dd3` and test_model `16
@@ -360,6 +372,11 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
     socket: `real_opener status=302 answers=[] failures=['bench.model'] failure='bench.model: redirect refused:
     302 to http://127.0.0.1:9/x'` (307 the same; 404 on the same server -> one row). model.py:18, :50, :54
     raise without `raw`. Finding V2b-F1; OR-8 rules "every received reply, any status, is stored".
+    Verifier 3 (blind, round 2 extra cycle, 2026-10-27, tip 695b97b): TICKED. Own probe on matter 9001.001,
+    loopback server, real opener: 302, 307, 301, 303, 308 and a 302 with an empty body each give exactly one
+    `failed` row holding the body and one `bench.model` failure `redirect refused: ...`, redirect target hit 0
+    times; 404 and 503 one `failed` row each; 200 one `ok` row. Transports returning 302/307 and raising
+    HTTPError 302/307: one row with the body each (`probe_v3 bad=0 runs=13 answers=13 target_hits=0`).
 - [x] R2-3d. W8 stand-in bench recording and runner tests (`benchrun_modes=7 of 7`).
   Build note: afed11b, Gemma G35 to G38. `bench_recording_ok=1 modes=4 pages_in_request=14`,
   `benchrun_modes=7 of 7 answers_ok=1 answers_failed=6 failures=6`; seeds a to f red (a and d via
@@ -384,9 +401,11 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
     files=129` (files grew since 4f03e69); em dash appended to key.json -> `gate prose FAIL dashes=1 files=129`;
     restored, cmp ok. `python -m tests.fakemodel --bench-matter` + `casefile bench` -> perfect line, exit 0, run
     log 1 run (bench.extract, 092368692dd3, pages_in 14) and 1 ok answer row; listeners 0 after.
-- [ ] R2-4. Regression baselines set in `## Project` from measured numbers.
-- [ ] R2-5. Close: report, Librarian, agent log, spec §11 as-built, handoff, next-round prompt.
-- [ ] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.
+- [x] R2-4. Regression baselines set in `## Project` from measured numbers (chair, 2026-10-27, from verifier 3's
+  regression set and the chair re-run at 695b97b).
+- [x] R2-5. Close: report, Librarian, agent log, spec §11 as-built, handoff, next-round prompt (chair, 2026-10-27).
+- [x] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.
+    Closed by verifier 3's V2 under "Round 2 extra fix cycle" (R2-3e, R2-8, R2-9 ticked; the rest by verifier 1).
     Verifier (blind, round 2, 2026-10-27, tip 2099304): NOT ticked. R2-3e refused (V2-F1: a received non-200
     reply gets no answer row). All other items `[x]`. Report: docs/loop/round-02/round02-verify.md.
     Verifier 2 (blind, round 2, 2026-10-27, tip b875949): NOT ticked. R2-3e and R2-8 refused on V2b-F1 (a received
@@ -451,7 +470,7 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   tasks, 11 calls, all first try, no fallback. Report: docs/loop/round-02/round02-fix2-report.md.
   Chair re-run after fix cycle 2 (tip 0d5e0a0): `263 passed in 36.86s`; gate `0`; flawed bench exit 1 with
   the amended line and six detail lines; ideal exit 0 `found=29 of 29 ... flags=6 of 6`; listeners 0.
-- [ ] R2-8. Fix cycle 3 (Gemma; OR-8): V2-F1 (non-200 replies stored as failed answer rows with the body)
+- [x] R2-8. Fix cycle 3 (Gemma; OR-8): V2-F1 (non-200 replies stored as failed answer rows with the body)
   and tests that turn the verifier's seeds S1, S2, S4, S5, S6 red.
   Note (fix cycle 3, 2026-10-27, not a tick: the verifier ticks): V2-F1 RED on e637357 (`assert [] ==
   [('failed', '...own model"}')]`), GREEN at 81c78ce (model.py passes the whole decoded body as `raw` at
@@ -468,6 +487,35 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
     seeds applied (`cmp -s` differed) and turned its own test red: S1 test_bench_discovery `1 failed`, S2
     test_benchscore_cite `1 failed`, S4 test_benchrun_done_reason `1 failed`, S5 test_benchscore_flag_dedupe
     `1 failed`, S6 test_bench_multi `1 failed`; all restored, `cmp` ok.
+    Verifier 3 (blind, round 2 extra cycle, 2026-10-27, tip 695b97b): TICKED. The refused first clause now holds:
+    every non-200 reply in my probe, 3xx included, stores one `failed` row with the body (`probe_v3 bad=0`, see
+    R2-3e). Non-200 sites seeded again: model.py:60 raw dropped -> `1 failed, 269 passed`; model.py:64 raw
+    dropped -> `1 failed, 269 passed`; both applied (`cmp -s` differed) and restored (`cmp` ok).
 - Round 2 verdict (chair, 2026-10-27): HELD at the fix-cycle cap (Q5). Verifier 2 FAIL on V2b-F1 (3xx replies
   store no answer row). Not merged; owner question 30 (recommend one extra cycle limited to V2b-F1, Q23
   precedent). Report `docs/loop/round-02/round02-report.md`.
+
+## Round 2 extra fix cycle (Q32, 2026-10-27)
+- [x] R2-9. V2b-F1: every received 3xx reply is stored as a failed answer row holding its body, on all three
+  refusal paths (model.py:18 `NoRedirect.redirect_request`, :50 status 3xx returned, :54 HTTPError 3xx);
+  the refusal itself stays (D21). CHECK: `pytest -q tests/test_benchrun.py` passes and the new 3xx test
+  fails when the `raw` argument is dropped at any one of the three raises (three seeds, each RED alone).
+  Note (extra fix cycle, 2026-10-27, not a tick: the verifier ticks): 695b97b, Sonnet (Q33). New
+  test_benchrun_redirect_reply red on the unfixed model.py (`1 failed`); builder seeds at :18, :50, :54 each
+  red alone, cmp ok; chair seed at :18 (real opener path) -> `1 failed`, cmp ok; `270 passed in 36.99s`;
+  gate `0` (`gate prose PASS dashes=0 files=138`).
+    Verifier 3 (blind, round 2 extra cycle, 2026-10-27, tip 695b97b): TICKED. `pytest -q tests/test_benchrun.py`
+    `5 passed`; raw dropped at each of model.py:19, :52, :58 alone -> `1 failed, 4 passed`, cmp ok each. Own
+    seeds off those lines, each applied and restored (cmp ok): benchrun.py:71 status ok -> `1 failed` (redirect
+    test); benchrun.py:70 always json.dumps -> `1 failed`; model.py:50 `300 <=` to `303 <=` -> `1 failed`;
+    model.py:23 NoRedirect dropped -> `1 failed` (probe: target hit 4 times). Refusal stays: redirect target hit
+    0 times in my probe. Gap, non-blocking: benchrun.py:69 `is not None` -> truthiness stays green (no 3xx
+    empty-body case in the test); code right by probe (empty 302 -> one row `''`).
+- [x] V2. Focused fresh blind re-verify of R2-9 and the regression set (269+ passed, gate 0, bench lines).
+    Verifier 3 (blind, round 2 extra cycle, 2026-10-27, tip 695b97b): TICKED. R2-3e, R2-8, R2-9 `[x]`.
+    `270 passed in 36.71s`; gate prints `0` (`gate prose PASS dashes=0 files=138`); stage 1 and 2 exit tests
+    `4 passed` (`stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`); flawed bench exit 1 `found=26 of 29
+    ... flags=5 of 6` with six detail lines; ideal (tests/fixtures/matters/9001.001/ideal.json) exit 0
+    `found=29 of 29`. Report: docs/loop/round-02/round02-verify3.md.
+- Round 2 verdict (chair, 2026-10-27): PASS after the extra fix cycle (Q32). Verifier 3 PASS at 695b97b;
+  non-blocking: no empty-body 3xx case in the redirect test (seed S5 green, code right by probe). Merged to `main`.
