@@ -17,3 +17,5 @@ by round with the `app-loop` skill (`.claude/skills/app-loop/`).
 ## Mistakes Log
 
 (one line per mistake that cost time, newest last)
+- 2026-10-27 R2: chair committed a copied review record without running the gate; it held em dashes and the gate
+  printed 1 until the builder fixed it. Run the gate before every chair commit.

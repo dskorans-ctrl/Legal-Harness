@@ -86,3 +86,16 @@ Held questions, numbered, with any interim ruling made while the owner was away 
   idle", checked every 30 minutes for up to 24 hours. Why: the other job keeps the model loaded for 24 h,
   so "unloaded" never fires. Risk: a job that pauses more than 15 minutes between requests would be
   shared with the build (Ollama queues; both still finish, just slower).
+- OR-2 (2026-10-27): ratified the build orchestrator's b6a9624, which replaced 7 en and em dashes with
+  hyphens in `docs/loop/round-02/round02-brief-codex.md` (a tracked copy of Codex's review) so the prose
+  gate prints 0. The chair committed that copy at 600ad8f without running the gate (Mistakes Log). The
+  untouched original stays in `.workflow/scratch/`.
+- OR-3 (2026-10-27): the measured Sonnet cost control (offered at Q29, no veto before bed) runs now, in a
+  throwaway worktree branch `control/r2-sonnet` from 2dfa4f5, rebuilding W3, the W5 code, W6 and W9
+  (`--candidate` path) from the same brief; never merged. Its tokens scale to the round for the
+  comparison in the round report.
+- OR-4 (2026-10-27): Codex R2-CX-2 (the bench cannot tell when Ollama silently cut the prompt) is real
+  against spec §4 gate 1, but the check needs the stage 4 model client design (Ollama does not count
+  cached prompt tokens, so "tokens read = tokens sent" is not a one-line test). Deferred to the stage 4
+  brief as a carried item; D25 gets a known-limit sentence. Stage 2's 14-page matter is about 5 k tokens
+  against a 65 k context, so it cannot fire in the loop today.

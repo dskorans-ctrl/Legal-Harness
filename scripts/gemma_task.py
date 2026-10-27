@@ -79,7 +79,8 @@ def ask(prompt, think, num_ctx, num_predict):
         "options": {"temperature": 0.2, "num_ctx": num_ctx, "num_predict": num_predict},
     }
     req = urllib.request.Request(URL, data=json.dumps(body).encode(), headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=1800) as r:
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))  # loopback only, never a proxy
+    with opener.open(req, timeout=1800) as r:
         return json.loads(r.read())
 
 
@@ -172,6 +173,9 @@ def main():
     allow = {os.path.normpath(a) for a in args.allow}
     writes = {}
     for kind, target, code in got:
+        if args.function and kind == "FILE":
+            print(f"gemma: FILE answer on a function task: {target}; {stats}")
+            return 4
         path = target.split("::")[0] if kind == "FUNCTION" else target
         if os.path.normpath(path) not in allow:
             print(f"gemma: path not allowed: {path}; {stats}")
@@ -188,6 +192,10 @@ def main():
         else:
             writes[path] = code
     for path, content in writes.items():  # every answer must parse before anything is written
+        real = os.path.realpath(os.path.join(ROOT, path))
+        if os.path.islink(os.path.join(ROOT, path)) or os.path.commonpath([real, os.path.realpath(ROOT)]) != os.path.realpath(ROOT):
+            print(f"gemma: {path} is a link or outside the checkout, nothing written; {stats}")
+            return 4
         try:
             if path.endswith(".py"):
                 ast.parse(content)

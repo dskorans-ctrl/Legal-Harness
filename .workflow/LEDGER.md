@@ -343,3 +343,18 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   tests/test_matter.py (W3 CHECK green, seeds a to d not run). Resume at: W3 seeds and commit, then G8.
 - RESUMED 2026-10-27; build G1 to G43 done, all W CHECKs and seeds red-then-green; no Sonnet fallback.
   Report: docs/loop/round-02/round02-build-report.md; tally docs/loop/round-02/round02-gemma-tally.md.
+- Chair re-run of the build (2026-10-27, tip dff4707): `253 passed in 36.89s`; gate `0`; stage 2 exit
+  `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1` and the perfect line; `casefile bench --config
+  config.example.toml --candidate flawed.json` -> the flawed line, exit 1; ideal -> perfect line, exit 0.
+  Chair seeds: quotes.py:15 drop `bool(quote) and` -> `1 failed`, cmp ok; benchscore.py:37 drop `rules == 0`
+  -> `1 failed`, cmp ok; benchrun.py:43 `c > 0` -> `c >= 0` -> GREEN (`1 passed`): zero token counts are
+  accepted untested. -> finding R2-CH-1 for fix cycle 1.
+- 8a Codex code review (2026-10-27, `round02-codex-review.md`): 7 findings, all reproduced or traced by the
+  chair. Driver (loop tooling, chair-owned): CX-1 proxy honoured, CX-3 symlink target, CX-4 FILE answer on a
+  function task -> fixed by the chair in scripts/gemma_task.py and proven on fake answers (link refused,
+  nothing written; mixed answer writes nothing; FILE on function task exit 4; opener has no proxy). App, for
+  fix cycle 1 (Gemma): R2-CX-5 key collisions (repro: duplicate fact F99 -> `found=26 of 27`, never
+  perfect); R2-CX-6 non-JSON 200 reply gets no answer row (traced model.py:62-65, no `raw`); R2-CX-7 bad
+  byte in matter.toml -> `UnicodeDecodeError`, exit 1 (repro, D25 wants 2); R2-CH-1 zero token counts.
+  R2-CX-2 (prompt truncation not detected: spec §4 gate 1 "read as many tokens as were sent"): deferred to
+  stage 4 (model client and gates) by the chair, OR-4, pending veto.
