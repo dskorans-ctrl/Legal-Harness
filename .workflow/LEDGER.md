@@ -446,3 +446,6 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   on the tip and red under the verifier's exact mutation, cmp ok: S1 a1af3ac, S2 f2148ca, S4 12876e9, S5
   73baa0c, S6 1e84c60. `269 passed in 37.13s`, gate `0` (`files=135`); Gemma 7 tasks, 8 calls, no
   fallback. Report: docs/loop/round-02/round02-fix3-report.md.
+  Chair re-run after fix cycle 3 (tip 64231af): `269 passed in 36.54s`; gate `0`; seed model.py status!=200
+  site drops raw -> `1 failed, 3 passed`, cmp ok; seed V2-S2 (drop cite clause) -> `1 failed, 268 passed`,
+  cmp ok. (A first chair seed did not apply, raw being positional; caught by `cmp -s`, not counted.)
