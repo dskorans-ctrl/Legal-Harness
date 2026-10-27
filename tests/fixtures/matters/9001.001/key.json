@@ -155,6 +155,24 @@
       "cite": "DEF0003",
       "quote": "No work restrictions are indicated.",
       "text": "Dr. Marchetti's report states no work restrictions are indicated."
+    },
+    {
+      "id": "F27",
+      "cite": "MED0008",
+      "quote": "Restrictions: sedentary duty, no lifting over 15 pounds, until re-evaluation on 06/20/2025.",
+      "text": "Dr. Okonkwo-Lind restricted the patient to sedentary duty with no lifting over 15 pounds until re-evaluation on 06/20/2025."
+    },
+    {
+      "id": "F28",
+      "cite": "DEF0003",
+      "quote": "No further treatment is medically necessary.",
+      "text": "The report states no further treatment is medically necessary."
+    },
+    {
+      "id": "F29",
+      "cite": "MED0003",
+      "quote": "Lumbar strain, likely work related.",
+      "text": "The family medicine record assessed a lumbar strain, likely work related."
     }
   ],
   "flags": [
@@ -200,6 +218,15 @@
         "MED0005"
       ],
       "about": "The physical therapy discharge summary is not in the records."
+    },
+    {
+      "id": "G6",
+      "kind": "conflict",
+      "cites": [
+        "MED0007",
+        "DEF0002"
+      ],
+      "about": "Dr. Okonkwo-Lind's impression is left L5 radiculopathy; the report found no objective findings of radiculopathy."
     }
   ]
 }

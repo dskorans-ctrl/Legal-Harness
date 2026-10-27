@@ -30,10 +30,10 @@ def test_key_loads(capsys):
     with capsys.disabled():
         print(f"key_facts={len(key.facts)} flags={len(key.flags)} pages={len(matter.pages)}")
     
-    expected_fact_ids = [f"F{n:02d}" for n in range(1, 27)]
-    expected_flag_ids = [f"G{n}" for n in range(1, 6)]
+    expected_fact_ids = [f"F{n:02d}" for n in range(1, 30)]
+    expected_flag_ids = [f"G{n}" for n in range(1, 7)]
     
-    assert (len(key.facts), len(key.flags), len(matter.pages)) == (26, 5, 14)
+    assert (len(key.facts), len(key.flags), len(matter.pages)) == (29, 6, 14)
     assert [f.id for f in key.facts] == expected_fact_ids
     assert [f.id for f in key.flags] == expected_flag_ids
     assert findings == []

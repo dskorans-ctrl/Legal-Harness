@@ -116,6 +116,21 @@
       "text": "The IME found no work restrictions."
     },
     {
+      "cite": "MED0008",
+      "quote": "Restrictions: sedentary duty, no lifting over 15 pounds, until re-evaluation on 06/20/2025.",
+      "text": "Dr. Okonkwo-Lind restricted the patient to sedentary duty with no lifting over 15 pounds until re-evaluation on 06/20/2025."
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "No further treatment is medically necessary.",
+      "text": "The report states no further treatment is medically necessary."
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Lumbar strain, likely work related.",
+      "text": "The family medicine record assessed a lumbar strain, likely work related."
+    },
+    {
       "cite": "EMP0001",
       "quote": "Date of hire: 08/02/2021",
       "text": "The incident report gives a hire date of 08/02/2021."
@@ -166,6 +181,14 @@
         "MED0005"
       ],
       "about": "The physical therapy discharge summary is not in the records."
+    },
+    {
+      "kind": "conflict",
+      "cites": [
+        "MED0007",
+        "DEF0002"
+      ],
+      "about": "Dr. Okonkwo-Lind's impression is left L5 radiculopathy; the report found no objective findings of radiculopathy."
     },
     {
       "kind": "conflict",

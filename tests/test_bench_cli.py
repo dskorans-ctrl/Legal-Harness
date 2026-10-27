@@ -11,9 +11,9 @@ from conftest import ROOT, write_config
 MATTERS = ROOT / "tests" / "fixtures" / "matters"
 MATTER = MATTERS / "9001.001"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 found=26 of 26 missed=0 invented=0 extra=2 flags=5 of 5 flags_missed=0 "
+PERFECT = ("bench 9001.001 found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 found=23 of 26 missed=3 invented=2 extra=2 flags=4 of 5 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 # Mock bench function based on background description

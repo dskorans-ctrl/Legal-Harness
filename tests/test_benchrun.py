@@ -42,7 +42,7 @@ def test_benchrun_modes(tmp_path, capsys):
     try:
         # 1. Replay (default mode)
         r = go()
-        check1 = r.pages_failed == 0 and r.failure is None and len(r.candidate.facts) == 28
+        check1 = r.pages_failed == 0 and r.failure is None and len(r.candidate.facts) == 31
         
         # Request shape check
         sent = json.loads(fake.requests[-1]["body"])
