@@ -145,3 +145,25 @@ def test_key_refusals(tmp_path, capsys):
     with capsys.disabled():
         print(f"key_refusals={ok} of 12")
     assert ok == 12
+
+
+def test_key_spellings_load_as_the_normalised_stamp(tmp_path):
+    matter = matters.load(make(tmp_path, PAGES))
+    data = copy.deepcopy(KEY)
+    data["facts"][0]["cite"] = "MED-0001"
+    data["flags"][0]["cites"] = ["MED 0001"]
+    key = load(write(tmp_path, data), matter)
+    assert key.facts[0].cite == "MED0001"
+    assert key.flags[0].cites == ("MED0001",)
+
+
+def test_whitespace_only_text_and_about_are_refused(tmp_path):
+    matter = matters.load(make(tmp_path, PAGES))
+    blank_text = copy.deepcopy(KEY)
+    blank_text["facts"][0]["text"] = "   \n"
+    blank_about = copy.deepcopy(KEY)
+    blank_about["flags"][0]["about"] = "  "
+    with pytest.raises(BenchKeyError, match="fact 1: expected keys id, cite, quote, text"):
+        load(write(tmp_path, blank_text), matter)
+    with pytest.raises(BenchKeyError, match="flag G1: about must be a nonempty string"):
+        load(write(tmp_path, blank_about), matter)

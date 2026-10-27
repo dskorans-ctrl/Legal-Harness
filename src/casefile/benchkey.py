@@ -6,6 +6,7 @@ from pathlib import Path
 
 from casefile.matter import Matter
 from casefile.quotes import found_in, normalize
+from casefile.stamps import normalize as normalize_stamp
 
 FLAG_KINDS = ("conflict", "gap")
 
@@ -72,10 +73,10 @@ def load(path, matter: Matter) -> Key:
             raise BenchKeyError(f"{path}: fact {fid}: duplicate id")
         fact_ids_seen.add(fid)
 
-        if not all(isinstance(item[k], str) and item[k] for k in required_keys):
+        if not all(isinstance(item[k], str) and item[k].strip() for k in required_keys):
             raise BenchKeyError(f"{path}: fact {n}: expected keys id, cite, quote, text (nonempty strings)")
 
-        cite = item["cite"]
+        cite = normalize_stamp(item["cite"])
         page = matter.page(cite)
         if page is None:
             raise BenchKeyError(f"{path}: fact {fid}: cite {cite} is not a page of matter {matter.number}")
@@ -117,13 +118,14 @@ def load(path, matter: Matter) -> Key:
         if not all(isinstance(c, str) and c for c in cites):
             raise BenchKeyError(f"{path}: flag {gid}: cites must be a nonempty list of Bates stamps")
 
+        cites = [normalize_stamp(c) for c in cites]
         for cite in cites:
             page = matter.page(cite)
             if page is None:
                 raise BenchKeyError(f"{path}: flag {gid}: cite {cite} is not a page of matter {matter.number}")
 
         about = item["about"]
-        if not isinstance(about, str) or not about:
+        if not isinstance(about, str) or not about.strip():
             raise BenchKeyError(f"{path}: flag {gid}: about must be a nonempty string")
 
         pair = (kind, frozenset(cites))

@@ -6,6 +6,8 @@ from pathlib import Path
 import re
 import tomllib
 
+from casefile.stamps import normalize
+
 STAMP_PATTERN = r"[A-Z]{1,8}[ -]?\d{4,}"
 NUMBER_PATTERN = r"\d{4}\.\d{3}"
 PAGE_NAME = re.compile(r"(\d{3})\.txt\Z")
@@ -19,8 +21,8 @@ class MatterError(ValueError):
 class Page:
     binder: str
     number: int
-    bates: str
     text: str
+    stamps: tuple[str, ...]
 
     @property
     def page_id(self) -> str:
@@ -33,48 +35,45 @@ class Matter:
     root: Path
     pages: tuple[Page, ...]
 
-    def page(self, bates: str) -> Page | None:
-        """The first page whose stamp equals bates, else None."""
+    def page(self, cite: str) -> Page | None:
+        """The first page that carries the cite as one of its stamps, compared by normalised form
+        (MED0001, MED 0001 and MED-0001 are one stamp, owner Q40), else None."""
+        wanted = normalize(cite)
         for page in self.pages:
-            if page.bates == bates:
+            if wanted in page.stamps:
                 return page
         return None
 
 
 def load(root) -> Matter:
-    # 1. root = Path(root); meta = root / "matter.toml".
     root = Path(root)
     meta = root / "matter.toml"
-
-    # 2. If not meta.is_file(): f"{meta}: matter.toml not found".
     if not meta.is_file():
         raise MatterError(f"{meta}: matter.toml not found")
 
-    # 3. Load matter.toml.
     try:
         with meta.open("rb") as stream:
             data = tomllib.load(stream)
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise MatterError(f"{meta}: {exc}") from exc
 
-    # 4. Check keys.
     if set(data) != {"number", "binders"}:
         raise MatterError(f"{meta}: expected keys number and binders")
 
-    # 5. Validate number.
     number = data["number"]
     if not isinstance(number, str) or not re.fullmatch(NUMBER_PATTERN, number):
         raise MatterError(f"{meta}: number must look like 9001.001")
 
-    # 6. Validate binders.
     binders = data["binders"]
     if not isinstance(binders, list) or not binders or any(not isinstance(b, str) or not b for b in binders):
         raise MatterError(f"{meta}: binders must be a nonempty list of names")
+    if len(set(binders)) != len(binders):
+        raise MatterError(f"{meta}: binders must be distinct")
 
-    # 7. Check records directory.
+    # A name that starts with a dot (a Finder .DS_Store) is not a record; it is the only ignore rule.
     records = root / "records"
     try:
-        names = sorted(p.name for p in records.iterdir())
+        names = sorted(p.name for p in records.iterdir() if not p.name.startswith("."))
     except OSError as exc:
         raise MatterError(f"{records}: {exc}") from exc
 
@@ -82,59 +81,45 @@ def load(root) -> Matter:
         if name not in binders:
             raise MatterError(f"{records}: unlisted binder folder {name}")
 
-    # 8. Process pages.
-    pages = []
-    seen = set()
-
+    # Every listing is checked before any page is read, so a stray file is named first.
+    listings = {}
     for binder in binders:
         folder = records / binder
-
-        # Check if folder exists and is a directory
         if not folder.is_dir():
             raise MatterError(f"{folder}: binder folder not found")
-
         try:
-            entries = sorted(p.name for p in folder.iterdir())
+            entries = sorted(p.name for p in folder.iterdir() if not p.name.startswith("."))
         except OSError as exc:
             raise MatterError(f"{folder}: {exc}") from exc
-
-        # Check file names
         for index, name in enumerate(entries, start=1):
-            expected_name = f"{index:03d}.txt"
-            if name != expected_name:
+            if name != f"{index:03d}.txt":
                 raise MatterError(f"{folder}: expected page files 001.txt, 002.txt, ...; found {name}")
+        listings[binder] = entries
 
+    pages = []
+    seen = set()
+    for binder, entries in listings.items():
+        folder = records / binder
+        for index, name in enumerate(entries, start=1):
             path = folder / name
-
-            # Read text
             try:
                 text = path.read_text(encoding="utf-8")
             except (OSError, UnicodeDecodeError) as exc:
                 raise MatterError(f"{path}: {exc}") from exc
 
             lines = text.rstrip().splitlines()
-
-            # Get stamp
             stamp = lines[-1].strip() if lines else ""
-
-            # Validate stamp
             if not re.fullmatch(STAMP_PATTERN, stamp):
                 raise MatterError(f"{path}: last line is not a Bates stamp")
 
-            # Extract body
             body = "\n".join(lines[:-1]).strip()
-
-            # Validate body
             if not body:
                 raise MatterError(f"{path}: no page text above the stamp")
 
-            # Check duplicates
-            if stamp in seen:
+            if normalize(stamp) in seen:
                 raise MatterError(f"{path}: duplicate Bates stamp {stamp}")
-            seen.add(stamp)
+            seen.add(normalize(stamp))
 
-            # Create Page
-            pages.append(Page(binder, index, stamp, body))
+            pages.append(Page(binder, index, body, (normalize(stamp),)))
 
-    # 9. Return Matter
     return Matter(number, root, tuple(pages))

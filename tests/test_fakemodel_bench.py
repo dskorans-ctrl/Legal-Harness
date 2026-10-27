@@ -11,7 +11,7 @@ MATTER = ROOT / "tests/fixtures/matters/9001.001"
 
 def test_bench_recording(capsys):
     m = matters.load(MATTER)
-    body = "Matter 9001.001\n" + "".join(f"=== PAGE {p.page_id} BATES {p.bates} ===\n{p.text}\n" for p in m.pages)
+    body = "Matter 9001.001\n" + "".join(f"=== PAGE {p.page_id} BATES {" ".join(p.stamps)} ===\n{p.text}\n" for p in m.pages)
     expected = [{"role": "system", "content": CARD_TEXT}, {"role": "user", "content": body}]
     assert body.count("=== PAGE ") == 14
     assert all(p.text in body for p in m.pages)

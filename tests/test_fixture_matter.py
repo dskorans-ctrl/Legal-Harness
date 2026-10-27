@@ -16,7 +16,7 @@ def test_fixture_loads(capsys):
     
     assert len(matter.pages) == 14
     assert len(binder_set) == 3
-    assert [p.bates for p in matter.pages] == STAMPS
+    assert [p.stamps for p in matter.pages] == [(s,) for s in STAMPS]
 
 def test_key_loads(capsys):
     matter = matters.load(MATTER)

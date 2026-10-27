@@ -27,7 +27,7 @@ def card_version() -> str:
 
 
 def page_block(page: Page) -> str:
-    return f"=== PAGE {page.page_id} BATES {page.bates} ===\n{page.text}\n"
+    return f"=== PAGE {page.page_id} BATES {" ".join(page.stamps)} ===\n{page.text}\n"
 
 
 def messages(matter: Matter) -> list[dict]:

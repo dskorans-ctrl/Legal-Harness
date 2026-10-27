@@ -6,6 +6,7 @@ from casefile.benchcandidate import Candidate
 from casefile.benchkey import Key
 from casefile.matter import Matter
 from casefile.quotes import found_in, normalize
+from casefile.stamps import normalize as normalize_stamp
 
 
 @dataclass(frozen=True)
@@ -70,15 +71,16 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
     flags_extra_items = []
 
     for fact in candidate.facts:
-        page = matter.page(fact.cite)
+        cite = normalize_stamp(fact.cite)
+        page = matter.page(cite)
         if page is None or not found_in(fact.quote, page.text):
-            invented_facts.append((fact.cite, fact.quote[:60]))
+            invented_facts.append((cite, fact.quote[:60]))
             invented.append(fact.quote[:60])
             continue
 
         hit = None
         for k in key.facts:
-            if k.cite == fact.cite and normalize(k.quote) == normalize(fact.quote):
+            if k.cite == cite and normalize(k.quote) == normalize(fact.quote):
                 hit = k
                 break
 
@@ -88,22 +90,23 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
             matched.add(hit.id)
 
     key_sets = {(f.kind, frozenset(f.cites)): f.id for f in key.flags}
-    cand_sets = {(f.kind, frozenset(f.cites)) for f in candidate.flags}
+    cand_sets = {(f.kind, frozenset(normalize_stamp(c) for c in f.cites)) for f in candidate.flags}
 
     flags_found = len(set(key_sets) & cand_sets)
     
     flags_extra_items_list = []
     seen = set()
     for flag in candidate.flags:
-        flag_key = (flag.kind, frozenset(flag.cites))
+        cites = frozenset(normalize_stamp(c) for c in flag.cites)
+        flag_key = (flag.kind, cites)
         if flag_key in key_sets or flag_key in seen:
             continue
         seen.add(flag_key)
-        flags_extra_items_list.append((flag.kind, tuple(sorted(set(flag.cites)))))
+        flags_extra_items_list.append((flag.kind, tuple(sorted(cites))))
     flags_extra = len(flags_extra_items_list)
 
     checks = [(f.text, f.cite) for f in candidate.facts]
-    checks += [(f.about, "flag " + ",".join(sorted(set(f.cites)))) for f in candidate.flags]
+    checks += [(f.about, "flag " + ",".join(sorted({normalize_stamp(c) for c in f.cites}))) for f in candidate.flags]
     rule_hits = []
     for text, where in checks:
         for finding in rules.check(text, unit="text", stamped=True):

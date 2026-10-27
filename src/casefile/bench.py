@@ -61,6 +61,7 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
 
     # 7. Main Loop
     imperfect = 0
+    seen_numbers = {}
     try:
         for root in roots:
             # Load Matter and Key
@@ -70,6 +71,12 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
             except (matters.MatterError, benchkey.BenchKeyError) as exc:
                 print(f"{type(exc).__name__}: {one_line(exc)}", file=err)
                 return 2
+
+            if matter.number in seen_numbers:
+                print(f"bench: duplicate matter number {matter.number} in {seen_numbers[matter.number]} "
+                      f"and {root}", file=err)
+                return 2
+            seen_numbers[matter.number] = root
 
             candidate = None
             pages_failed = 0

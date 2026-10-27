@@ -30,3 +30,17 @@ def test_same_quote_wrong_page_is_extra_and_missed(tmp_path):
     assert not s.perfect
     assert s.line("9001.001") == ("bench 9001.001 found=1 of 2 missed=1 invented=0 extra=1 flags=1 of 1 "
                                   "flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 2")
+
+
+def test_candidate_cite_spellings_match_the_page(tmp_path, capsys):
+    matter = matters.load(make(tmp_path, PAGES))
+    path = tmp_path / "key.json"
+    path.write_text(json.dumps(KEY), encoding="utf-8")
+    key = benchkey.load(path, matter)
+    answer = {"facts": [{"cite": "MED-0001", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
+                        {"cite": "med 0002", "quote": "Diagnosis: acute lumbar strain.", "text": "A lumbar strain."}],
+              "flags": [{"kind": "conflict", "cites": ["MED 0002", "MED-0001"], "about": "The pages differ."}]}
+    s = score(key, parse(answer), matter, RULES, 0)
+    with capsys.disabled():
+        print(f"candidate_spellings found={s.found} flags_found={s.flags_found}")
+    assert (s.found, s.missed, s.extra, s.invented, s.flags_found, s.flags_extra) == (2, 0, 0, 0, 1, 0)

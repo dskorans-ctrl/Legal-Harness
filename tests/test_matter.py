@@ -1,4 +1,4 @@
-"""The stage 2 matter loader: pages, stamps and its twelve refusals."""
+"""The stage 2 matter loader: pages, stamps and its fifteen refusals."""
 
 import pytest
 from pathlib import Path
@@ -24,12 +24,13 @@ def test_load_happy(tmp_path):
     matter = load(root)
     assert len(matter.pages) == 3
     assert matter.pages[0].page_id == "medical/001"
+    assert matter.pages[0].stamps == ("MED0001",)
     assert matter.page("MED0002").text == "Diagnosis: acute lumbar strain."
     assert matter.page("NOPE0001") is None
     assert matter.number == "9001.001"
 
     # Check that only expected files exist (filenames only)
-    actual_files = sorted([p.name.split('/')[-1] for p in root.rglob("*") if p.is_file()])
+    actual_files = sorted(p.name for p in root.rglob("*") if p.is_file())
     assert actual_files == ["001.txt", "001.txt", "002.txt", "matter.toml"]
 
 # --- Refusal Setup Functions ---
@@ -102,6 +103,25 @@ def setup_toml_not_utf8(base):
         stream.write(b"\xff")
     return root
 
+def setup_binders_repeated(base):
+    root = make(base, GOOD)
+    content = 'number = "9001.001"\nbinders = ["medical", "employer", "medical"]\n'
+    (root / "matter.toml").write_text(content, encoding="utf-8")
+    return root
+
+def setup_stray_file_named_before_unreadable_page(base):
+    """The first binder holds a page that is not UTF-8; the second holds a stray file. Names are
+    checked for every binder before any page is read, so the stray file is the refusal named."""
+    root = make(base, GOOD)
+    (root / "records/medical/002.txt").write_bytes(b"\xff\xfe text\nMED0002\n")
+    (root / "records/employer/notes.txt").write_text("x\nEMP0009\n", encoding="utf-8")
+    return root
+
+def setup_unlisted_binder(base):
+    root = make(base, GOOD)
+    (root / "records/xray").mkdir()
+    return root
+
 def test_refusals(tmp_path, capsys):
     CASES = [
         (setup_missing_toml, "matter.toml not found"),
@@ -115,7 +135,10 @@ def test_refusals(tmp_path, capsys):
         (setup_duplicate_stamp, "duplicate Bates stamp MED0001"),
         (setup_page_is_folder, "002.txt"),
         (setup_page_not_utf8, "002.txt"),
-        (setup_toml_not_utf8, "can't decode byte 0xff")
+        (setup_toml_not_utf8, "can't decode byte 0xff"),
+        (setup_binders_repeated, "binders must be distinct"),
+        (setup_stray_file_named_before_unreadable_page, "found notes.txt"),
+        (setup_unlisted_binder, "unlisted binder folder xray"),
     ]
 
     ok = 0
@@ -135,5 +158,46 @@ def test_refusals(tmp_path, capsys):
         happy_root.mkdir()
         happy_root = make(happy_root, GOOD)
         matter = load(happy_root)
-        print(f"matter_pages={len(matter.pages)} refusals={ok} of 12")
-    assert ok == 12
+        print(f"matter_pages={len(matter.pages)} refusals={ok} of 15")
+    assert ok == 15
+
+
+def test_dotfiles_are_ignored(tmp_path, capsys):
+    ignored = 0
+    for where in ("records", "records/medical"):
+        base = tmp_path / where.replace("/", "_")
+        base.mkdir()
+        root = make(base, GOOD)
+        (root / where / ".DS_Store").write_bytes(b"\x00\x00 finder bytes")
+        try:
+            matter = load(root)
+        except MatterError:
+            continue
+        if [p.page_id for p in matter.pages] == ["medical/001", "medical/002", "employer/001"]:
+            ignored += 1
+    with capsys.disabled():
+        print(f"dotfiles_ignored={ignored}")
+    assert ignored == 2
+
+
+def test_dotfile_is_the_only_ignore_rule(tmp_path):
+    root = make(tmp_path, GOOD)
+    (root / "records" / "medical" / "Thumbs.db").write_bytes(b"x")
+    with pytest.raises(MatterError, match="found Thumbs.db"):
+        load(root)
+
+
+def test_stamp_spellings_are_one_stamp(tmp_path, capsys):
+    matter = load(make(tmp_path, GOOD))
+    hits = [matter.page(c) for c in ("MED0001", "MED 0001", "MED-0001")]
+    ok = sum(1 for h in hits if h is not None and h.page_id == "medical/001")
+    with capsys.disabled():
+        print(f"cite_spellings={ok} of 3")
+    assert ok == 3
+    assert matter.page("MED 0003") is None
+
+
+def test_authored_stamp_with_a_space_collides_with_the_plain_one(tmp_path):
+    pages = {"medical": [("First page.", "MED0001"), ("Second page.", "MED 0001")]}
+    with pytest.raises(MatterError, match="duplicate Bates stamp MED 0001"):
+        load(make(tmp_path, pages))
