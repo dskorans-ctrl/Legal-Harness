@@ -179,7 +179,7 @@
         "MED0008",
         "DEF0003"
       ],
-      "about": "Dr. Okonkwo-Lind relates the L4-L5 protrusion to the lifting injury; Dr. Marchetti's report calls it degenerative and not related."
+      "about": "Dr. Okonkwo-Lind relates the L4-L5 protrusion to the lifting injury; Dr. Marchetti's report calls it degenerative and not related. They also disagree on maximum medical improvement (not reached versus reached), on work restrictions (sedentary duty versus none) and on treatment (an epidural steroid injection planned versus no further treatment necessary)."
     },
     {
       "kind": "gap",
@@ -193,7 +193,7 @@
       "cites": [
         "MED0005"
       ],
-      "about": "The physical therapy discharge summary is not in the records."
+      "about": "The physical therapy discharge summary is not in the records, and neither are the therapy visit notes other than the initial evaluation and visit 6 of 12, or the letter to Dr. Castellanos-Reyes that the visit 6 note says is being prepared."
     },
     {
       "kind": "conflict",
@@ -201,7 +201,29 @@
         "MED0007",
         "DEF0002"
       ],
-      "about": "Dr. Okonkwo-Lind's impression is left L5 radiculopathy; the report found no objective findings of radiculopathy."
+      "about": "Dr. Okonkwo-Lind's impression is left L5 radiculopathy, with a positive left straight leg raise and strength graded 4/5; the report found no objective findings of radiculopathy, a negative straight leg raise and strength of 5/5."
+    },
+    {
+      "kind": "gap",
+      "cites": [
+        "MED0003"
+      ],
+      "about": "The family medicine note says to follow up in four weeks, but no later family medicine note is in the records."
+    },
+    {
+      "kind": "gap",
+      "cites": [
+        "MED0008"
+      ],
+      "about": "The orthopedic note plans a left L4-L5 epidural steroid injection and a re-evaluation on 06/20/2025, but no injection record and no re-evaluation note are in the records."
+    },
+    {
+      "kind": "conflict",
+      "cites": [
+        "MED0006",
+        "DEF0002"
+      ],
+      "about": "The report describes the L4-L5 disc changes as degenerative, while the MRI reports a 4 mm posterior central disc protrusion at L4-L5."
     }
   ]
 }
