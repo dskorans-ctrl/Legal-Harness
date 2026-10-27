@@ -72,3 +72,10 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 15 | Extra fix cycle (Q32): V2b-F1, 3xx replies stored | sonnet (Q33, owner's Gemma job was running) | 2.1 min | 61 k | done; 3 seeds red, chair seed red, red on unfixed code; 270 passed, gate 0; 695b97b |
 | 16 | 8c blind re-verify after the extra cycle | opus | 6.4 min | 77 k | PASS; 13 reply probes, 0 bad, redirect target hit 0 times; 8 seeds, 7 red; S5 green (empty-body 3xx case untested, code right) |
 | | **Round 2 total** | | **~12 h wall-clock incl. owner pause, plus the extra cycle (~20 min)** | **Opus ~1.30 M (877 k Gemma orchestration, 423 k critic and verifiers, chair not counted); Fable 618 k; Sonnet 186 k (125 k control, 61 k V2b-F1 fix); Gemma 399 k local; plus Codex** | 16 runs; PASS after one extra fix cycle (Q32); merged |
+
+## Round 3 (stage 3 intake and OCR, opened 2026-10-27 on `loop/round-03`)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 1 | Build brief | fable | 64.4 min | 284 k | done; 645 lines, 18 decisions, owner questions 31 to 36 (answered, Q40) |
+| 2 | Adversarial plan review | codex gpt-6.1-sol (read-only, high) | ~10 min | n/a | 18 findings (11 high, 7 med); 10 CONFIRMED, 8 PLAUSIBLE |

@@ -140,6 +140,19 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Q39: OCR on this dev Mac (owner, 2026-10-27, supersedes Q11 for OCR only)? -> install ocrmypdf here with
   brew (the owner runs `brew install ocrmypdf`, which brings Tesseract, Ghostscript and qpdf). D6 unchanged;
   the doctor's OCR check must PASS for real. Ollama and other brew installs stay barred.
+- Q40: round 3 brief questions 31 to 36 (owner, 2026-10-27)? -> 31 `MED0001`, `MED 0001`, `MED-0001` are the
+  same stamp: intake keeps the raw text and a normalised form (letters plus digits) so cites match across
+  spellings. 32 a page with no text after OCR is listed as an open item, exit 1, never counted as read. 33
+  the binder is a typed name (letters, digits, hyphens). 34 re-intake into an existing binder is refused
+  until the old binder is removed by hand. 35 every token matching the stamp pattern is recorded and shown.
+  36 OCR in English only. Homebrew, ocrmypdf and tesseract are installed under `/opt/homebrew/bin`.
+- Q41: question 37, the degeneration disagreement MED0006 vs DEF0002 (owner, 2026-10-27)? -> "Where records
+  conflict, especially between defense examinations and our records, those need to be flagged. Records
+  around that should be anonymized so I can upload to Claude for more advanced review." Keyed as conflict
+  G9 (9 flags). Standing rule for the key: a disagreement between a defense examination and our records is
+  a conflict to flag, even where one record does not expressly exclude the other. The anonymized excerpt
+  around each conflict is a new requirement for the anonymization stage (spec §2 brief package, §10),
+  not stage 3.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 

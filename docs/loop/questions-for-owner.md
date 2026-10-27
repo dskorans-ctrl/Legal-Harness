@@ -160,3 +160,37 @@ Owner, 2026-10-27: OR-1 to OR-9 RATIFIED, D25 and D26 RATIFIED; question 30 answ
   round 3: two matters with the same number are not refused.
 - OR-9 (2026-10-27): round 2 held at the cap: not merged, `loop/round-03` not opened, no re-brief.
   Owner question 30. Round report written; Librarian and spec §11 wait for the close.
+
+## Held 2026-10-27 (round 3 brief)
+
+31. Stamp separators: are `MED0001`, `MED 0001` and `MED-0001` the same stamp to you (one page, three
+    spellings by three scanners), or different stamps? Intake records each stamp exactly as OCR reads it;
+    cite matching later needs to know whether to treat them as one. Interim: recorded raw, no normalisation.
+32. Blank pages: when a page has no text after OCR (a separator sheet, an unstamped blank back), should
+    intake list it as an open item every time (the command exits 1 and names the page), or record it as
+    blank quietly and exit 0? Interim: listed, exit 1; the page is never counted as read.
+33. Binder naming: when you drop a PDF, should the binder be named by you (`--binder medical`, and later a
+    box on the web page) or taken from the file name? File names carry dates, spaces and sometimes a client
+    name. Interim: a typed name, letters, digits and hyphens only.
+34. Re-intake: when a binder is scanned again (a better scan, missing pages added), should the new file
+    replace the old pages or should intake refuse until the old binder is removed by hand? Interim: refuse.
+35. Stamp shapes on your records: do stamps ever carry a suffix after the digits (such as `MED0001-A` or
+    `MED0001.2`), and do your pages carry other tokens that look like a stamp, such as claim numbers of the
+    form `ABC-2025-0418`? With the Q21 pattern such a token is recorded as a stamp `ABC-2025`. Interim: the
+    Q21 pattern with word boundaries; everything that matches is recorded and shown.
+36. Languages: are any records in a language other than English (Spanish medical records, for example)?
+    OCR runs with English only until told otherwise. Interim: English only.
+
+Answered 2026-10-27 (ledger Q40): 31 same stamp, raw plus normalised form kept; 32 to 36 as the interim
+rulings.
+
+## Held 2026-10-27 (round 3 brief revision)
+
+37. In the invented matter 9001.001, the report says "The L4-L5 disc changes are described as degenerative"
+    (DEF0002:32) while the MRI reads "L4-L5: 4 mm posterior central disc protrusion contacting the thecal
+    sac" (MED0006:25) and also notes "mild degenerative change noted at the lower vertebral levels"
+    (MED0006:23). Is that a conflict you would flag between the two records, or is it an inference the
+    benchmark should not require? A keyed flag fails a model that does not report it; an unkeyed one fails a
+    model that does. Interim: not keyed (only unambiguous disagreements are in the key).
+ANSWERED 2026-10-27 (ledger Q40): 31 same stamp (raw kept plus a normalised form); 32 to 36 as the interim
+rulings.
