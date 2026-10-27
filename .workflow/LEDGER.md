@@ -243,6 +243,12 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   secs=4`, held pipe `exit=3 secs=3`, `run.sh false` -> 1. Carried low: state/playbook expanduser in
   config.py can still traceback on a bad `~user` (fails closed, exit 1).
 
+- Re-brief 8b output critic (fresh Opus 5.5): `OUTPUT CRITIC 7/10 · high 0 · med 2 · low 4`
+  (`round01r-critic.md`); chair reproduced F1 (HUP -> exit 129, capture folder left). Owner questions 19, 20.
+- Re-brief fix cycle 2 (Sonnet, 9f86d07): F1 to F6. Chair re-run `233 passed`, gate `0`, HUP -> `exit=129`,
+  capture folders `before=13 after=13`; F3 message names path and fix. Chair could not delete 13 older
+  capture folders in the shared TMPDIR (classifier denied); they hold invented test output only.
+
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.
   Verifier 3 (blind, focused per Q23, 2026-10-26, tip 6db09cb): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify3.md`.

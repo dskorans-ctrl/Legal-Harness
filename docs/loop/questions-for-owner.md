@@ -41,6 +41,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
     D16 for round 1's rulings (run.sh, config, data root, ...). Renumber §8b's as D24 to D28 in §9?
     Interim: cite them as "§8b D12" etc. to keep them apart; the chair does not edit your section.
 
+19. (re-brief critic Q-A) `matters = "~"` or `"/"` loads although the checkout sits inside it. Refuse a
+    matters folder that contains the checkout? Interim: allowed (D13 says only "outside the checkout").
+20. (re-brief critic Q-B) Ctrl-Z stops only the wrapper; the job keeps running and resuming keeps its exit
+    code. Should pause pause the job? Interim: as built.
+
 ## Answered 2026-10-25
 - Q1 -> ledger Q10, Q14. Q2 -> Q20. Q3 -> Q17. Q4 -> Q16. Q5 -> Q21. Q6 -> Q18. Q7 -> Q19 (still open).
 
