@@ -170,3 +170,44 @@ def test_benchrun_unparsed_reply(tmp_path):
         assert count == 2
     finally:
         log.close()
+
+
+def test_benchrun_non200_reply(tmp_path):
+    """A received non-200 reply is stored as a failed answer row holding the whole body (D25, V2-F1)."""
+    from io import BytesIO
+
+    class OneReply:
+        def __init__(self, status, body):
+            self.status = status
+            self.body = body
+
+        def open(self, request, timeout=None):
+            response = BytesIO(self.body)
+            response.getcode = lambda: self.status
+            return response
+
+    config = config_mod.load(write_config(tmp_path))
+    log = runlog.open_db(tmp_path / "runlog.sqlite")
+    matter = matters.load(MATTER)
+    long_body = "invented server busy reply " * 20
+    try:
+        # 1. HTTPError path: the stand-in serves another model tag and answers 404
+        fake = FakeModel(recordings=recordings_for(MATTER), model="other:model")
+        r = benchrun.run(matter, config, log, "pb-test", FakeTransport(fake))
+        assert r.failure is not None and r.failure.startswith("bench.model: status=404"), r.failure
+        assert r.pages_failed == 14
+        rows = [tuple(row) for row in log.connection.execute("SELECT status, raw_answer FROM answers ORDER BY id")]
+        assert rows == [("failed", '{"error": "fakemodel: unknown model"}')]
+        gates = [row[0] for row in log.connection.execute("SELECT gate FROM failures ORDER BY id")]
+        assert gates == ["bench.model"]
+
+        # 2. Status path: a 503 reply returned without an exception, body longer than 200 bytes
+        r = benchrun.run(matter, config, log, "pb-test", OneReply(503, long_body.encode("utf-8")))
+        assert r.failure is not None and r.failure.startswith("bench.model: status=503"), r.failure
+        assert r.pages_failed == 14
+        rows = [tuple(row) for row in log.connection.execute("SELECT status, raw_answer FROM answers ORDER BY id")]
+        assert rows == [("failed", '{"error": "fakemodel: unknown model"}'), ("failed", long_body)]
+        gates = [row[0] for row in log.connection.execute("SELECT gate FROM failures ORDER BY id")]
+        assert gates == ["bench.model", "bench.model"]
+    finally:
+        log.close()

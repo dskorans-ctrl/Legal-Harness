@@ -52,11 +52,12 @@ class ModelClient:
         except error.HTTPError as exc:
             if 300 <= exc.code < 400:
                 raise ModelError(f"redirect refused: {exc.code} to {exc.headers.get('Location', '')}") from exc
-            raise ModelError(f"status={exc.code}: {exc.read(200)!r}") from exc
+            reply = exc.read()
+            raise ModelError(f"status={exc.code}: {reply[:200]!r}", reply.decode("utf-8", errors="replace")) from exc
         except (OSError, error.URLError) as exc:
             raise ModelError(str(exc)) from exc
         if status != 200:
-            raise ModelError(f"status={status}: {payload[:200]!r}")
+            raise ModelError(f"status={status}: {payload[:200]!r}", payload.decode("utf-8", errors="replace"))
         text = payload.decode("utf-8", errors="replace")
         try:
             result = json.loads(payload)
