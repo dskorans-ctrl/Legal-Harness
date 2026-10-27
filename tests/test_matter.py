@@ -1,7 +1,6 @@
 """The stage 2 matter loader: pages, stamps and its fifteen refusals."""
 
 import pytest
-from pathlib import Path
 from casefile.matter import MatterError, load
 
 def make(tmp_path, pages):

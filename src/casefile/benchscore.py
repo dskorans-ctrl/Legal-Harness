@@ -93,7 +93,7 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
     cand_sets = {(f.kind, frozenset(normalize_stamp(c) for c in f.cites)) for f in candidate.flags}
 
     flags_found = len(set(key_sets) & cand_sets)
-    
+
     flags_extra_items_list = []
     seen = set()
     for flag in candidate.flags:

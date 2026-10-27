@@ -1,8 +1,6 @@
 """The stage 2 runner: seven probes, each with exactly one thing wrong, and the run-log rows."""
 
 import json
-import sqlite3
-from pathlib import Path
 
 import pytest
 
@@ -42,10 +40,10 @@ def test_benchrun_modes(tmp_path, capsys):
         return benchrun.run(matter, config, log, "pb-test", opener)
 
     try:
-        # 1. Replay (default mode)
+        # Replay (default mode)
         r = go()
         check1 = r.pages_failed == 0 and r.failure is None and len(r.candidate.facts) == 31
-        
+
         # Request shape check
         sent = json.loads(fake.requests[-1]["body"])
         req_shape_ok = (
@@ -55,25 +53,25 @@ def test_benchrun_modes(tmp_path, capsys):
         )
         checks.append(check1 and req_shape_ok)
 
-        # 2. Truncated
+        # Truncated
         fake.mode = "truncated"
         r = go()
         check2 = r.failure.startswith("bench.truncation") and r.pages_failed == 14
         checks.append(check2)
 
-        # 3. Malformed
+        # Malformed
         fake.mode = "malformed"
         r = go()
         check3 = r.failure.startswith("bench.answer: not JSON")
         checks.append(check3)
 
-        # 4. Forbidden
+        # Forbidden
         fake.mode = "forbidden"
         r = go()
         check4 = r.failure.startswith("bench.answer")
         checks.append(check4)
 
-        # 5. Truncation only (full valid JSON, done_reason "length")
+        # Truncation only (full valid JSON, done_reason "length")
         fake.mode = "replay"
         original = patched(fake, "done_reason", "length")
         r = go()
@@ -81,7 +79,7 @@ def test_benchrun_modes(tmp_path, capsys):
         check5 = r.failure.startswith("bench.truncation") and r.pages_failed == 14
         checks.append(check5)
 
-        # 6. Incomplete
+        # Incomplete
         fake.mode = "incomplete"
         r = go()
         newest = log.connection.execute("SELECT status, raw_answer FROM answers ORDER BY id DESC LIMIT 1").fetchone()
@@ -92,7 +90,7 @@ def test_benchrun_modes(tmp_path, capsys):
         )
         checks.append(check6)
 
-        # 7. Counts only
+        # Counts only
         fake.mode = "replay"
         original = patched(fake, "eval_count", None)
         r = go()
@@ -106,12 +104,12 @@ def test_benchrun_modes(tmp_path, capsys):
         ok_answers = db.execute("SELECT COUNT(*) FROM answers WHERE status = 'ok'").fetchone()[0]
         failed_answers = db.execute("SELECT COUNT(*) FROM answers WHERE status = 'failed'").fetchone()[0]
         gates = [row[0] for row in db.execute("SELECT gate FROM failures ORDER BY id")]
-        
+
         ok = sum(checks)
-        
+
         with capsys.disabled():
             print(f"benchrun_modes={ok} of 7 answers_ok={ok_answers} answers_failed={failed_answers} failures={len(gates)}")
-        
+
         assert checks == [True] * 7
         assert runs == [("bench", "9001.001", 14)] * 7
         assert (ok_answers, failed_answers) == (1, 6)
@@ -193,7 +191,7 @@ def test_benchrun_non200_reply(tmp_path):
     matter = matters.load(MATTER)
     long_body = "invented server busy reply " * 20
     try:
-        # 1. HTTPError path: the stand-in serves another model tag and answers 404
+        # HTTPError path: the stand-in serves another model tag and answers 404
         fake = FakeModel(recordings=recordings_for(MATTER), model="other:model")
         r = benchrun.run(matter, config, log, "pb-test", FakeTransport(fake))
         assert r.failure is not None and r.failure.startswith("bench.model: status=404"), r.failure
@@ -203,7 +201,7 @@ def test_benchrun_non200_reply(tmp_path):
         gates = [row[0] for row in log.connection.execute("SELECT gate FROM failures ORDER BY id")]
         assert gates == ["bench.model"]
 
-        # 2. Status path: a 503 reply returned without an exception, body longer than 200 bytes
+        # Status path: a 503 reply returned without an exception, body longer than 200 bytes
         r = benchrun.run(matter, config, log, "pb-test", OneReply(503, long_body.encode("utf-8")))
         assert r.failure is not None and r.failure.startswith("bench.model: status=503"), r.failure
         assert r.pages_failed == 14

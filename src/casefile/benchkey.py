@@ -83,7 +83,7 @@ def load(path, matter: Matter) -> Key:
 
         if not found_in(item["quote"], page.text):
             raise BenchKeyError(f"{path}: fact {fid}: quote not found on page {cite}")
-        
+
         pair = (cite, normalize(item["quote"]))
         if pair in fact_pairs_seen:
             raise BenchKeyError(f"{path}: fact {fid}: same cite and quote as fact {fact_pairs_seen[pair]}")
@@ -114,7 +114,7 @@ def load(path, matter: Matter) -> Key:
         cites = item["cites"]
         if not isinstance(cites, list) or not cites:
             raise BenchKeyError(f"{path}: flag {gid}: cites must be a nonempty list of Bates stamps")
-        
+
         if not all(isinstance(c, str) and c for c in cites):
             raise BenchKeyError(f"{path}: flag {gid}: cites must be a nonempty list of Bates stamps")
 

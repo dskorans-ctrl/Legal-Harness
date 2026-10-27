@@ -5,7 +5,6 @@ import sqlite3
 import subprocess
 import sys
 from threading import Thread
-from pathlib import Path
 
 import pytest
 

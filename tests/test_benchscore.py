@@ -2,7 +2,6 @@
 
 import copy
 import json
-from pathlib import Path
 
 from casefile import benchkey, matter as matters, rules as rules_mod
 from casefile.benchcandidate import parse, parse_text
@@ -76,27 +75,27 @@ def add_extra_flag(data):
 
 # (change_function, pages_failed, check_function)
 CASES = [
-    # 1. perfect
+    # perfect
     (None, 0, lambda s: s.perfect and s.found == 2 and s.extra == 0 and s.line("9001.001", "candidate").startswith("bench 9001.001 model=candidate found=2 of 2 ")),
-    # 2. one key fact dropped
+    # one key fact dropped
     (drop_second_fact, 0, lambda s: s.missed == 1 and s.missed_ids == ("F2",) and not s.perfect),
-    # 3. quote not on the page
+    # quote not on the page
     (quote_not_on_page, 0, lambda s: s.invented == 1 and s.missed_ids == ("F2",)),
-    # 4. cite not a page
+    # cite not a page
     (cite_not_a_page, 0, lambda s: s.invented == 1 and s.missed == 1),
-    # 5. a real fact not in the key
+    # a real fact not in the key
     (add_real_fact, 0, lambda s: s.extra == 1 and s.invented == 0 and s.perfect),
-    # 6. duplicate candidate fact
+    # duplicate candidate fact
     (duplicate_fact, 0, lambda s: s.found == 2 and s.extra == 0 and s.invented == 0 and s.perfect),
-    # 7. flag kind swapped
+    # flag kind swapped
     (swap_flag_kind, 0, lambda s: s.flags_missed == 1 and s.flags_extra == 1 and not s.perfect),
-    # 8. fact text with a firm-rule word
+    # fact text with a firm-rule word
     (fact_rule_word, 0, lambda s: s.rules == 1 and not s.perfect),
-    # 9. flag about with a firm-rule word
+    # flag about with a firm-rule word
     (flag_rule_word, 0, lambda s: s.rules == 1 and s.flags_found == 1),
-    # 10. pages failed
+    # pages failed
     (None, 2, lambda s: s.pages_failed == 2 and not s.perfect),
-    # 11. an added flag not in the key
+    # an added flag not in the key
     (add_extra_flag, 0, lambda s: s.flags_extra == 1 and s.flags_found == 1 and not s.perfect)
 ]
 

@@ -1,6 +1,5 @@
 import json
 import copy
-import pytest
 
 from casefile.benchcandidate import (
     EMPTY, CandidateError, CandidateFact, CandidateFlag, parse, parse_text

@@ -18,38 +18,38 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
     out = sys.stdout if out is None else out
     err = sys.stderr if err is None else err
 
-    # 1. Load Config
+    # Load Config
     try:
         config = load(config_path)
     except ConfigError as exc:
         print(f"ConfigError: {one_line(exc)}", file=err)
         return 2
 
-    # 2. Load Playbook
+    # Load Playbook
     try:
         book = playbook.load(config.paths.playbook)
     except playbook.PlaybookError as exc:
         print(f"PlaybookError: {one_line(exc)}", file=err)
         return 2
 
-    # 3. Find Matter Roots
+    # Find Matter Roots
     try:
         roots = sorted(p for p in Path(matters_dir).iterdir() if (p / "matter.toml").is_file())
     except OSError as exc:
         print(f"bench: cannot read {matters_dir}: {one_line(exc)}", file=err)
         return 2
 
-    # 4. Check if roots exist
+    # Check if roots exist
     if not roots:
         print(f"bench: no matters under {matters_dir}", file=err)
         return 2
 
-    # 5. Check candidate path constraints
+    # Check candidate path constraints
     if candidate_path is not None and len(roots) != 1:
         print("bench: --candidate needs exactly one matter", file=err)
         return 2
 
-    # 6. Open Run Log
+    # Open Run Log
     log = None
     if candidate_path is None:
         log_path = config.paths.state / "runlog.sqlite"
@@ -59,7 +59,7 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
             print(f"bench: cannot open run log {log_path}: {one_line(exc)}", file=err)
             return 2
 
-    # 7. Main Loop
+    # Main Loop
     imperfect = 0
     seen_numbers = {}
     try:
@@ -96,10 +96,10 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
                 except sqlite3.Error as exc:
                     print(f"bench: run log: {one_line(exc)}", file=err)
                     return 2
-                
+
                 candidate = result.candidate
                 pages_failed = result.pages_failed
-                
+
                 if result.failure:
                     print(f"bench {matter.number} failure {result.failure}", file=out)
                     if not result.reply_received:
@@ -118,6 +118,6 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
         if log is not None:
             log.close()
 
-    # 8. Final Result
+    # Final Result
     print(f"bench matters={len(roots)} imperfect={imperfect}", file=out)
     return 0 if imperfect == 0 else 1

@@ -1,7 +1,6 @@
 """VF-2: unresolvable config, state and playbook paths are ConfigError, exit 2."""
 import subprocess
 
-import pytest
 
 from casefile.config import ConfigError, load
 from conftest import write_config

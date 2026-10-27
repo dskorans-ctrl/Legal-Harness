@@ -7,7 +7,6 @@ import shutil
 import subprocess
 import sys
 
-import pytest
 
 from casefile.pathguard import classify
 from conftest import ROOT, alias_table

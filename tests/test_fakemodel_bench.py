@@ -39,7 +39,7 @@ def test_bench_recording(capsys):
         fake.mode = mode
         status, answer = fake.handle("POST", "/api/chat", json.dumps(request).encode())
         content = answer["message"]["content"]
-        
+
         condition_holds = False
         if status == 200:
             if mode == "truncated":
@@ -50,7 +50,7 @@ def test_bench_recording(capsys):
                 condition_holds = ("IME" in content)
             elif mode == "incomplete":
                 condition_holds = (answer["done"] is False and content == replay)
-            
+
             if condition_holds:
                 n += 1
 
