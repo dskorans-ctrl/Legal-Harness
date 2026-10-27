@@ -10,7 +10,6 @@ import sys
 import time
 
 GRACE_S = 2.0   # how long the output pipe may stay open after the child has exited
-POLL_S = 0.2    # select wake while no exit is recorded, so an exit is seen within this
 
 
 def capture_failed(reason):
@@ -24,9 +23,8 @@ def main():
     cap, directory, *command = sys.argv[1:]
     cap = int(cap)
     child = capture = None
-    exits = []
-    # Only record the exit time: reaping here would free the pid before the group kill.
-    previous = signal.signal(signal.SIGCHLD, lambda signum, frame: exits.append(time.monotonic()))
+    exit_at = None
+    queue = select.kqueue()   # macOS: no descriptor-number limit, and an exit is told from a stop
     try:
         try:
             capture = (Path(directory) / "out").open("wb", buffering=0)
@@ -44,10 +42,16 @@ def main():
         total = 0
         deadline = None
         fd = child.stdout.fileno()
+        # Watch the pipe and the child's exit (NOTE_EXIT is not raised by stop or continue, and
+        # it does not reap: reaping would free the pid before the group kill).
+        queue.control([select.kevent(fd, select.KQ_FILTER_READ, select.KQ_EV_ADD),
+                       select.kevent(child.pid, select.KQ_FILTER_PROC, select.KQ_EV_ADD,
+                                     select.KQ_NOTE_EXIT)], 0, 0)
         while True:
-            if exits and deadline is None:
-                deadline = exits[0] + GRACE_S
-            if deadline is not None and time.monotonic() >= deadline:
+            now = time.monotonic()
+            if exit_at is not None and deadline is None:
+                deadline = exit_at + GRACE_S
+            if deadline is not None and now >= deadline:
                 try:
                     os.killpg(child.pid, signal.SIGKILL)
                 except OSError:   # ESRCH, or EPERM when only a zombie leader is left
@@ -57,8 +61,15 @@ def main():
                 print(f"run.sh: child exited {code} but its output pipe stayed open; "
                       f"process group killed after {GRACE_S}s", file=sys.stderr)
                 return code
-            wait = POLL_S if deadline is None else deadline - time.monotonic()
-            if not select.select([fd], [], [], wait)[0]:
+            wait = None if deadline is None else max(0.0, deadline - now)
+            readable = False
+            for event in queue.control(None, 2, wait):
+                if event.filter == select.KQ_FILTER_PROC:
+                    if exit_at is None:
+                        exit_at = time.monotonic()
+                else:
+                    readable = True
+            if not readable:
                 continue
             chunk = os.read(fd, min(65536, cap + 1 - total))
             if not chunk:
@@ -87,10 +98,13 @@ def main():
         status = child.wait()
         return status if status >= 0 else 128 - status
     finally:
-        signal.signal(signal.SIGCHLD, previous)
+        queue.close()
         if child is not None:
             if child.poll() is None:
-                os.killpg(child.pid, signal.SIGKILL)
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except OSError:
+                    pass
                 child.wait()
             child.stdout.close()
         if capture is not None:

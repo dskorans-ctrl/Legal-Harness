@@ -5,7 +5,9 @@ TOOLCHAIN="${CASEFILE_TOOLCHAIN:-$HOME/.casefile-dev}/$(basename "$ROOT")"
 case "$TOOLCHAIN" in /*) ;; *) TOOLCHAIN="$PWD/$TOOLCHAIN" ;; esac
 [ "$#" -ge 1 ] || { echo "run.sh: usage: scripts/run.sh <cmd> [args]" >&2; exit 96; }
 # One identity guard (D24) judges the override and every child path exported below.
-verdict="$(python3 -I "$ROOT/src/casefile/pathguard.py" "$ROOT" "$TOOLCHAIN" "$TOOLCHAIN/python" \
+# One interpreter: the one that runs the guard also runs the capture stage, whatever PATH becomes.
+PY="$(command -v python3)"
+verdict="$("$PY" -I "$ROOT/src/casefile/pathguard.py" "$ROOT" "$TOOLCHAIN" "$TOOLCHAIN/python" \
     "$TOOLCHAIN/cache" "$TOOLCHAIN/venv" "$TOOLCHAIN/venv/bin" 2>&1)"
 # The token is the last line; an interpreter may print a warning above it.
 case "${verdict##*$'\n'}" in
@@ -17,4 +19,4 @@ export UV_PYTHON_INSTALL_DIR="$TOOLCHAIN/python" UV_CACHE_DIR="$TOOLCHAIN/cache"
 [ -d "$TOOLCHAIN/venv/bin" ] && PATH="$TOOLCHAIN/venv/bin:$PATH"
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/casefile-run.XXXXXX")" \
   || { echo "run.sh: cannot create capture dir under ${TMPDIR:-/tmp}; exit 98" >&2; exit 98; }
-exec python3 "$ROOT/scripts/run_capture.py" "$CAP" "$tmp" "$@"
+exec "$PY" "$ROOT/scripts/run_capture.py" "$CAP" "$tmp" "$@"

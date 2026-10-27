@@ -123,7 +123,10 @@ def load(path: str | Path | None = None) -> Config:
         raise ConfigError("[model].host must use http with hostname 127.0.0.1")
 
     paths = values["paths"]
-    expanded = os.path.expanduser(paths["matters"])
+    try:
+        expanded = os.path.expanduser(paths["matters"])
+    except Exception as exc:   # e.g. ValueError for a NUL in the user name
+        raise ConfigError(f"cannot expand ~ in [paths].matters: {exc}") from exc
     if expanded.startswith("~"):
         raise ConfigError("cannot expand ~ in [paths].matters: no home directory")
     checkout = Path(__file__).resolve().parents[2]

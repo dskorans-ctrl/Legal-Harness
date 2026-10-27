@@ -40,8 +40,8 @@ def classify(path, root):
                 if parent == ancestor:
                     break
                 ancestor = parent
-    except (OSError, ValueError) as exc:
-        return "cannot-verify", str(exc)
+    except Exception as exc:   # OSError, ValueError, RecursionError from realpath: all unverifiable
+        return "cannot-verify", str(exc) or type(exc).__name__
     return "outside", real
 
 
