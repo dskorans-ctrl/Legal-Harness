@@ -1,4 +1,4 @@
-"""The stage 2 answer key loader and its ten refusals."""
+"""The stage 2 answer key loader and its twelve refusals."""
 
 import copy
 import json
@@ -75,6 +75,19 @@ def case_flag_cite_not_a_page():
     data["flags"][0]["cites"] = ["MED0099"]
     return data
 
+def case_duplicate_fact_quote():
+    data = copy.deepcopy(KEY)
+    data["facts"].append({"id": "F3", "cite": "MED0002", "quote": "he said “no prior injury”",
+                          "text": "He reported no prior injury."})
+    return data
+
+def case_duplicate_flag():
+    data = copy.deepcopy(KEY)
+    data["flags"][0]["cites"] = ["MED0001", "MED0002"]
+    data["flags"].append({"id": "G2", "kind": "gap", "cites": ["MED0002", "MED0001"],
+                          "about": "A referral letter is missing."})
+    return data
+
 
 # --- Tests ---
 
@@ -102,6 +115,8 @@ def test_key_refusals(tmp_path, capsys):
         (case_flag_kind, "flag G1: kind must be conflict or gap"), # Case 8
         (case_flag_cites_empty, "flag G1: cites must be a nonempty list of Bates stamps"), # Case 9
         (case_flag_cite_not_a_page, "flag G1: cite MED0099 is not a page of matter 9001.001"), # Case 10
+        (case_duplicate_fact_quote, "fact F3: same cite and quote as fact F2"), # Case 11
+        (case_duplicate_flag, "flag G2: same kind and cites as flag G1"), # Case 12
     ]
 
     # Case 1: not JSON (raw text)
@@ -114,7 +129,7 @@ def test_key_refusals(tmp_path, capsys):
         if "Expecting" in str(exc):
             ok += 1
 
-    # Cases 2 through 10
+    # Cases 2 through 12
     for i, (data_gen, match_text) in enumerate(cases):
         case_num = i + 2
         path = tmp_path / f"key{case_num}.json"
@@ -128,5 +143,5 @@ def test_key_refusals(tmp_path, capsys):
         # Any other exception fails the test
 
     with capsys.disabled():
-        print(f"key_refusals={ok} of 10")
-    assert ok == 10
+        print(f"key_refusals={ok} of 12")
+    assert ok == 12

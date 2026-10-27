@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from casefile.matter import Matter
-from casefile.quotes import found_in
+from casefile.quotes import found_in, normalize
 
 FLAG_KINDS = ("conflict", "gap")
 
@@ -58,6 +58,7 @@ def load(path, matter: Matter) -> Key:
 
     facts = []
     fact_ids_seen = set()
+    fact_pairs_seen = {}
     for n, item in enumerate(facts_data, start=1):
         required_keys = {"id", "cite", "quote", "text"}
         if not isinstance(item, dict) or set(item.keys()) != required_keys:
@@ -81,11 +82,17 @@ def load(path, matter: Matter) -> Key:
 
         if not found_in(item["quote"], page.text):
             raise BenchKeyError(f"{path}: fact {fid}: quote not found on page {cite}")
+        
+        pair = (cite, normalize(item["quote"]))
+        if pair in fact_pairs_seen:
+            raise BenchKeyError(f"{path}: fact {fid}: same cite and quote as fact {fact_pairs_seen[pair]}")
+        fact_pairs_seen[pair] = fid
 
         facts.append(Fact(fid, cite, item["quote"], item["text"]))
 
     flags = []
     flag_ids_seen = set()
+    flag_pairs_seen = {}
     for n, item in enumerate(flags_data, start=1):
         required_keys = {"id", "kind", "cites", "about"}
         if not isinstance(item, dict) or set(item.keys()) != required_keys:
@@ -118,6 +125,11 @@ def load(path, matter: Matter) -> Key:
         about = item["about"]
         if not isinstance(about, str) or not about:
             raise BenchKeyError(f"{path}: flag {gid}: about must be a nonempty string")
+
+        pair = (kind, frozenset(cites))
+        if pair in flag_pairs_seen:
+            raise BenchKeyError(f"{path}: flag {gid}: same kind and cites as flag {flag_pairs_seen[pair]}")
+        flag_pairs_seen[pair] = gid
 
         flags.append(Flag(gid, kind, tuple(cites), about))
 
