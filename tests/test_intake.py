@@ -259,6 +259,13 @@ def test_child_environment_and_flags(tmp_path):
     assert env.leftovers() == ["scan", "scan"]
 
 
+def test_exit_zero_without_output_is_refused(tmp_path):
+    env = Env(tmp_path, mode="nooutput", pages=1)
+    code, _, err = env.run()
+    assert code == 2 and "wrote no output" in err
+    assert env.leftovers() == []
+
+
 def test_write_failure_is_exit_2_and_leaves_nothing(tmp_path, monkeypatch):
     env = Env(tmp_path, sidecar="", pages=1)
 

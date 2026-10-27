@@ -2,6 +2,7 @@
 
 from io import StringIO
 import json
+import os
 import shutil
 import subprocess
 from threading import Thread
@@ -31,11 +32,21 @@ def setup_config(tmp_path, **overrides):
     return config
 
 
-def invoke(config, *, fake=None, lsof=None):
+VERSIONS = {"ocrmypdf": "17.13.0", "tesseract": "5.5.3"}
+
+
+def passing_smoke(config):
+    """An injected smoke result: a text-free page before, the smoke line read after (Codex 13)."""
+    return "", "CASEFILE OCR SMOKE 7342\n", VERSIONS
+
+
+def invoke(config, *, fake=None, lsof=None, smoke=passing_smoke):
+    """Unit tests inject a passing smoke; pass smoke=doctor.REAL to run the real tools."""
     fake = FakeModel() if fake is None else fake
     out = StringIO()
     code = doctor.run(config, out=out, opener=FakeTransport(fake),
-                      lsof_runner=lambda *a, **k: lsof_result() if lsof is None else lsof)
+                      lsof_runner=lambda *a, **k: lsof_result() if lsof is None else lsof,
+                      ocr_smoke=smoke)
     return code, out.getvalue()
 
 
@@ -152,7 +163,7 @@ def test_loopback_real_bind_all(tmp_path):
         config = load(write_config(tmp_path, host=f"http://127.0.0.1:{server.server_port}"))
         shutil.copytree(ROOT / "playbook", config.paths.playbook, dirs_exist_ok=True)
         out = StringIO()
-        assert doctor.run(config, out=out) == 1
+        assert doctor.run(config, out=out, ocr_smoke=passing_smoke) == 1
         assert f"doctor ollama_loopback FAIL listening on *:{server.server_port}" in out.getvalue()
     finally:
         server.shutdown()
@@ -194,25 +205,110 @@ def test_context_requires_positive_token_counts(tmp_path, monkeypatch, field, co
         assert log.count_test_jobs() == 0
 
 
-@pytest.mark.parametrize("codes", [(0, 0), (0, 7), (8, 0), (8, 7)])
-def test_ocr_checks_both_versions(tmp_path, monkeypatch, codes):
-    calls = []
-    monkeypatch.setattr(doctor.shutil, "which", lambda name: f"/invented/{name}")
+def ocr_line(output):
+    return next(line for line in output.splitlines() if line.startswith("doctor ocr "))
 
-    def version(command, **kwargs):
-        calls.append(command)
-        code = codes[0 if command[0].endswith("tesseract") else 1]
-        return subprocess.CompletedProcess(command, code, b"invented version", b"")
 
-    monkeypatch.setattr(doctor.subprocess, "run", version)
+def test_ocr_unit_cases(tmp_path, capsys, monkeypatch):
+    """Six verdicts from injected smokes; each guard fails alone (#R01-CX-10)."""
+    from casefile.intake import IntakeError
+
+    def smoke(before, after):
+        return lambda config: (before, after, VERSIONS)
+
+    def raises(message):
+        def run(config):
+            raise IntakeError(message)
+        return run
+
+    cases = [
+        ("pass", smoke("", "CASEFILE OCR SMOKE 7342\n"), True,
+         "smoke=ok stamps=SMOKE7342 ocrmypdf=17.13.0 tesseract=5.5.3 ms="),
+        ("input had text", smoke("already text", "CASEFILE OCR SMOKE 7342"), False, "smoke input had text"),
+        ("text wrong, stamp right", smoke("", "SMOKE 7342 and nothing else"), False,
+         "smoke text not read: SMOKE 7342 and nothing else"),
+        ("stamp wrong, text right", smoke("", "CASEFILE OCR SMOKE"), False, "smoke stamp not found"),
+        ("ocrmypdf exit", raises("ocrmypdf exit=7: gs: no fonts"), False, "ocrmypdf exit=7: gs: no fonts"),
+        ("tool missing", smoke("", "CASEFILE OCR SMOKE 7342"), False, "not found: tesseract"),
+    ]
+    good = 0
+    for index, (name, injected, want_ok, text) in enumerate(cases):
+        config = setup_config(tmp_path / f"c{index}")
+        with monkeypatch.context() as patch:
+            if name == "tool missing":
+                patch.setattr(doctor.shutil, "which", lambda tool: None)
+            ok, reason = doctor.check_ocr(doctor.State(config, config=config, ocr_smoke=injected))
+        assert ok is want_ok and text in reason, (name, ok, reason)
+        code, output = invoke(config, smoke=injected) if name != "tool missing" else (None, "")
+        if name != "tool missing":
+            line = ocr_line(output)
+            assert ("PASS" in line) is want_ok and text in line, (name, line)
+            assert code == (0 if want_ok else 1) or not want_ok, output
+        good += 1
+    with capsys.disabled():
+        print(f"ocr_unit={good} of 6")
+    assert good == 6
+
+
+def test_ocr_next_step_names_the_fix(tmp_path):
     config = setup_config(tmp_path)
+    state = doctor.State(config, config=config)
+    assert "brew install ocrmypdf" in doctor.next_step("ocr", "not found: ocrmypdf", state)
+    assert "ocrmypdf stderr" in doctor.next_step("ocr", "ocrmypdf exit=7: x", state)
+
+
+def write_stub_tools(folder, ocrmypdf_body):
+    folder.mkdir(parents=True, exist_ok=True)
+    tools = {}
+    for name, body in (("tesseract", '#!/bin/sh\n[ "$1" = "--version" ] && echo "tesseract 5.5.3"\nexit 0\n'),
+                       ("ocrmypdf", ocrmypdf_body)):
+        stub = folder / name
+        stub.write_text(body)
+        stub.chmod(0o755)
+        tools[name] = str(stub)
+    return tools
+
+
+def test_ocr_copying_stub_cannot_pass(tmp_path):
+    """A tool that copies input to output with an empty sidecar read nothing (Codex 16)."""
+    body = ('#!/bin/bash\n[ "$1" = "--version" ] && { echo 17.13.0; exit 0; }\n'
+            'args=("$@"); n=${#args[@]}; cp "${args[$((n-2))]}" "${args[$((n-1))]}"\n'
+            'for ((i=0;i<n;i++)); do [ "${args[$i]}" = "--sidecar" ] && : > "${args[$((i+1))]}"; done\nexit 0\n')
+    config = setup_config(tmp_path, ocr=write_stub_tools(tmp_path / "stubs", body))
     ok, reason = doctor.check_ocr(doctor.State(config, config=config))
-    assert ok is False
-    assert calls == [["/invented/tesseract", "--version"], ["/invented/ocrmypdf", "--version"]]
-    status = "tools found" if codes == (0, 0) else "tools unavailable"
-    assert reason == (f"OCR not verified: {status} (tesseract exit={codes[0]}, "
-                      f"ocrmypdf exit={codes[1]}); smoke test arrives in stage 3")
-    assert ocr_expected_fail() is True
+    assert ok is False and reason == "smoke text not read: "
+
+
+def test_ocr_no_op_stub_is_exit_zero_but_not_a_pass(tmp_path):
+    body = '#!/bin/bash\n[ "$1" = "--version" ] && echo 17.13.0\nexit 0\n'
+    config = setup_config(tmp_path, ocr=write_stub_tools(tmp_path / "stubs", body))
+    ok, reason = doctor.check_ocr(doctor.State(config, config=config))
+    assert ok is False and "smoke=ok" not in reason, reason
+
+
+@pytest.mark.ocr
+def test_run_sh_appends_homebrew_to_path(tmp_path):
+    """The wrapper finds the OCR tools even when launchd or the sandbox omit Homebrew's folder."""
+    result = subprocess.run(
+        ["scripts/run.sh", "python", "-c",
+         "import shutil; print(shutil.which('ocrmypdf')); print(shutil.which('tesseract'))"],
+        cwd=ROOT, env={"PATH": "/usr/bin:/bin", "HOME": os.environ["HOME"], "TMPDIR": os.environ.get("TMPDIR", "/tmp")},
+        capture_output=True, text=True, timeout=60)
+    ocrmypdf, tesseract = result.stdout.split()
+    assert ocrmypdf in ("/opt/homebrew/bin/ocrmypdf", "/usr/local/bin/ocrmypdf"), result
+    assert tesseract in ("/opt/homebrew/bin/tesseract", "/usr/local/bin/tesseract"), result
+
+
+@pytest.mark.ocr
+def test_ocr_real_tools(tmp_path, capsys):
+    code, output = invoke(setup_config(tmp_path), smoke=doctor.REAL)
+    line = ocr_line(output)
+    with capsys.disabled():
+        print(line)
+        print("ocr_real=" + ("PASS" if line.startswith("doctor ocr PASS") else "FAIL"))
+    assert line.startswith("doctor ocr PASS smoke=ok stamps=SMOKE7342 ocrmypdf="), output
+    assert " tesseract=" in line and " ms=" in line
+    assert verdicts(output) == set()
 
 
 @pytest.mark.parametrize("fields,reason", [

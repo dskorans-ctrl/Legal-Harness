@@ -11,7 +11,7 @@ from casefile.config import ConfigError, load
 from casefile.rules import load as load_rules
 from conftest import ROOT, write_config
 from fakemodel.core import FakeModel
-from test_doctor import invoke, setup_config
+from test_doctor import invoke, passing_smoke, setup_config
 
 
 def findings(text, unit="text"):
@@ -28,8 +28,7 @@ def test_h1_ocr_unverified_with_two_successful_stubs(tmp_path):
     config = setup_config(tmp_path, ocr=tools)
     ok, reason = doctor.check_ocr(doctor.State(config, config=config))
     assert ok is False
-    assert reason == ("OCR not verified: tools found (tesseract exit=0, ocrmypdf exit=0); "
-                      "smoke test arrives in stage 3")
+    assert "smoke=ok" not in reason and "--version exit=0" in reason, reason
 
 
 def test_h2_exam_label_variants():
@@ -110,7 +109,7 @@ def test_m6_every_failure_has_action(tmp_path, monkeypatch):
     class Offline:
         def open(self, *args, **kwargs):
             raise URLError("invented connection refused")
-    doctor.run(setup_config(tmp_path / "offline"), out=out, opener=Offline())
+    doctor.run(setup_config(tmp_path / "offline"), out=out, opener=Offline(), ocr_smoke=passing_smoke)
     runs.append(out.getvalue())
     offline_output = runs[-1]
     for name in doctor.CHECKS:

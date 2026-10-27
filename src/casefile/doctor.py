@@ -7,15 +7,22 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
+from pathlib import Path
 from urllib.parse import urlsplit
 
-from . import config as configuration, playbook, runlog
+from . import config as configuration, intake, pdfsmoke, playbook, quotes, runlog
+from . import stamps as stamp_finder
 from .model import ModelClient
 
 
 CHECKS = ("config", "folders", "playbook", "runlog_schema", "ollama_loopback",
           "context", "runlog_job", "ocr")
 CARD_TEXT = "Reply with the single word READY."
+SMOKE_LINE = "CASEFILE OCR SMOKE 7342"
+SMOKE_STAMP = "SMOKE7342"
+SMOKE_TIMEOUT_S = 120
 MESSAGES = [{"role": "system", "content": CARD_TEXT},
             {"role": "user", "content": "casefile doctor warmup"}]
 
@@ -25,6 +32,7 @@ class State:
     source: object
     opener: object = None
     runner: object = subprocess.run
+    ocr_smoke: object = None   # None runs the real tools (REAL); tests inject a callable
     config: object = None
     book: object = None
     log: object = None
@@ -153,23 +161,41 @@ def check_runlog_job(state):
     return difference == 1, f"test_jobs={difference:+d}"
 
 
+def real_smoke(config):
+    """Render an image-only page, OCR it with intake's own flags, return (before, after, versions)."""
+    with tempfile.TemporaryDirectory(prefix="casefile-doctor-ocr-") as folder:
+        base = Path(folder).resolve()
+        pdf, out, work = base / "smoke.pdf", base / "ocr.pdf", base / "work"
+        work.mkdir()
+        pdfsmoke.image_pdf([pdfsmoke.render_page([SMOKE_LINE], [])], pdf)
+        before = "\n".join(intake.page_texts(pdf))
+        versions = intake.run_ocr(config.ocr, pdf, out, base / "sidecar.txt", workdir=work,
+                                  timeout_s=SMOKE_TIMEOUT_S)
+        return before, "\n".join(intake.page_texts(out)), versions
+
+
+REAL = None   # ocr_smoke=None means the real tools
+
+
 def check_ocr(state):
-    codes = []
-    reasons = []
     for name in ("tesseract", "ocrmypdf"):
-        executable = shutil.which(getattr(state.config.ocr, name))
-        code = "not-found"
-        if executable is not None:
-            try:
-                result = subprocess.run([executable, "--version"], capture_output=True,
-                                        timeout=30, check=False)
-                code = result.returncode
-            except (OSError, subprocess.TimeoutExpired) as exc:
-                code = f"error ({exc})"
-        codes.append(code)
-        reasons.append(f"{name} exit={code}")
-    status = "tools found" if codes == [0, 0] else "tools unavailable"
-    return False, "OCR not verified: " + status + " (" + ", ".join(reasons) + "); smoke test arrives in stage 3"
+        if shutil.which(getattr(state.config.ocr, name)) is None:
+            return False, f"not found: {getattr(state.config.ocr, name)}"
+    started = time.monotonic()
+    try:
+        before, after, versions = (state.ocr_smoke or real_smoke)(state.config)
+    except intake.IntakeError as exc:
+        return False, str(exc)
+    if before.strip():
+        return False, "smoke input had text"
+    if quotes.normalize("casefile ocr smoke") not in quotes.normalize(after):
+        return False, f"smoke text not read: {' '.join(after.split())[:40]}"
+    found = [s.stamp for s in stamp_finder.find(after, state.config.ocr.stamp_pattern)]
+    if found != [SMOKE_STAMP]:
+        return False, "smoke stamp not found"
+    ms = round((time.monotonic() - started) * 1000)
+    return True, (f"smoke=ok stamps={SMOKE_STAMP} ocrmypdf={versions['ocrmypdf']} "
+                  f"tesseract={versions['tesseract']} ms={ms}")
 
 
 DEPENDENCIES = {"context": ("playbook", "runlog_schema", "ollama_loopback"),
@@ -188,11 +214,9 @@ def next_step(name, reason, state):
             return "check lsof access and rerun doctor"
         return "start the Ollama app"
     if name == "ocr":
-        missing = [tool for tool in ("tesseract", "ocrmypdf")
-                   if f"{tool} exit=not-found" in reason]
-        if missing:
-            return f"install {' and '.join(missing)}; expected until stage 3"
-        return "expected until stage 3"
+        if "not found:" in reason:
+            return "install ocrmypdf (brew install ocrmypdf) and rerun doctor"
+        return "check the ocrmypdf stderr in the reason and rerun doctor"
     return {"config": "correct the config file and rerun doctor",
             "folders": "check the configured folder paths and write access",
             "playbook": "correct the playbook files and rerun doctor",
@@ -200,9 +224,10 @@ def next_step(name, reason, state):
             "runlog_job": "rerun doctor and check the run log"}[name]
 
 
-def run(config=None, *, out=None, opener=None, lsof_runner=None) -> int:
+def run(config=None, *, out=None, opener=None, lsof_runner=None, ocr_smoke=None) -> int:
     out = sys.stdout if out is None else out
-    state = State(config, opener, subprocess.run if lsof_runner is None else lsof_runner)
+    state = State(config, opener, subprocess.run if lsof_runner is None else lsof_runner,
+                  ocr_smoke=ocr_smoke)
     failed = 0
     try:
         for name in CHECKS:

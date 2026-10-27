@@ -141,6 +141,8 @@ def run_ocr(ocr_config, src, dst, sidecar, *, workdir, timeout_s, runner=None, e
     code, err = (runner or popen_runner)(command, env, timeout_s)
     if code != 0:
         raise IntakeError(f"ocrmypdf exit={code}: {err.strip()[-300:]}")
+    if not dst.is_file() or not sidecar.is_file():
+        raise IntakeError("ocrmypdf exited 0 but wrote no output or no sidecar")
     return versions
 
 
@@ -214,8 +216,6 @@ def _intake(config, number, binder, file, out, runner) -> int:
             versions = run_ocr(config.ocr, tmp_records / "source.pdf", tmp_records / "ocr.pdf",
                                tmp_records / "sidecar.txt", workdir=work,
                                timeout_s=config.ocr.timeout_s, runner=runner)
-            if not (tmp_records / "ocr.pdf").is_file() or not (tmp_records / "sidecar.txt").is_file():
-                raise IntakeError("ocrmypdf wrote no output or no sidecar")
         finally:
             shutil.rmtree(work, ignore_errors=True)
         try:
