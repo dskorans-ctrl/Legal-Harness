@@ -117,3 +117,25 @@ def test_benchrun_modes(tmp_path, capsys):
 
     finally:
         log.close()
+
+
+def test_benchrun_zero_counts(tmp_path):
+    """A zero token count is not proof the model read or wrote anything: bench.counts must fire."""
+    config = config_mod.load(write_config(tmp_path))
+    log = runlog.open_db(tmp_path / "runlog.sqlite")
+    fake = FakeModel(recordings=recordings_for(MATTER))
+    opener = FakeTransport(fake)
+    matter = matters.load(MATTER)
+    try:
+        failures = []
+        for field in ("eval_count", "prompt_eval_count"):
+            original = patched(fake, field, 0)
+            r = benchrun.run(matter, config, log, "pb-test", opener)
+            fake.handle = original
+            failures.append(r.failure)
+            assert r.failure is not None and r.failure.startswith("bench.counts"), (field, r.failure)
+            assert r.pages_failed == 14
+        gates = [row[0] for row in log.connection.execute("SELECT gate FROM failures ORDER BY id")]
+        assert gates == ["bench.counts", "bench.counts"]
+    finally:
+        log.close()
