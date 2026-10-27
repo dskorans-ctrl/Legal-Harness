@@ -168,6 +168,11 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   model reads it; no manual read. 43 firm rules check our words only; a verbatim record quote is exempt. 44 only a stamp
   alone on a line and "Page N of M" lines are ignored by the quote ladder. 45 an OCR-rung match counts as verified; the
   rung is in the run log only. 46 punctuation repairs are in the run log only. Additional instructions: none; proceed.
+- Q45: round 4 tiers (owner, 2026-10-27, session 2)? -> "use Codex Sol 6.1 to code this round, and Astra for the
+  review". Chair's reading: Codex `gpt-6.1-sol` (CLI, `-s workspace-write`) replaces Sonnet 5.5 as builder and fix
+  worker; Codex `gpt-6-astra` (read-only) takes the plan review (6) and the code review (8a). Opus 5.5 still
+  orchestrates and runs the output critic and blind verifier; Fable still revises. Round 4 only. The Sol plan review
+  in progress was stopped and rerun on Astra (partial log kept, `round04-brief-codex-sol-stopped.log`).
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -656,8 +661,8 @@ invented fixture under `tests/fixtures/`.
   real-tools fixture test expectation `  empty: scan/004` now carries the reason. Sweep `358 passed`, gate `0`.
 
 ## Round 4: stage 4 model client and gates (opened 2026-10-27 on `loop/round-04` at 204f6fd)
-Tiers: Q30 defaults (Fable brief and revision, Codex plan and code review, Opus orchestrator, output critic
-and blind verifier, Sonnet 5.5 code). Ollama on the Studio: login-user app (Q43).
+Tiers: Q45 (Fable brief and revision, Codex `gpt-6-astra` plan and code review, Opus orchestrator, output critic
+and blind verifier, Codex `gpt-6.1-sol` code). Ollama on the Studio: login-user app (Q43).
 Exit test (spec §7 stage 4): every gate (spec §4) tested with good and bad answers, including truncated ones.
 All answers are invented fixtures served by the stand-in model server (`tests/fakemodel/`).
 - [ ] R4-1. Stage 4 work items (defined by the round 4 brief, ruled by the chair before any code): the model
@@ -670,4 +675,5 @@ All answers are invented fixtures served by the stand-in model server (`tests/fa
   `normalize` beyond spaces and hyphens (as the brief rules); leftover step comments in `bench.py` and
   `benchcandidate.py`; suite time near the 90 s budget (T-11).
 - [~] R4-5. deferred: R1-20 (`bates-cites` sees only bracketed cites) waits for the stage that writes cited prose.
+- Plan review and rulings (session 2, 2026-10-27): Codex gpt-6-astra plan review, 16 findings (`docs/loop/round-04/round04-brief-codex.md`); Fable revision accepted 16, rejected 0 (brief §8, 892 lines). Chair ruled D31 to D38 as written in brief §6, logged in spec §9 pending owner veto. Owner questions 47 (uncited pages) and 48 (summary wording) held for the close check-in; interims fail closed (D38). Tuning note for close: the digit-run check of D38 can fail a good answer that reformats a date (`3/2/2026` against `03/02/2026`); fails closed, settled by the benchmark (T-19).
 - [ ] V. Fresh blind verification: every non-deferred R4 item `[x]` with the verifier's own evidence.

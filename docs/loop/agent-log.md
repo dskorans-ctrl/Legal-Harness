@@ -98,3 +98,7 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 1 | Build brief | fable | 37.0 min | 322 k | done; 628 lines, 12 decisions, D31 to D37 pending, owner questions 42 to 46 (answered, Q44) |
 | 2 | Adversarial plan review | codex gpt-6.1-sol (read-only, high) | under 1 min | n/a | stopped by the owner before it reported; rerun in session 2 |
 | | **Round 4 session 1 total** | | **~45 min** | **Fable 322 k; chair not counted** | brief written, check-in done; session ended at the owner's request |
+| 3 | Adversarial plan review (rerun, session 2) | codex gpt-6.1-sol (read-only, high) | about 4 min | n/a | stopped by the chair at the owner's tier change (Q45) before it reported; partial log kept |
+| 4 | Adversarial plan review | codex gpt-6-astra (read-only, high) | 5.5 min | n/a | done; 16 findings (8 high, 8 med; 9 confirmed); `round04-brief-codex.md` |
+| 5 | Builder capability probes (two) | codex gpt-6.1-sol (workspace-write, low) | about 3 min | n/a | probe 1 gate `1` (loopback bind refused in the Codex sandbox); probe 2 with network_access on, gate `0`; no file changed |
+| 6 | Brief revision | fable | 19.6 min | 204 k | done; 16 accepted, 0 rejected, 0 owner-only; 892 lines; D31 to D36 amended, D38 new; owner questions 47, 48 |

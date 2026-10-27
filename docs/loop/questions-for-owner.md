@@ -236,3 +236,16 @@ spelling enough; 41 lowercase accepted. D27 to D30, the whole-token rule and G9 
 
 ANSWERED 2026-10-27 (round 4 check-in, ledger Q44): 42 to 46, every interim ruling kept (42 stays open, 43 quotes
 exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged, 46 log only).
+
+## Held 2026-10-27 (round 4 brief, revised after the Codex plan review)
+
+47. When a chunk of pages passes every check but the model cites nothing on one of its pages (a cover sheet, a
+    blank page, or a page it skipped: the code cannot tell which), that page is listed as an open item marked
+    "uncited" and never counted as read. Should that stay so, or should the model's own per-page statement
+    "nothing relevant on this page" close it, or should you close it by hand with your name in the log (as question
+    42 asked for failed pages)? Interim: it stays open; nothing closes it.
+48. The checks verify a fact's quote against the page and that every number in the fact's summary sentence appears
+    in its quote; the rest of the summary's wording is the model's and is not verified. Should the memo show the
+    quote as the verified text and label the summary as the model's reading, or should a second model call judge
+    each summary against its quote before the memo uses it? Interim: no output of this round or the next uses a
+    summary as verified; the quote is the verified thing.
