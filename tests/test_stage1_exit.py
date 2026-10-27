@@ -51,7 +51,7 @@ def test_stage1_exit(tmp_path, capsys):
         command = ["scripts/run.sh", "casefile", "doctor"]
         result = subprocess.run(command, cwd=ROOT,
                                 env=dict(os.environ, CASEFILE_CONFIG=str(path)),
-                                capture_output=True, text=True, timeout=60)
+                                capture_output=True, text=True, timeout=180)
         assert_exit(result, command, load(path), capsys)
     finally:
         server.shutdown()
@@ -84,5 +84,5 @@ def test_stage1_inprocess_control(tmp_path, capsys):
     env["PYTHONPATH"] = str(ROOT / "tests") + os.pathsep + env.get("PYTHONPATH", "")
     command = ["scripts/run.sh", sys.executable, "-c", INPROCESS_CHILD, "doctor"]
     result = subprocess.run(command, cwd=ROOT, env=env,
-                            capture_output=True, text=True, timeout=60)
+                            capture_output=True, text=True, timeout=180)
     assert_exit(result, command, load(path), capsys, label="stage-control ")

@@ -15,3 +15,5 @@ timeout_s = 600 # Positive integer seconds.
 [ocr]
 tesseract = "tesseract" # Executable name or path.
 ocrmypdf = "ocrmypdf" # Executable name or path.
+stamp_pattern = "[A-Z]{1,8}[ -]?\\d{4,}" # Page stamp (Bates) regular expression; must compile.
+timeout_s = 3600 # Positive integer seconds for one ocrmypdf run (one PDF).

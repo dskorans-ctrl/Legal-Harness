@@ -198,5 +198,5 @@ def alias_table(base, root, firmlink=True):
 
 
 def ocr_expected_fail() -> bool:
-    """Version checks cannot verify OCR before the stage 3 smoke test exists."""
-    return True
+    """The doctor's OCR check runs a real smoke page (stage 3); no check is expected to fail."""
+    return False

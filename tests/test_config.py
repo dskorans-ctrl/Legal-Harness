@@ -55,6 +55,27 @@ def test_bad_values(tmp_path, overrides, message):
     assert message in str(caught.value)
 
 
+@pytest.mark.parametrize("ocr, message", [
+    ({"x": "y"}, "unknown key [ocr].x"),
+    ({"timeout_s": 0}, "[ocr].timeout_s must be positive"),
+    ({"timeout_s": "5"}, "[ocr].timeout_s: expected int, got str"),
+    ({"stamp_pattern": "("}, "[ocr].stamp_pattern is not a valid pattern"),
+    ({"stamp_pattern": " "}, "[ocr].stamp_pattern must be non-empty"),
+])
+def test_ocr_key_refusals(tmp_path, capsys, ocr, message):
+    with pytest.raises(ConfigError) as caught:
+        load(write_config(tmp_path, ocr=ocr))
+    assert message in str(caught.value)
+    with capsys.disabled():
+        print(f"config_refusals=+1 ({message})")
+
+
+def test_ocr_defaults(tmp_path):
+    config = load(write_config(tmp_path))
+    assert config.ocr.timeout_s == 3600
+    assert config.ocr.stamp_pattern == r"[A-Z]{1,8}[ -]?\d{4,}"
+
+
 def test_paths_defaults_and_frozen_config(tmp_path, monkeypatch):
     settings = tmp_path / "settings"
     settings.mkdir()
@@ -96,7 +117,7 @@ def test_config_show(tmp_path, capsys):
                             env=env, capture_output=True, text=True, timeout=30)
     assert (result.returncode, result.stderr) == (0, "")
     lines = dict(line.split(" = ", 1) for line in result.stdout.splitlines())
-    assert len(lines) == 10
+    assert len(lines) == 12
     assert lines["paths.matters"] == f'{json.dumps(str(tmp_path.parent / "invented-matters"))} (source=file)'
     assert lines["model.num_ctx"] == "65536 (source=default)"
     assert all("(source=default)" in value for key, value in lines.items() if key != "paths.matters")

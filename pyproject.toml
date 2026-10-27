@@ -21,4 +21,4 @@ build-backend = "uv_build"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-p no:cacheprovider --strict-markers"
-markers = ["socket: binds or connects to 127.0.0.1"]
+markers = ["socket: binds or connects to 127.0.0.1", "ocr: runs ocrmypdf and tesseract"]

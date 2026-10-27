@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import math
 import os
 from pathlib import Path
+import re
 from types import MappingProxyType
 from typing import Mapping
 import tomllib
@@ -22,12 +23,13 @@ DEFAULTS = {
         "host": "http://127.0.0.1:11434", "name": "qwen3.8:27b",
         "num_ctx": 65536, "temperature": 0.1, "timeout_s": 600,
     },
-    "ocr": {"tesseract": "tesseract", "ocrmypdf": "ocrmypdf"},
+    "ocr": {"tesseract": "tesseract", "ocrmypdf": "ocrmypdf",
+            "stamp_pattern": r"[A-Z]{1,8}[ -]?\d{4,}", "timeout_s": 3600},
 }
 KNOWN_KEYS = MappingProxyType({
     "paths": ("matters", "state", "playbook"),
     "model": ("host", "name", "num_ctx", "temperature", "timeout_s"),
-    "ocr": ("tesseract", "ocrmypdf"),
+    "ocr": ("tesseract", "ocrmypdf", "stamp_pattern", "timeout_s"),
 })
 
 
@@ -51,6 +53,8 @@ class Model:
 class OCR:
     tesseract: str
     ocrmypdf: str
+    stamp_pattern: str
+    timeout_s: int
 
 
 @dataclass(frozen=True)
@@ -113,6 +117,13 @@ def load(path: str | Path | None = None) -> Config:
         raise ConfigError("[model].timeout_s must be positive")
     if not math.isfinite(model["temperature"]) or not 0 <= model["temperature"] <= 2:
         raise ConfigError("[model].temperature must be finite and between 0 and 2")
+    ocr = values["ocr"]
+    if ocr["timeout_s"] <= 0:
+        raise ConfigError("[ocr].timeout_s must be positive")
+    try:
+        re.compile(r"(?<![A-Z0-9])(?:" + ocr["stamp_pattern"] + ")")
+    except re.error as exc:
+        raise ConfigError(f"[ocr].stamp_pattern is not a valid pattern: {exc}") from exc
     try:
         host = urlsplit(model["host"])
         port = host.port

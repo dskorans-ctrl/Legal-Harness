@@ -21,6 +21,10 @@ case "${verdict##*$'\n'}" in
 esac
 export UV_PYTHON_INSTALL_DIR="$TOOLCHAIN/python" UV_CACHE_DIR="$TOOLCHAIN/cache" UV_PROJECT_ENVIRONMENT="$TOOLCHAIN/venv"
 [ -d "$TOOLCHAIN/venv/bin" ] && PATH="$TOOLCHAIN/venv/bin:$PATH"
+# Homebrew's folders come last: the venv and the resolved PY keep priority; launchd and the sandbox omit them.
+for brew_bin in /opt/homebrew/bin /usr/local/bin; do
+    if [ -d "$brew_bin" ]; then PATH="$PATH:$brew_bin"; fi
+done
 tmp="$(mktemp -d "${TMPDIR:-/tmp}/casefile-run.XXXXXX")" \
   || { echo "run.sh: cannot create capture dir under ${TMPDIR:-/tmp}; exit 98" >&2; exit 98; }
 exec "$PY" "$ROOT/scripts/run_capture.py" "$CAP" "$tmp" "$@"

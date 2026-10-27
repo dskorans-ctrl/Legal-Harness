@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 
-from casefile import __version__, bench, doctor, playbook
+from casefile import __version__, bench, doctor, intake, playbook
 from casefile.config import ConfigError, load
 
 
@@ -29,6 +29,11 @@ def main() -> int:
     bench_parser.add_argument("--matters", type=Path, required=True)
     bench_parser.add_argument("--candidate", type=Path)
     bench_parser.add_argument("--config", type=Path)
+    intake_parser = subcommands.add_parser("intake", help="OCR a PDF into page records with page IDs")
+    intake_parser.add_argument("--matter", required=True)
+    intake_parser.add_argument("--binder", required=True)
+    intake_parser.add_argument("file", type=Path)
+    intake_parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     if args.command == "version":
         print(f"casefile {__version__}")
@@ -43,6 +48,14 @@ def main() -> int:
         print(f"version={book.version} entries={len(book.entries)}")
         for entry in book.entries:
             print(f"{entry.id}: {entry.rule}")
+    elif args.command == "intake":
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"ConfigError: {exc}", file=sys.stderr)
+            return 2
+        return intake.intake(config, args.matter, args.binder, args.file,
+                             out=sys.stdout, err=sys.stderr)
     elif args.command == "bench":
         return bench.main(args.matters, args.config, args.candidate)
     elif args.command == "config":
