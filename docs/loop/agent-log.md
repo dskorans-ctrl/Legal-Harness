@@ -57,3 +57,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 |---|---|---|---|---|---|
 | 1 | Round 2 build brief | fable | 25.9 min | 256 k | done; 962 lines, 31 Gemma tasks, owner questions 21 to 23 |
 | 2 | Plan review of the brief | codex gpt-6.1-sol (read-only, high) | ~12 min | n/a | 16 findings (10 high); finding 2 on the chair's driver fixed and proven by the chair |
+| 3 | Brief revision after Codex | fable | 13.5 min | 178 k | done; 16 accepted, 0 rejected, 0 owner; 43 Gemma tasks, 27 seeds; chair accepted all decisions (D25, D26 pending veto) |
+| 4 | Build orchestrator, Gemma G1 to G7 (paused by the owner) | opus (orchestrator) + gemma4:e4b (local) | 17.6 min | 150 k Opus; Gemma 13.9 k prompt + 17.8 k answer (local) | paused; W1 94f6a3b, W2 cad2779 committed; G4 to G7 written, W3 CHECK green, W3 seeds not run; 6 of 7 first try, 0 Sonnet fallbacks |

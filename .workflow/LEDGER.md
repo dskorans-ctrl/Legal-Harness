@@ -98,6 +98,16 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   round's code for quality and errors against what Sonnet 5.5 would produce, placed after 8a Codex and
   before 8b; its reproduced findings join fix cycle 1. Fable brief, Opus critic and verifier unchanged.
   Additional instructions: none.
+- Q29: cost report (owner, 2026-10-26)? -> the round report states how many tokens the build cost
+  (Gemma local tokens, Opus orchestration, Sonnet fallbacks) compared with the token cost of a Sonnet
+  build of the same work, counting every Sonnet takeover.
+- Q30: Gemma scope (owner, 2026-10-26)? -> Gemma codes for round 2 only, as a trial. From round 3 the
+  tiers return to the defaults (Q27: Fable brief, Codex plan and code review, Opus orchestrator, critic
+  and verifier, Sonnet 5.5 code). The round 2 build resumes when the owner's other Gemma job is done
+  (checked every 30 minutes).
+- Q31: owner away overnight (owner, 2026-10-26 ~23:05)? -> keep the loop running until the owner returns;
+  the chair makes the calls, each logged in `docs/loop/questions-for-owner.md` under "Round 2 overnight
+  rulings" as pending veto or ratification.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -306,3 +316,6 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
 - [ ] R2-4. Regression baselines set in `## Project` from measured numbers.
 - [ ] R2-5. Close: report, Librarian, agent log, spec §11 as-built, handoff, next-round prompt.
 - [ ] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.
+- PAUSED (owner, 2026-10-26, "Pause local work") after G7. Committed: W1 94f6a3b, W2 cad2779. Uncommitted
+  Gemma output left in the tree: src/casefile/quotes.py, src/casefile/matter.py, tests/test_quotes.py,
+  tests/test_matter.py (W3 CHECK green, seeds a to d not run). Resume at: W3 seeds and commit, then G8.

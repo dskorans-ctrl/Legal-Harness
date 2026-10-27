@@ -78,3 +78,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
     stage 2 fixture puts it alone on the last line), or do stamps appear top right, with a producing
     party prefix, or more than one per page? Interim: one stamp per page, last line; stage 3 reads the
     stamp from the page text with the configurable pattern (Q21).
+
+## Round 2 overnight rulings (Q31: chair rulings while the owner is away, each pending veto or ratification)
+
+- OR-1 (2026-10-26 23:05): "Gemma is free" is judged from `~/local-worker/ollama-serve.log`: the last
+  POST /api/chat or /api/generate at least 15 minutes old and the server's last slot line "all slots are
+  idle", checked every 30 minutes for up to 24 hours. Why: the other job keeps the model loaded for 24 h,
+  so "unloaded" never fires. Risk: a job that pauses more than 15 minutes between requests would be
+  shared with the build (Ollama queues; both still finish, just slower).
