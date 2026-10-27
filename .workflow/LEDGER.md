@@ -585,3 +585,15 @@ invented fixture under `tests/fixtures/`.
   empty=1 failed=0 min_ratio=1.000`; stage 1 `exit=0 verdicts=8 fails=set() test_jobs=1`. Chair driven intake
   on the fixture: `intake 9002.001 scan pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit
   1, page 3 two stamps, page 6 `mixed`, re-intake exit 2. 46 builder seeds red (lane reports).
+- Fix cycle 1 notes (worker, 2026-10-27, code 4d615be; a note, not a tick; each test RED before the fix, seeded RED alone after):
+  CX-1 `pages`/`records` link to another matter, the checkout, or a dangling target: intake now exit 2 "records or
+  pages folder must not be a link", nothing written (6 tests; seed `if False and (` red). CX-2 `.tmp` mkdir fails
+  after a rival made one: only folders this run created are removed (2 tests; seed red). CX-3 KeyboardInterrupt
+  between renames: `_publish` rolls back on BaseException, re-intake exit 0 (seed `except OSError` red).
+  CX-4 302 with stalled or truncated body: `received=True`, raw `partial` or empty (loopback socket, 2 tests;
+  seed re-raise red). CX-5 detached child of ocrmypdf (exit 0 and 7) killed after normal return (seed red).
+  CX-6 SIGTERM in page extraction and JSON writing: whole-intake handlers, exit 143, no `.tmp` (seed red).
+  CX-7 stamp match must end at a token boundary (`(?![A-Za-z0-9])`), 6th stamps case (seed red). CX-8 doctor
+  OCR failure cases now assert exit 1 (seed: doctor returns 0 on OCR FAIL red). Sweep `350 passed in 63.42s`,
+  gate `0`, `unused_imports=0`, stage3 exit line unchanged. Open: lookbehind is still upper-case only (a
+  lowercase letter before a stamp is not refused); a signal between `mkdir` and `created.append` leaks one folder.
