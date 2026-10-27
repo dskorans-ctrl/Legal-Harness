@@ -1,0 +1,75 @@
+{
+  "matter": "9002.001",
+  "binder": "scan",
+  "file": "scanned.pdf",
+  "sha256": "0c620cd28be65e7314dbf14012059dc9df46ce420241245d9b58973fa3603526",
+  "pages": [
+    {
+      "page": 1,
+      "kind": "image",
+      "stamps": [
+        "KMR2342"
+      ],
+      "must_contain": [
+        "02/18/2026",
+        "6 out of 10",
+        "no lifting over 10 pounds"
+      ],
+      "text": "Harrowgate Occupational Clinic\nProgress Note\n\nPatient: Delphine Okafor-Brandt   DOB 09/03/1979\nDate of visit: 02/18/2026\nInjury: 02/10/2026, lifting a crate at work.\nAssessment: right shoulder strain.\nPain is 6 out of 10 at rest and with overhead reach.\nPlan: ice, stretching and ibuprofen as needed.\nWork status: no lifting over 10 pounds.\nSeen by Dr. Rafael Soto-Lindgren.\nKMR2342"
+    },
+    {
+      "page": 2,
+      "kind": "image",
+      "stamps": [
+        "KMR2343"
+      ],
+      "must_contain": [
+        "03/04/2026",
+        "released to full duty"
+      ],
+      "text": "Harrowgate Occupational Clinic\nProgress Note\n\nPatient: Delphine Okafor-Brandt   DOB 09/03/1979\nDate of visit: 03/04/2026\nFollow up for right shoulder strain.\nStrength is improving and the brace is in use.\nPatient is released to full duty with the brace.\nRecheck in two weeks if pain returns.\nSeen by Dr. Rafael Soto-Lindgren.\nKMR2343"
+    },
+    {
+      "page": 3,
+      "kind": "image",
+      "stamps": [
+        "KMR2344",
+        "TWP7731"
+      ],
+      "must_contain": [
+        "02/25/2026",
+        "partial thickness"
+      ],
+      "text": "Pinecrest Imaging\nMagnetic Resonance Report\n\nPatient: Delphine Okafor-Brandt   DOB 09/03/1979\nStudy date: 02/25/2026\nStudy: right shoulder without contrast.\nFindings: partial thickness tear of the supraspinatus tendon.\nNo full thickness tear is seen.\nImpression: partial thickness tear, mild fluid in the bursa.\nKMR2344\nTWP7731"
+    },
+    {
+      "page": 4,
+      "kind": "blank",
+      "stamps": [],
+      "must_contain": [],
+      "text": ""
+    },
+    {
+      "page": 5,
+      "kind": "text",
+      "stamps": [
+        "KMR2345"
+      ],
+      "must_contain": [
+        "two visits per week for four weeks"
+      ],
+      "text": "Wexley Physical Therapy\nPlan of Care\n\nPatient: Delphine Okafor-Brandt\nReferred by Dr. Rafael Soto-Lindgren.\nDiagnosis: right shoulder strain.\nFrequency: two visits per week for four weeks.\nGoals: restore overhead reach and lifting strength.\nKMR2345"
+    },
+    {
+      "page": 6,
+      "kind": "mixed",
+      "stamps": [
+        "KMR2346"
+      ],
+      "must_contain": [
+        "return to work 03/16/2026"
+      ],
+      "text": "Harrowgate Occupational Clinic\nWork Status Letter\n\nPatient: Delphine Okafor-Brandt   DOB 09/03/1979\nDate of letter: 03/12/2026\nThe shoulder is healing as expected.\nPlan: return to work 03/16/2026 on light duty.\nSigned, Dr. Rafael Soto-Lindgren.\nKMR2346"
+    }
+  ]
+}
