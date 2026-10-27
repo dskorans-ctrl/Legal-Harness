@@ -1,0 +1,184 @@
+{
+  "facts": [
+    {
+      "cite": "MED0001",
+      "quote": "Date of service: 03/11/2025",
+      "text": "The date of service was 03/11/2025."
+    },
+    {
+      "cite": "MED0001",
+      "quote": "Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
+      "text": "The patient stated he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back."
+    },
+    {
+      "cite": "MED0001",
+      "quote": "Pain 7/10 in the low back, no radiation.",
+      "text": "Pain was 7/10 in the low back with no radiation."
+    },
+    {
+      "cite": "MED0001",
+      "quote": "Patient denies any prior back injury or back pain.",
+      "text": "The patient denied any prior back injury or back pain."
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Straight leg raise negative bilaterally.",
+      "text": "The straight leg raise was negative bilaterally."
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Lumbar spine x-ray, three views, ordered; report to follow.",
+      "text": "Lumbar spine x-ray, three views, was ordered with the report to follow."
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Diagnosis: acute lumbar strain.",
+      "text": "The diagnosis was acute lumbar strain."
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Off work for 3 days, then return as tolerated.",
+      "text": "The ER record took the patient off work for 3 days, then return as tolerated."
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.",
+      "text": "The patient reported a lumbar strain in 2019 after moving furniture, which resolved with rest."
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Restrictions: no lifting over 10 pounds and no repetitive bending through 04/11/2025.",
+      "text": "Restrictions were no lifting over 10 pounds and no repetitive bending through 04/11/2025."
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Referred to physical therapy, two visits per week for six weeks.",
+      "text": "The patient was referred to physical therapy for two visits per week for six weeks."
+    },
+    {
+      "cite": "MED0004",
+      "quote": "Lumbar flexion 40 degrees, extension 10 degrees.",
+      "text": "Lumbar flexion was 40 degrees and extension was 10 degrees."
+    },
+    {
+      "cite": "MED0005",
+      "quote": "Patient reports new numbness into the left calf since approximately 04/10/2025.",
+      "text": "The patient reported new numbness into the left calf since approximately 04/10/2025."
+    },
+    {
+      "cite": "MED0005",
+      "quote": "Recommend MRI of the lumbar spine before further progression.",
+      "text": "It was recommended to have an MRI of the lumbar spine before further progression."
+    },
+    {
+      "cite": "MED0005",
+      "quote": "Discharge summary to follow at visit 12.",
+      "text": "The discharge summary was to follow at visit 12."
+    },
+    {
+      "cite": "MED0006",
+      "quote": "L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.",
+      "text": "The MRI showed L4-L5 had a 4 mm posterior central disc protrusion contacting the thecal sac."
+    },
+    {
+      "cite": "MED0007",
+      "quote": "Positive straight leg raise on the left at 45 degrees.",
+      "text": "There was a positive straight leg raise on the left at 45 degrees."
+    },
+    {
+      "cite": "MED0007",
+      "quote": "Impression: L4-L5 disc protrusion with left L5 radiculopathy.",
+      "text": "The impression was L4-L5 disc protrusion with left L5 radiculopathy."
+    },
+    {
+      "cite": "MED0008",
+      "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
+      "text": "The plan was a left L4-L5 transforaminal epidural steroid injection."
+    },
+    {
+      "cite": "MED0008",
+      "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
+      "text": "Dr. Okonkwo-Lind gave the opinion that the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025."
+    },
+    {
+      "cite": "MED0008",
+      "quote": "The patient has not reached maximum medical improvement.",
+      "text": "The patient has not reached maximum medical improvement."
+    },
+    {
+      "cite": "EMP0001",
+      "quote": "Employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
+      "text": "The employee reported lifting a tote weighing approximately 40 pounds from a floor pallet."
+    },
+    {
+      "cite": "EMP0003",
+      "quote": "Average weekly wage: $912.40",
+      "text": "The average weekly wage was $912.40."
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.",
+      "text": "Dr. Marchetti's report states the L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025."
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "The examinee is at maximum medical improvement as of today's examination.",
+      "text": "Dr. Marchetti's report states the examinee is at maximum medical improvement."
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "No work restrictions are indicated.",
+      "text": "Dr. Marchetti's report states no work restrictions are indicated."
+    },
+    {
+      "cite": "EMP0001",
+      "quote": "Date of hire: 08/02/2021",
+      "text": "The incident report gives a hire date of 08/02/2021."
+    },
+    {
+      "cite": "EMP0002",
+      "quote": "Lift up to 50 pounds repeatedly during the shift.",
+      "text": "The job description requires lifting up to 50 pounds repeatedly."
+    }
+  ],
+  "flags": [
+    {
+      "kind": "conflict",
+      "cites": [
+        "MED0001",
+        "EMP0001"
+      ],
+      "about": "The tote weight is 60 pounds in the ER record and approximately 40 pounds in the incident report."
+    },
+    {
+      "kind": "conflict",
+      "cites": [
+        "MED0001",
+        "MED0003"
+      ],
+      "about": "Prior back injury denied at the ER, but a 2019 lumbar strain reported at the family medicine visit."
+    },
+    {
+      "kind": "conflict",
+      "cites": [
+        "MED0008",
+        "DEF0003"
+      ],
+      "about": "Dr. Okonkwo-Lind relates the L4-L5 protrusion to the lifting injury; Dr. Marchetti's report calls it degenerative and not related."
+    },
+    {
+      "kind": "gap",
+      "cites": [
+        "MED0002"
+      ],
+      "about": "The lumbar x-ray report that was ordered is not in the records."
+    },
+    {
+      "kind": "gap",
+      "cites": [
+        "MED0005"
+      ],
+      "about": "The physical therapy discharge summary is not in the records."
+    }
+  ]
+}
