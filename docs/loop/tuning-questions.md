@@ -18,3 +18,5 @@ benchmark says, and what to watch for.
   doctor/examiner/exam in one clause within 60 characters (`playbook/rules.toml:21`). The 120-character
   cross-sentence window over-blocked benefits prose ("The carrier paid temporary total disability ...;
   Dr. Lane released him"). Measure false hits on the benchmark memos before widening or narrowing.
+- T-6 (round 1 re-brief, R5): full suite rose from 12.9 s to 32 s (pathguard rows run /usr/bin/python3
+  per row, about 8 s; three 2 s grace waits). Revisit if the suite passes 60 s.

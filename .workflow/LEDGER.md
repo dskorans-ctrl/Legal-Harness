@@ -229,6 +229,13 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   alias tests shared by both callers.
 - [ ] R1-23. One test per D12 exit branch (96, 97 incl. grandchild killed, 98 mktemp and write, 95,
   126, 127, child code); V3-3; verify2 N2.
+  Build note (re-brief, Sonnet 5.5, commits 330ff81..a69814d; chair re-run, not a tick): `214 passed`;
+  gate `0` on three runs (one earlier run printed `1`, row not captured: tripwire for the verifier);
+  wrapper and pathguard tests `43 passed` x4; V3-1 loop -> `exit=2` ConfigError; V3-2 at the right
+  depth -> `exit=95`, nothing created; B1b `exit=2`; outside `exit=0`; chair SEED run.sh inside branch
+  -> `;;` -> `10 failed, 27 passed`, cmp restored, no residue. Builder deviations 1 to 7 accepted
+  (6: suite 12.9 s -> 32 s, over the brief's 20 percent R5 line; accepted as the cost of real
+  interpreter and grace tests, T-6).
 
 - [ ] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.
