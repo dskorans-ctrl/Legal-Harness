@@ -49,6 +49,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
 ## Answered 2026-10-25
 - Q1 -> ledger Q10, Q14. Q2 -> Q20. Q3 -> Q17. Q4 -> Q16. Q5 -> Q21. Q6 -> Q18. Q7 -> Q19 (still open).
 
+## Answered 2026-10-27 (round 3 check-in)
+- 8 to 20: interim rulings ratified (ledger Q34). 7 still open (Q19).
+- 21, 22, 25, 26, 27, 29 -> ledger Q34. 23 -> Q35. 24 -> Q36 (chair ruling, owner had no preference;
+  pending veto). 28 -> Q37.
+
 ## Held (round 1 re-brief), 2026-10-26 (interim rulings by the chair, pending veto)
 16. On the Studio, will a `python3` be on PATH before `uv sync` (Xcode Command Line Tools installed, or a
     python.org build)? `scripts/run.sh` needs one for the path guard and the capture stage before the

@@ -120,6 +120,26 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   ratified.
 - Q33: coder for the V2b-F1 fix (owner, 2026-10-27; the owner's other Gemma job was running)? -> Sonnet
   writes it; a deviation from Q28, logged in the round report.
+- Q34: round 3 check-in (owner, 2026-10-27), held questions 21 to 29 and round 1 holds? -> Q21 keep the key
+  categories as listed. Q22 benchmark matters live in a separate folder outside the checkout, same layout
+  as `tests/fixtures/matters/`. Q25 flags match by kind plus cite set (D25 stands). Q26 an unreachable model
+  server makes `casefile bench` exit 2 (cannot run); Q27 the bench line names the model (`model=<tag>`).
+  Q29 "Dr. X's report" is allowed; only the DME and IME labels are banned (Q16). Round 1 holds 8 to 20: all
+  interim rulings ratified; question 7 (Ollama user or daemon) stays open (Q19).
+- Q35: Bates stamps (owner, 2026-10-27, question 23)? -> "Bates stamps only necessary for hearing prep. For
+  hearings, ask me which bates stamp to use. Normally for a hearing I'll upload a medical binder which has
+  our bates stamp at bottom center of each page." A page may carry more than one stamp. Chair reading: a
+  page ID is matter, binder, page (spec §3); intake records every Bates stamp found on a page without
+  choosing one; hearing prep asks the attorney which stamp to cite.
+- Q36: question 24, key completeness (owner: no preference)? -> chair ruling, pending veto: the key lists
+  every real gap and conflict a careful reader would flag; an extra flag keeps failing the run.
+- Q37: bills (owner, question 28)? -> "Billing memo will be provided, no need to create that separately."
+  The attorney supplies the billing memo; casefile does not build one and test matters need no bills.
+- Q38: round 3 scope and tiers (owner, 2026-10-27)? -> spec §7 stage 3 on `loop/round-03`; Q30 default tiers;
+  merge to `main` after V.; do not start round 4. Additional instructions: none; proceed.
+- Q39: OCR on this dev Mac (owner, 2026-10-27, supersedes Q11 for OCR only)? -> install ocrmypdf here with
+  brew (the owner runs `brew install ocrmypdf`, which brings Tesseract, Ghostscript and qpdf). D6 unchanged;
+  the doctor's OCR check must PASS for real. Ollama and other brew installs stay barred.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -519,3 +539,27 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
     `found=29 of 29`. Report: docs/loop/round-02/round02-verify3.md.
 - Round 2 verdict (chair, 2026-10-27): PASS after the extra fix cycle (Q32). Verifier 3 PASS at 695b97b;
   non-blocking: no empty-body 3xx case in the redirect test (seed S5 green, code right by probe). Merged to `main`.
+
+## Round 3: stage 3 intake and OCR with page IDs (opened 2026-10-27 on `loop/round-03` at a0d3c6a)
+Tiers: Q30 defaults (Fable brief and revision, Codex plan and code review, Opus orchestrator, output critic
+and blind verifier, Sonnet 5.5 code). OCR engine: ocrmypdf and Tesseract on this Mac (Q39).
+Exit test (spec §7 stage 3): a scanned PDF becomes page text with correct IDs. The scanned PDF is an
+invented fixture under `tests/fixtures/`.
+- [ ] R3-1. Stage 3 work items (defined by the round 3 brief, ruled by the chair before any code):
+  intake of a PDF into page text; OCR where a page has no text layer; every page gets an ID (matter,
+  binder, page) and the list of every Bates stamp found on it, none chosen (Q35).
+- [ ] R3-2. Doctor's OCR check turns PASS for real on this Mac (Q11, Q39); R1-19 OCR smoke test on an
+  invented fixture PDF.
+- [ ] R3-3. Bench: an unreachable model server exits 2 (Q26); the bench line names the model (Q27).
+- [ ] R3-4. Key completeness (Q36): the 9001.001 key lists every real gap and conflict a careful reader
+  would flag (critic H1 list); every exact bench number updated.
+- [ ] R3-5. Model client carried items: empty-body 3xx test case (verifier 3, S5); a non-200 HTTPError with
+  no body stream stores an answer row.
+- [ ] R3-6. Matter loader carried items: duplicate matter numbers refused; OR-5 F3 (`.DS_Store` and other
+  hidden files in `records/`), F4 (binder listed twice), F5 (validate names before reading), F6
+  (whitespace-only page text).
+- [ ] R3-7. Hygiene carried from OR-5: trailing whitespace, unused imports in test files, prompt-framing
+  comments, F7, F8; verifier test gaps N2 to N5.
+- [~] R3-8. deferred: R2-CX-2 (prompt truncation detection) waits for stage 4 (OR-4, owner ratified).
+  R1-20 (`bates-cites` sees only bracketed cites) waits for the stage that writes cited prose.
+- [ ] V. Fresh blind verification: every non-deferred R3 item `[x]` with the verifier's own evidence.
