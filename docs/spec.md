@@ -245,5 +245,6 @@ and read-only Outbox shares for the operations computer; D16 no local agent loop
 
 | Part | State |
 |---|---|
-| Everything in §5 | not built (repo seeded 2026-10-25) |
+| Stage 1 (round 1, merged 2026-10-26) | built and verified: `scripts/run.sh` and `scripts/run_capture.py` (D12), `src/casefile/` config (D13), pathguard (D24), rules and `playbook/rules.toml` (§4, Q16), playbook loader, append-only run log, model client (loopback, no proxy), doctor (D19, eight checks), privacy scan and gate; stand-in model server `tests/fakemodel/` (D18); 233 tests, gate prints 0; stage 1 exit test `exit=1 verdicts=8 fails={'ocr'} test_jobs=1` (OCR FAIL until stage 3, Q11) |
+| Rest of §5 | not built |
 | Cards and schemas | written for the earlier two-model plan; updates listed in §7 |

@@ -31,6 +31,11 @@ Cross-project failure classes live in the app-loop skill's catalog
 - When a guard is fixed, is every alias of the protected thing tested (case, symlink to root, symlink
   to a subfolder, chains, `..`), not only the one the finding named? (#R01-V-B1b)
 - Is the chair's fix instruction itself checked against the spec row before sending? (#R01-OC-M8)
+- Does a process watcher treat a stop or continue as an exit? Use kqueue NOTE_EXIT, not SIGCHLD. (#R01R-RX-1)
+- Does every interrupt (HUP, TERM, INT) kill the job and remove its capture, so client text never
+  lingers in a temp folder? (#R01R-OC-F1)
+- Is a relative path resolved against the root the spec names (D14: the checkout), not the config's folder? (#R01R-OC-F2)
+- Is the interpreter that runs a step the same one the guard ran under? (#R01R-RX-2)
 
 ## Round 1 (2026-10-25 to 2026-10-26)
 
@@ -185,9 +190,53 @@ resolved path and every ancestor of both spellings (third pass on one guard: #R0
 - The output critic left a stand-in server running; kill was refused in its sandbox. Critic and
   verifier prompts must prefer pytest-driven runs that clean up.
 
+## Round 1 re-brief (2026-10-26, Q24, Q26, Q27)
+
+### R01R-1: one identity guard replaces four spelling-based patches
+**What broke:** the guards of #R01-CX-1, #R01-V-B1, #R01-V-B1b each closed one alias; `..` after a missing
+part still escaped run.sh (V3-2), a symlink loop gave a traceback (V3-1).
+**Why:** a guard rebuilt per finding instead of designed for the class.
+**Caught by:** three verifier passes; the re-brief (Fable) redesigned it, Codex attacked the plan (19 findings).
+**Countermeasure:** `src/casefile/pathguard.py` (D24): identity of every ancestor of the typed and real
+spellings; one alias table drives the module, config and run.sh tests; final verifier ran 26 + 26 probes.
+**Status:** fixed (330ff81..a69814d, 22d0125).
+
+### R01R-RX-1: a stopped and resumed child was killed as if it had exited
+**What broke:** `scripts/run_capture.py:29` SIGCHLD handler started the 2 s grace on SIGSTOP; chair probe
+`exit=137 secs=2`, want 3.
+**Why:** SIGCHLD fires on stop and continue too (no SA_NOCLDSTOP in CPython).
+**Caught by:** re-brief 8a Codex review; chair reproduced.
+**Countermeasure:** kqueue NOTE_EXIT watch (also removes select's 1024-descriptor limit, RX-5).
+**Status:** fixed (22d0125).
+
+### R01R-RX-2: the wrapper exec'd a different python3 than the one that ran the guard
+**What broke:** `scripts/run.sh:17`: venv/bin prepended to PATH before `exec python3`.
+**Why:** a check and its consumer resolved the same name twice.
+**Caught by:** re-brief 8a Codex review.
+**Countermeasure:** `PY` resolved once and used for both.
+**Status:** fixed (22d0125).
+
+### R01R-OC-F1: hangup or TERM left the job running and its output in a temp folder
+**What broke:** `scripts/run_capture.py`: SIGHUP -> exit 129, child alive, capture folder kept.
+**Why:** start_new_session isolates the child from terminal signals; default handlers skip `finally`.
+**Caught by:** re-brief 8b output critic; chair reproduced.
+**Countermeasure:** HUP/TERM/INT handlers kill the group, remove the capture, exit 128+n.
+**Status:** fixed (9f86d07).
+
+### R01R-OC-F2: state and playbook defaults followed the config file, not the checkout
+**What broke:** `src/casefile/config.py`: config in the home folder made doctor create ~/state and FAIL playbook.
+**Why:** relative paths anchored to the wrong root (D14 says the checkout).
+**Caught by:** re-brief 8b output critic.
+**Countermeasure:** relative state and playbook resolve against the checkout.
+**Status:** fixed (9f86d07).
+
 ## Open items a future pass must not re-discover
 
 - **R1-19**: OCR smoke test on an invented fixture PDF: stage 3 (#R01-CX-9).
 - **R1-20**: `bates-cites` sees only bracketed cites; "See page 12" passes: the stage that writes cited prose.
 - **Owner questions 7 to 14** (`docs/loop/questions-for-owner.md`): interim rulings in force.
-- **run.sh needs python3 on PATH** before `uv sync` on a fresh checkout (#R01-CX-4).
+- **run.sh needs python3 on PATH** before `uv sync` on a fresh checkout (#R01-CX-4; owner question 16).
+- **VF-1**: pathguard.py:55 newline join has no test; a seed lets a forged last line pass (tip correct). Round 2.
+- **VF-2**: config.py:67 and :145 traceback (exit 1, not ConfigError) on `--config` through a loop and on a
+  bad `~user` or loop in state/playbook. Round 2.
+- **Leftover capture folders** from killed test runs before 9f86d07 sit in the shared TMPDIR (invented text).

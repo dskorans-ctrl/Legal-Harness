@@ -1,5 +1,33 @@
 # Round 1 report: stage 1 skeleton and harness
 
+**Verdict: PASS, merged 2026-10-26.** After the first build was discarded (Q23), the re-brief on the branch
+(Q24, Q26, tiers Q27) passed the blind verifier. V1 is ticked: all 23 items are ticked except R1-1 (the
+first brief), R1-19 (OCR smoke test, stage 3), R1-20 (unbracketed cites) and R1-21 (owner question 15),
+which are deferred with reasons.
+
+## Re-brief (2026-10-26)
+
+| Number | Check that produced it |
+|---|---|
+| `233 passed` | `scripts/run.sh pytest -q` (chair and verifier) |
+| gate prints `0` (twice) | `scripts/run.sh python -m casefile.gate` |
+| `exit=1 verdicts=8 fails={'ocr'} test_jobs=1` | `scripts/run.sh pytest -q -s tests/test_stage1_exit.py` |
+| 26 matters aliases exit 2; 26 toolchain aliases exit 95, nothing created | verifier probes through `config show` and `run.sh` |
+| every D12 exit holds (96, 95, 98, 126, 127, 97 in 0.45 s, held pipe 2.09 s, stop/continue keeps 5, HUP/TERM/INT 129/143/130) | verifier probes |
+| 8 fresh verifier seeds, 7 red | `round01r-verify.md` |
+
+- Fable brief (248 lines), Codex plan review (19 findings, 7 high), Fable revision (17 accepted, 1 rejected,
+  1 owner). One Python identity guard (D24) replaced four spelling-based patches.
+- Sonnet build W1 to W6, 25 seeds red. 8a Codex review: 8 findings. RX-1 (a stopped child was killed)
+  was reproduced and fixed with kqueue. 8b output critic: `OUTPUT CRITIC 7/10 · high 0 · med 2 · low 4`.
+  F1 (HUP left the job and its capture behind) was reproduced and fixed. Two fix cycles of three used.
+- Carried to round 2: VF-1 (newline join untested at pathguard.py:55; tip correct) and VF-2 (config
+  tracebacks on loops or a bad `~user` in --config, state or playbook; still refuses).
+- Spec: D12, D13 and D23 amended, D24 added (pending veto); §11 as-built row for stage 1. Owner questions
+  15 to 20 held with interim rulings.
+
+## First build (discarded 2026-10-26, kept for the record)
+
 **Verdict: DISCARDED (not merged).** Three verify passes failed V1. The owner granted one extra cycle
 (Q23) and the focused re-verify then failed too, so the round was discarded per Q5. Owner Q24: re-brief
 on the branch. `loop/round-01` keeps its tip; `main` stays at the seed `5a55b54`. 14 of 20 items are

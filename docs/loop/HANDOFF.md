@@ -1,43 +1,42 @@
-# casefile: loop handoff (2026-10-26, end of round 1 session 2)
+# casefile: loop handoff (2026-10-26, end of round 1)
 
-Read this page, then `.workflow/LEDGER.md` (`## Project`, `## Clarified` Q1 to Q24, `## Round 1`, the
-critic-round lines), then `Librarian.md` (builder pre-flight first). Spec (canon): `docs/spec.md`.
+Read this page, then `.workflow/LEDGER.md` (`## Project`, `## Clarified` Q1 to Q27), then `Librarian.md`
+(builder pre-flight and open items). Spec (canon): `docs/spec.md`.
 
 ## Where things stand
-- Round 1 (spec §7 stage 1 plus the harness) was DISCARDED, not merged (Q23, Q5). Owner Q24: re-brief
-  on the branch. `loop/round-01` keeps its tip; `main` is still the seed `5a55b54`. No `loop/round-02`.
-- On the tip: `192 passed`, gate `0`, stage 1 exit test `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`.
-  14 items ticked by a verifier, 4 deferred, R1-4 and R1-13 refused, V1 open.
-- Round report: `docs/loop/round-01/round01-report.md` (verdict, numbers, carried items, design).
+- Round 1 (spec §7 stage 1 plus the harness) PASSED after the re-brief (Q24, Q26) and is merged:
+  `main` was fast-forwarded to the round 1 close. Branch `loop/round-02` is open from it, with no work yet.
+- Measured on `main`: `233 passed`, gate `0`, stage 1 exit test `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`.
+- Round report: `docs/loop/round-01/round01-report.md`. Spec §11 has the stage 1 as-built row.
 
-## Next session: round 1 re-brief (Q24), on `loop/round-01`
-**ON HOLD (owner Q25, 2026-10-26): start only when the owner says so.**
-1. Ask the owner the tiers for the session (Q22 is the last answer).
-2. Fable brief, limited scope: redesign the path-identity guards and the wrapper exit branches as ONE
-   Python identity check shared by `src/casefile/config.py` and `scripts/run.sh`, with table-driven
-   alias tests (case, root and subfolder symlinks, chains, loops, `..`, dangling, relative, unreadable)
-   and one test per D12 exit branch. Items: V3-1 to V3-4 (`round01-verify3.md`), verify2 N2. Codex plan
-   review, Fable revision, build (Codex per Q22 unless the owner changes it).
-3. The full critic round (8a, 8b, 8c), with the cycle cap starting fresh for the re-brief.
-4. Close: R1-12 (spec §11 as-built), tick R1-4 and R1-13, then V1. Fast-forward `main`, open
-   `loop/round-02`, and prompt the owner to `git push origin main`.
+## Next session: round 2 (spec §7 stage 2: benchmark and invented test matter)
+1. Ask the owner the tiers (Q27 is the last answer: Fable brief, Codex plan and code review, Opus
+   orchestrator, critic and verifier, Sonnet code).
+2. Full round per the app-loop skill: brief, plan review, revision, build, critic round (8a, 8b, 8c),
+   fix cycles (cap three), close. Exit test: `casefile bench` scores the invented test matter against its
+   answer key. Set the regression baselines (ledger `## Project`).
+3. First items carried from round 1: VF-1 (a test for the newline join at pathguard.py:55), VF-2
+   (config.py:67 and :145 tracebacks become ConfigError), R1-20 if stage 2 writes cited text.
 
 ## Held owner questions
-- `docs/loop/questions-for-owner.md`: Q7 (Ollama login user or daemon) and items 8 to 14 from the output
-  critic (DME as durable medical equipment, rule scope, bills, exam volume, cite forms, QME/AME, folder
-  creation), all with interim rulings in force.
-- Pending veto: spec §9 D12 to D21 and D23, including the 2026-10-26 amendments to D12 and D18.
+- `docs/loop/questions-for-owner.md`: Q7, and items 8 to 20 (critic practice questions, spec §8b decision
+  numbering, python3 on the Studio, the held-pipe kill, a TMPDIR inside the checkout, a matters folder
+  that contains the checkout, Ctrl-Z). All have interim rulings in force.
+- Pending veto: spec §9 D12 to D24 (chair rulings, including the 2026-10-26 amendments and D24).
 
 ## Machine rules
-- Every run through `scripts/run.sh`, which now execs `scripts/run_capture.py` and needs a `python3` on
-  PATH. The toolchain lives at `~/.casefile-dev/legal-harness` (D23).
-- Codex: build with `codex exec -m gpt-6.1-sol -s workspace-write -C <tree> ... < /dev/null`; review with
-  `-s read-only`. Run with the sandbox off, in the background. Codex cannot write `.git`, so the chair
-  commits. Its sandbox denies socket binding, so the chair re-runs the full suite and gate before every
-  commit.
-- Socket tests run inside this session's sandbox now (Q18 takes effect at session start).
-- Agents must not leave a stand-in server running: use pytest-driven runs.
+- Every run goes through `scripts/run.sh`. It runs `src/casefile/pathguard.py` with the first `python3` on
+  PATH (3.9 or newer), then `scripts/run_capture.py`. The toolchain lives at
+  `~/.casefile-dev/legal-harness` (D23).
+- Codex reviews only (`codex exec -m gpt-6.1-sol -s read-only ... < /dev/null`), with the sandbox off, in
+  the background. Sonnet builders commit their own work. The chair re-runs every CHECK and seed before
+  accepting.
+- Socket tests run inside this sandbox (Q18). Agents must not leave processes running, and must not turn
+  the sandbox off to clean up (two did this round).
+- The shared TMPDIR holds old `casefile-run.*` folders from killed test runs (invented text). Deleting
+  them needs the owner's permission.
+- The suite takes about 45 s (T-6).
 
 ## Cost rules (owner)
-- One orchestrator alive at a time. Builders report once, no polling. Logs go to files, with short
+- One orchestrator alive at a time. Builders report once, with no polling. Logs go to files, with short
   summaries and small tool outputs. A fresh session per round; this page is the entry point.

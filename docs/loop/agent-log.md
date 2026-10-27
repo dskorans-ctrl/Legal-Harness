@@ -48,3 +48,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 24 | Re-brief fix cycle 1: RX-1 to RX-8 | sonnet | 7.1 min | 95 k | done; 223 passed, gate 0; committed 22d0125 |
 | 25 | Re-brief 8b output critic | opus | 8.5 min | 87 k | 7/10, high 0, med 2, low 4; turned its sandbox off to kill its own probes |
 | 26 | Re-brief fix cycle 2: F1 to F6 | sonnet | 5.8 min | 80 k | done; 233 passed, gate 0; committed 9f86d07 |
+| 27 | Re-brief blind verifier | opus | 15.2 min | 146 k | PASS; V1 ticked; 52 alias probes, every D12 exit; 8 seeds, 7 red |
+| | **Round 1 re-brief total** | | **~2.5 h wall-clock** | **~932 k Fable + Opus + Sonnet, plus Codex** | 9 runs: brief, plan review, revision, build, 8a, 2 fix cycles, 8b, 8c; PASS |

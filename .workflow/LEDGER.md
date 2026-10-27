@@ -156,7 +156,7 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): `scripts/run.sh pytest -q -s tests/test_stage1_exit.py` -> `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`, `stage-control exit=1 verdicts=8 fails={'ocr'} expected={'ocr'} test_jobs=1`, `2 passed in 0.75s`. Driven doctor on the stand-in (port 18434): eight lines config, folders `writable=3 of 3`, playbook `pb-00be6eb62752`, runlog_schema `schema=1 triggers=15`, ollama_loopback `addr=127.0.0.1:18434`, context `context_length=65536`, runlog_job `test_jobs=+1` (again `+1` on a second run), ocr `FAIL ... | do: install tesseract and ocrmypdf; expected until stage 3`; `doctor failed=1 of 8`, exit `1` (R1-9 holds).
   Verifier 3 (blind, focused per Q23, 2026-10-26, tip 6db09cb): still holds: `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`, `stage-control exit=1 verdicts=8 fails={'ocr'} expected={'ocr'} test_jobs=1`, `2 passed in 0.78s`.
   Verifier 4 (blind, re-brief, 2026-10-26, tip 4db60e2): still holds: `scripts/run.sh pytest -q -s tests/test_stage1_exit.py` -> `stage-control exit=1 verdicts=8 fails={'ocr'} expected={'ocr'} test_jobs=1`, `2 passed in 0.81s`; in the full suite `exit=1 verdicts=8 fails={'ocr'} test_jobs=1`.
-- [~] R1-12. Spec §9 rows for this round's rulings, §11 as-built updated; Librarian, agent log,
+- [x] R1-12. Spec §9 rows for this round's rulings, §11 as-built updated; Librarian, agent log,
   round report under `docs/loop/round-01/`.
   deferred: chair at close
 ## Discoveries during round 1 (appended, not yet scheduled)
@@ -267,6 +267,12 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Re-brief fix cycle 2 (Sonnet, 9f86d07): F1 to F6. Chair re-run `233 passed`, gate `0`, HUP -> `exit=129`,
   capture folders `before=13 after=13`; F3 message names path and fix. Chair could not delete 13 older
   capture folders in the shared TMPDIR (classifier denied); they hold invented test output only.
+
+  R1-12 (chair at close, 2026-10-26): spec §11 as-built row for stage 1; §9 D12, D13, D18, D23 amended and
+  D24 added (pending veto); Librarian round 1 entries; agent log; reports `round01-report.md`.
+- Carried to round 2 (non-blocking, from the final verifier): VF-1 newline join at pathguard.py:55 has no
+  test (tip correct, exits 95); VF-2 config.py:67 and :145 traceback on `--config` through a loop and on a
+  bad `~user` or loop in state/playbook (refuses, exit 1, not ConfigError).
 
 - [x] V1. Fresh blind verification: every non-deferred R1 item `[x]` with the verifier's own evidence.
   Verifier 2 (blind, 2026-10-26, tip c997bc1): not ticked; R1-4 and R1-13 refused. `docs/loop/round-01/round01-verify2.md`.
