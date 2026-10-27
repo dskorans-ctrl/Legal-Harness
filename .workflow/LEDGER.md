@@ -302,20 +302,44 @@ Tiers: Q28 (Gemma 4 e4b codes, Opus orchestrates, Codex reviews, extra Fable cod
 Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter against its answer key.
 - [ ] R2-1. VF-1: a test that the newline join at pathguard.py:55 is load-bearing (seed: drop the join
   -> red).
+  Build note (orchestrator, 2026-10-27): 94f6a3b, Gemma G1. `newline_join_exit=95 verdict_lines=1`, exit 0;
+  seed (join dropped) -> `newline_join_exit=0 verdict_lines=0`, exit 1; restored by cmp.
 - [ ] R2-2. VF-2: config.py:67 and :145 refusals raise ConfigError (exit 2), never a traceback.
+  Build note: cad2779, Gemma G2 (FUNCTION splice, diff only the two sites) and G3. `resolve_refused=4 of 4
+  cli_exit=2`, exit 0; seeds a and b -> `RuntimeError: Symlink loop`, exit 1; restored by cmp.
 - R2-3. Stage 2 work items (brief `docs/loop/round-02/round02-build-brief.md`, ruled by the chair 2026-10-26:
   all §1 decisions 1 to 18 accepted; D25 and D26 in spec §9, pending veto):
 - [ ] R2-3a. W3 quote normalisation and matter loader (11 refusals) and W4 invented matter 9001.001 (14 pages).
+  Build note: d1fd758 (W3: `quotes_ok=8 of 8`, `matter_pages=3 refusals=11 of 11`; seeds a to d red) and
+  3d095c0 (W4: `fixture_pages=14 binders=3`; stamp seed -> `last line is not a Bates stamp`). Every page
+  read against the bible; ten pages corrected by feedback (names, dates, unplanned conflicts).
 - [ ] R2-3b. W5 answer key loader and `key.json` (26 facts, 5 flags), validated against the pages.
+  Build note: b553411, Gemma G23 to G26. `key_refusals=10 of 10`, `key_facts=26 flags=5 pages=14`,
+  firm rules over the key's prose `[]`; seeds a (found_in dropped) and b (one quote character) red.
 - [ ] R2-3c. W6 candidate parser and scorer; `flawed.json` scores exactly `found=23 of 26 missed=3
   invented=2 extra=2 flags=4 of 5 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`.
+  Build note: 09ad98a, Gemma G27 to G32. `candidate_refusals=7 of 7`, `score_cases=11 of 11`, perfect and
+  flawed lines exact; seeds a to e red (d fails with KeyError, not `6 of 7`).
 - [ ] R2-3e. W7 `ModelError.raw` and the stage 2 runner (counts gate, every received reply an answer row).
+  Build note: afed11b, Gemma G33, G34. test_model.py green, `card_version=092368692dd3`; model.py diff is
+  `__init__` plus the five raw raises; seed W8 e (raw dropped) -> `answers_failed=5`, exit 1.
 - [ ] R2-3d. W8 stand-in bench recording and runner tests (`benchrun_modes=7 of 7`).
+  Build note: afed11b, Gemma G35 to G38. `bench_recording_ok=1 modes=4 pages_in_request=14`,
+  `benchrun_modes=7 of 7 answers_ok=1 answers_failed=6 failures=6`; seeds a to f red (a and d via
+  AttributeError on a None failure, not `6 of 7`).
 - [ ] R2-3f. W9 `casefile bench` CLI (exit 0 perfect, 1 imperfect, 2 cannot run).
+  Build note: 31a3a9e, Gemma G39 to G41. `bench_exit_perfect=0 bench_exit_flawed=1 bench_exit_badkey=2
+  bench_exit_noconfig=2 bench_exit_nolog=2`; standing command status 0 and 1; seeds a to d red.
 - [ ] R2-3g. W10 stage 2 exit test (`stage2 exit=0 ... server_stopped=1`) and W11 prose gate on fixtures.
+  Build note: 0d922ed (W10: `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`, control
+  `stage2-control exit=0 runs=+1 answers_ok=+1`; seeds a, b red) and 4f03e69 (W11: gate `0`, `gate prose PASS
+  dashes=0 files=122`; em dash seed -> `dashes=1`). b6a9624 replaced 7 dashes in the Codex review record
+  (the gate printed 1 at 600ad8f): orchestrator deviation.
 - [ ] R2-4. Regression baselines set in `## Project` from measured numbers.
 - [ ] R2-5. Close: report, Librarian, agent log, spec §11 as-built, handoff, next-round prompt.
 - [ ] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.
 - PAUSED (owner, 2026-10-26, "Pause local work") after G7. Committed: W1 94f6a3b, W2 cad2779. Uncommitted
   Gemma output left in the tree: src/casefile/quotes.py, src/casefile/matter.py, tests/test_quotes.py,
   tests/test_matter.py (W3 CHECK green, seeds a to d not run). Resume at: W3 seeds and commit, then G8.
+- RESUMED 2026-10-27; build G1 to G43 done, all W CHECKs and seeds red-then-green; no Sonnet fallback.
+  Report: docs/loop/round-02/round02-build-report.md; tally docs/loop/round-02/round02-gemma-tally.md.
