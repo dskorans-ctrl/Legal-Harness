@@ -96,6 +96,12 @@ Held questions, numbered, with any interim ruling made while the owner was away 
 28. Should a test matter include bills (for the billing memo) and a carrier file (critic Q6)?
 29. Outputs say "Dr. Marchetti's report" in the fixture prose; is that right, or always just "the
     report" (critic Q7, Q16)?
+30. Round 2 is held at the fix-cycle cap (Q5) on V2b-F1: a 302 or 307 reply from the model server stores
+    no answer row (model.py:18, :50, :54). Choose: (a) one extra fix cycle limited to V2b-F1 (pass the body
+    as `raw` at the three raises, add a 302 test) and one focused re-verify, then close and merge
+    (recommended; the fix is three arguments and one test; Q23 precedent); (b) rule that a refused
+    redirect is not a received reply (amend D25 and OR-8), then close and merge; (c) discard and re-brief
+    per Q5.
 
 ## Round 2 overnight rulings (Q31: chair rulings while the owner is away, each pending veto or ratification)
 
@@ -144,3 +150,5 @@ Held questions, numbered, with any interim ruling made while the owner was away 
   across matters). Unlogged design calls, ratified pending veto: a duplicate candidate fact counts once
   (neither found twice nor extra); candidate mode writes no run log (no model call is made). Carried to
   round 3: two matters with the same number are not refused.
+- OR-9 (2026-10-27): round 2 held at the cap: not merged, `loop/round-03` not opened, no re-brief.
+  Owner question 30. Round report written; Librarian and spec §11 wait for the close.

@@ -352,6 +352,14 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
     different model tag -> `probe404 failure= bench.model: status=404: b'{"error": "fakemodel: unknown model"}'`,
     `probe404 answers= 0 failures= 1` (model.py raises without `raw` at `status != 200` and on HTTPError). Finding
     V2-F1. Also V2-S4: done_reason missing accepted as stop is untested (seed green).
+    Verifier 2 (blind, round 2, 2026-10-27, tip b875949): REFUSED, narrowly. 19 received replies through the
+    stand-in each give exactly one row and one failure (`probe_d25 cases=20 bad=1`): 404, 500, 503 empty, 502
+    html, 201, non-JSON 200, JSON array, bad UTF-8, truncated, done false, no done_reason, eval 0, eval -3,
+    prompt "12", prompt 12.0, eval true, no message, malformed answer -> one `failed` row holding the body, and
+    a good reply -> one `ok` row. But a received 3xx reply stores none, through the real opener on a loopback
+    socket: `real_opener status=302 answers=[] failures=['bench.model'] failure='bench.model: redirect refused:
+    302 to http://127.0.0.1:9/x'` (307 the same; 404 on the same server -> one row). model.py:18, :50, :54
+    raise without `raw`. Finding V2b-F1; OR-8 rules "every received reply, any status, is stored".
 - [x] R2-3d. W8 stand-in bench recording and runner tests (`benchrun_modes=7 of 7`).
   Build note: afed11b, Gemma G35 to G38. `bench_recording_ok=1 modes=4 pages_in_request=14`,
   `benchrun_modes=7 of 7 answers_ok=1 answers_failed=6 failures=6`; seeds a to f red (a and d via
@@ -381,6 +389,11 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
 - [ ] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.
     Verifier (blind, round 2, 2026-10-27, tip 2099304): NOT ticked. R2-3e refused (V2-F1: a received non-200
     reply gets no answer row). All other items `[x]`. Report: docs/loop/round-02/round02-verify.md.
+    Verifier 2 (blind, round 2, 2026-10-27, tip b875949): NOT ticked. R2-3e and R2-8 refused on V2b-F1 (a received
+    3xx reply stores no answer row). `269 passed in 37.28s`; gate prints `0` (`gate prose PASS dashes=0
+    files=136`); stage 1 `2 passed`, stage 2 `stage2 exit=0 runs=+1 answers_ok=+1`, `2 passed`; flawed bench
+    exit 1, ideal exit 0. New seeds: N1, N6 red; N2, N3, N4, N5 green, code right by probe (non-blocking).
+    Report: docs/loop/round-02/round02-verify2.md.
 - PAUSED (owner, 2026-10-26, "Pause local work") after G7. Committed: W1 94f6a3b, W2 cad2779. Uncommitted
   Gemma output left in the tree: src/casefile/quotes.py, src/casefile/matter.py, tests/test_quotes.py,
   tests/test_matter.py (W3 CHECK green, seeds a to d not run). Resume at: W3 seeds and commit, then G8.
@@ -449,3 +462,12 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   Chair re-run after fix cycle 3 (tip 64231af): `269 passed in 36.54s`; gate `0`; seed model.py status!=200
   site drops raw -> `1 failed, 3 passed`, cmp ok; seed V2-S2 (drop cite clause) -> `1 failed, 268 passed`,
   cmp ok. (A first chair seed did not apply, raw being positional; caught by `cmp -s`, not counted.)
+    Verifier 2 (blind, round 2, 2026-10-27, tip b875949): REFUSED on the first clause only (V2b-F1: a 302 or 307
+    reply is a non-200 reply and stores no answer row; see R2-3e). The rest reproduces: model.py raw dropped at
+    the HTTPError site -> `1 failed, 268 passed`, at `status != 200` -> `1 failed, 268 passed`; each of the five
+    seeds applied (`cmp -s` differed) and turned its own test red: S1 test_bench_discovery `1 failed`, S2
+    test_benchscore_cite `1 failed`, S4 test_benchrun_done_reason `1 failed`, S5 test_benchscore_flag_dedupe
+    `1 failed`, S6 test_bench_multi `1 failed`; all restored, `cmp` ok.
+- Round 2 verdict (chair, 2026-10-27): HELD at the fix-cycle cap (Q5). Verifier 2 FAIL on V2b-F1 (3xx replies
+  store no answer row). Not merged; owner question 30 (recommend one extra cycle limited to V2b-F1, Q23
+  precedent). Report `docs/loop/round-02/round02-report.md`.
