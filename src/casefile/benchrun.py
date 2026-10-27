@@ -48,12 +48,13 @@ class RunResult:
     candidate: Candidate
     pages_failed: int
     failure: str | None
+    reply_received: bool
 
 
 def _fail(log, run_id, raw_text, fields, n, gate, message) -> RunResult:
     log.record_answer(run_id, raw_answer=raw_text, status="failed", **fields)
     log.record_failure(run_id, gate, message)
-    return RunResult(EMPTY, n, f"{gate}: {message}")
+    return RunResult(EMPTY, n, f"{gate}: {message}", True)
 
 
 def run(matter: Matter, config, log, playbook_version: str, opener=None) -> RunResult:
@@ -66,11 +67,12 @@ def run(matter: Matter, config, log, playbook_version: str, opener=None) -> RunR
     try:
         answer = client.chat(msgs, options={"num_ctx": config.model.num_ctx})
     except ModelError as exc:
-        if exc.raw is not None:
-            raw_answer = exc.raw if isinstance(exc.raw, str) else json.dumps(exc.raw)
+        # Every received reply is a row (OR-8), even when its body never came; no reply stores none.
+        if exc.raw is not None or exc.received:
+            raw_answer = "" if exc.raw is None else exc.raw if isinstance(exc.raw, str) else json.dumps(exc.raw)
             log.record_answer(run_id, raw_answer=raw_answer, status="failed")
         log.record_failure(run_id, "bench.model", str(exc))
-        return RunResult(EMPTY, n, f"bench.model: {exc}")
+        return RunResult(EMPTY, n, f"bench.model: {exc}", exc.received)
 
     fields = dict(done_reason=answer.done_reason, prompt_eval_count=answer.prompt_eval_count,
                   eval_count=answer.eval_count)
@@ -92,4 +94,4 @@ def run(matter: Matter, config, log, playbook_version: str, opener=None) -> RunR
 
     # Success
     log.record_answer(run_id, raw_answer=raw_text, status="ok", **fields)
-    return RunResult(candidate, 0, None)
+    return RunResult(candidate, 0, None, True)

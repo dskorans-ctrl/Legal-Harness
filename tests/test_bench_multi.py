@@ -11,9 +11,9 @@ from conftest import ROOT, write_config
 MATTER = ROOT / "tests" / "fixtures" / "matters" / "9001.001"
 IDEAL = MATTER / "ideal.json"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=qwen3.8:27b found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 model=qwen3.8:27b found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 
@@ -29,7 +29,7 @@ def test_first_imperfect_second_perfect_exits_1(tmp_path):
 
     def runner(matter, config, log, playbook_version, opener):
         seen.append(matter.root.name)
-        return RunResult(answers.pop(0), 0, None)
+        return RunResult(answers.pop(0), 0, None, True)
 
     config = write_config(tmp_path / "cfg", playbook=ROOT / "playbook", host="http://127.0.0.1:9")
     out, err = io.StringIO(), io.StringIO()
@@ -51,7 +51,7 @@ def test_equal_matter_numbers_in_two_roots_exit_2(tmp_path, capsys):
 
     def runner(matter, config, log, playbook_version, opener):
         seen.append(matter.root.name)
-        return RunResult(parse_text(IDEAL.read_text(encoding="utf-8")), 0, None)
+        return RunResult(parse_text(IDEAL.read_text(encoding="utf-8")), 0, None, True)
 
     config = write_config(tmp_path / "cfg", playbook=ROOT / "playbook", host="http://127.0.0.1:9")
     out, err = io.StringIO(), io.StringIO()

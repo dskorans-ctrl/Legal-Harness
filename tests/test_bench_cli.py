@@ -11,9 +11,9 @@ from conftest import ROOT, write_config
 MATTERS = ROOT / "tests" / "fixtures" / "matters"
 MATTER = MATTERS / "9001.001"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 # Mock bench function based on background description
@@ -109,3 +109,60 @@ def test_bench_exits(tmp_path, capsys):
     # We check the state directory created in step 1 (tmp_path / "a")
     runlog_path = tmp_path / "a" / "state" / "runlog.sqlite"
     assert not runlog_path.exists()
+
+
+def run_runner_mode(tmp_path, opener=None, host="http://127.0.0.1:9"):
+    """casefile bench in runner mode, in process, with the stand-in's recordings or no server at all."""
+    import io
+    from casefile import bench
+    config = write_config(tmp_path, playbook=ROOT / "playbook", host=host)
+    out, err = io.StringIO(), io.StringIO()
+    code = bench.main(MATTERS, config, out=out, err=err, opener=opener)
+    return code, out.getvalue().splitlines(), err.getvalue()
+
+
+def test_bench_no_reply_exit2(tmp_path, capsys):
+    """No server at the host: nothing was received, so the run cannot be scored (Q26, D25): exit 2."""
+    code, lines, err = run_runner_mode(tmp_path)
+    with capsys.disabled():
+        print(f"no_reply_exit={code}")
+    assert code == 2
+    assert lines and lines[0].startswith("bench 9001.001 failure bench.model: ")
+    assert "bench matters=" not in "\n".join(lines)
+    assert err.startswith("bench: cannot run: no reply from the model server at http://127.0.0.1:9: ")
+    assert err.count("\n") == 1
+
+
+def test_bench_received_404_stays_exit1(tmp_path, capsys):
+    """A 404 for an unknown model tag is a received reply: scored found=0, exit 1 (D25)."""
+    from fakemodel.bench import recordings_for
+    from fakemodel.core import FakeModel, FakeTransport
+    opener = FakeTransport(FakeModel(recordings=recordings_for(MATTER), model="other:model"))
+    code, lines, err = run_runner_mode(tmp_path, opener)
+    with capsys.disabled():
+        print(f"received_404_exit={code}")
+    assert code == 1
+    assert err == ""
+    assert lines[0].startswith("bench 9001.001 failure bench.model: status=404")
+    assert lines[1].startswith("bench 9001.001 model=qwen3.8:27b found=0 of 29 ")
+    assert lines[1].endswith("pages_failed=14 of 14")
+    assert lines[-1] == "bench matters=1 imperfect=1"
+
+
+def test_candidate_lines_name_the_model_candidate(tmp_path):
+    r = bench(write_config(tmp_path, playbook=ROOT / "playbook", host="http://127.0.0.1:9"),
+              "--matters", str(MATTERS), "--candidate", str(FLAWED))
+    assert r.stdout.splitlines()[0].startswith("bench 9001.001 model=candidate found=")
+
+
+def test_bench_received_bad_answer_stays_exit1(tmp_path, capsys):
+    """A truncated answer reached us: scored with every page failed, exit 1, not exit 2 (D25)."""
+    from fakemodel.bench import recordings_for
+    from fakemodel.core import FakeModel, FakeTransport
+    opener = FakeTransport(FakeModel(recordings=recordings_for(MATTER), mode="truncated"))
+    code, lines, err = run_runner_mode(tmp_path, opener)
+    with capsys.disabled():
+        print(f"received_truncated_exit={code}")
+    assert (code, err) == (1, "")
+    assert lines[0].startswith("bench 9001.001 failure bench.truncation")
+    assert lines[1].endswith("pages_failed=14 of 14")

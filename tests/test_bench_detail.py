@@ -9,9 +9,9 @@ from conftest import ROOT, write_config
 MATTERS = ROOT / "tests" / "fixtures" / "matters"
 IDEAL = MATTERS / "9001.001" / "ideal.json"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 FLAWED_DETAIL = [
     "  missed: F04 F15 F24",
@@ -22,7 +22,7 @@ FLAWED_DETAIL = [
     "  rules: no-dme-ime DEF0003",
 ]
 LONG_QUOTE = "Patient was given a lumbar brace and told to rest for two full weeks at home."
-PROBE_LINE = ("bench 9001.001 found=29 of 29 missed=0 invented=1 extra=2 flags=6 of 6 flags_missed=0 "
+PROBE_LINE = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=1 extra=2 flags=6 of 6 flags_missed=0 "
               "flags_extra=0 rules=1 pages_failed=0 of 14")
 PROBE_DETAIL = [
     '  invented: MED0002 "Patient was given a lumbar brace and told to rest for two fu"',

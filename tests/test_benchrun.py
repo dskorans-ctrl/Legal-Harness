@@ -282,3 +282,98 @@ def test_benchrun_redirect_reply(tmp_path):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+def _run_with(tmp_path, opener):
+    config = config_mod.load(write_config(tmp_path))
+    log = runlog.open_db(tmp_path / "runlog.sqlite")
+    try:
+        result = benchrun.run(matters.load(MATTER), config, log, "pb-test", opener)
+        rows = [tuple(row) for row in log.connection.execute("SELECT status, raw_answer FROM answers ORDER BY id")]
+    finally:
+        log.close()
+    return result, rows
+
+
+def test_benchrun_no_stream_http_error_stores_an_empty_row(tmp_path, capsys):
+    """A 503 whose HTTPError has no body stream still stores one failed row with an empty body (D25, OR-8)."""
+    from urllib.error import HTTPError
+
+    class Refuses:
+        def open(self, request, timeout=None):
+            raise HTTPError(request.full_url, 503, "x", {}, None)
+
+    r, rows = _run_with(tmp_path, Refuses())
+    ok = int(rows == [("failed", "")] and r.reply_received is True)
+    with capsys.disabled():
+        print(f"no_stream_row={ok}")
+    assert r.failure.startswith("bench.model: status=503"), r.failure
+    assert (rows, r.reply_received) == ([("failed", "")], True)
+
+
+def test_benchrun_empty_body_redirect_stores_an_empty_row(tmp_path, capsys):
+    """A 302 whose body is empty is a received reply: one failed row holding "" (verifier 3 S5)."""
+    from io import BytesIO
+
+    class Redirects:
+        def open(self, request, timeout=None):
+            response = BytesIO(b"")
+            response.getcode = lambda: 302
+            response.headers = {"Location": "http://127.0.0.1:1/"}
+            return response
+
+    r, rows = _run_with(tmp_path, Redirects())
+    ok = int(rows == [("failed", "")])
+    with capsys.disabled():
+        print(f"empty_302_row={ok}")
+    assert r.failure.startswith("bench.model: redirect refused"), r.failure
+    assert (rows, r.reply_received) == ([("failed", "")], True)
+
+
+def test_benchrun_read_timeout_is_a_received_failed_row(tmp_path, capsys):
+    """The status line arrived and the body read timed out: received, one failed row holding ""."""
+    import socket
+    from io import BytesIO
+
+    class Stalls:
+        def open(self, request, timeout=None):
+            class Body(BytesIO):
+                def getcode(self):
+                    return 200
+
+                def read(self, *args):
+                    raise socket.timeout("timed out")
+            return Body()
+
+    r, rows = _run_with(tmp_path, Stalls())
+    ok = int(rows == [("failed", "")] and r.reply_received is True)
+    with capsys.disabled():
+        print(f"read_timeout_row={ok}")
+    assert (rows, r.reply_received) == ([("failed", "")], True)
+    assert r.pages_failed == 14
+
+
+def test_benchrun_no_reply_stores_no_row_and_is_not_received(tmp_path):
+    class Dead:
+        def open(self, request, timeout=None):
+            raise ConnectionRefusedError("refused")
+
+    r, rows = _run_with(tmp_path, Dead())
+    assert rows == []
+    assert (r.reply_received, r.pages_failed) == (False, 14)
+    assert r.failure == "bench.model: refused"
+
+
+def test_benchrun_reply_received_on_success_and_on_a_failed_gate(tmp_path):
+    config = config_mod.load(write_config(tmp_path))
+    log = runlog.open_db(tmp_path / "runlog.sqlite")
+    fake = FakeModel(recordings=recordings_for(MATTER))
+    matter = matters.load(MATTER)
+    try:
+        ok = benchrun.run(matter, config, log, "pb-test", FakeTransport(fake))
+        fake.mode = "truncated"
+        truncated = benchrun.run(matter, config, log, "pb-test", FakeTransport(fake))
+    finally:
+        log.close()
+    assert (ok.failure, ok.reply_received) == (None, True)
+    assert truncated.failure.startswith("bench.truncation") and truncated.reply_received is True

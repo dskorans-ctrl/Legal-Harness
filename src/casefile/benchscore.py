@@ -41,8 +41,8 @@ class Score:
         return (self.missed == 0 and self.invented == 0 and self.flags_missed == 0
                 and self.flags_extra == 0 and self.rules == 0 and self.pages_failed == 0)
 
-    def line(self, matter_number: str) -> str:
-        return (f"bench {matter_number} found={self.found} of {self.key_total} missed={self.missed} "
+    def line(self, matter_number: str, model: str) -> str:
+        return (f"bench {matter_number} model={model} found={self.found} of {self.key_total} missed={self.missed} "
                 f"invented={self.invented} extra={self.extra} flags={self.flags_found} of "
                 f"{self.flags_total} flags_missed={self.flags_missed} flags_extra={self.flags_extra} "
                 f"rules={self.rules} pages_failed={self.pages_failed} of {self.pages_in}")

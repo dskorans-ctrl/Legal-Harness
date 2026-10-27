@@ -1,8 +1,11 @@
 """Invented recorded answers exercise the native client without network access."""
 
+from http.client import BadStatusLine, IncompleteRead, RemoteDisconnected
 from io import BytesIO
 import json
+import socket
 from threading import Thread
+from urllib.error import HTTPError, URLError
 from urllib.request import ProxyHandler
 
 import pytest
@@ -108,3 +111,81 @@ def test_fake_incomplete_answer(tmp_path):
     with pytest.raises(ModelError, match="done must be true"):
         ModelClient(load(write_config(tmp_path)).model,
                     FakeTransport(FakeModel(mode="incomplete"))).chat(MESSAGES)
+
+
+class Refusing:
+    """An opener whose open() itself fails: no status line ever arrives."""
+
+    def __init__(self, exc):
+        self.exc = exc
+
+    def open(self, request, timeout=None):
+        raise self.exc
+
+
+class BrokenBody(BytesIO):
+    """A reply whose status line arrived but whose body read fails."""
+
+    def __init__(self, status, exc):
+        super().__init__(b"")
+        self.status = status
+        self.exc = exc
+
+    def getcode(self):
+        return self.status
+
+    def read(self, *args):
+        raise self.exc
+
+
+def caught(tmp_path, opener, messages=MESSAGES):
+    client = ModelClient(load(write_config(tmp_path)).model, opener)
+    with pytest.raises(ModelError) as info:
+        client.chat(messages)
+    return info.value
+
+
+@pytest.mark.parametrize("exc", [ConnectionRefusedError("refused"), URLError("no route"),
+                                 RemoteDisconnected("closed without a reply"), BadStatusLine("garbage"),
+                                 socket.timeout("timed out")],
+                         ids=["refused", "urlerror", "closed", "bad_status_line", "connect_timeout"])
+def test_no_status_line_is_not_received(tmp_path, exc):
+    err = caught(tmp_path, Refusing(exc))
+    assert (err.received, err.raw) == (False, None)
+
+
+def test_status_line_then_read_timeout_is_received(tmp_path, capsys):
+    err = caught(tmp_path, Transport(BrokenBody(200, socket.timeout("timed out"))))
+    with capsys.disabled():
+        print(f"read_timeout received={err.received}")
+    assert (err.received, err.raw) == (True, None)
+
+
+def test_incomplete_read_keeps_the_partial_body(tmp_path, capsys):
+    err = caught(tmp_path, Transport(BrokenBody(200, IncompleteRead(b"par", 10))))
+    with capsys.disabled():
+        print(f"incomplete_read_row={int(err.raw == 'par' and err.received)}")
+    assert (err.raw, err.received) == ("par", True)
+
+
+def test_http_error_without_a_body_stream_has_an_empty_body(tmp_path, capsys):
+    err = caught(tmp_path, Refusing(HTTPError("http://x", 503, "x", {}, None)))
+    with capsys.disabled():
+        print(f"no_stream_error raw={err.raw!r} received={err.received}")
+    assert (err.raw, err.received) == ("", True)
+
+
+def test_error_after_a_received_reply_says_received(tmp_path):
+    for mode in ("empty", "incomplete"):
+        err = caught(tmp_path, FakeTransport(FakeModel(mode=mode)))
+        assert err.received is True, mode
+    err = caught(tmp_path, FakeTransport(FakeModel()), [{"role": "user", "content": "invented unmatched request"}])
+    assert (err.received, "status=404" in str(err)) == (True, True)
+
+
+def test_redirect_with_an_empty_body_is_received_and_stored(tmp_path):
+    response = FakeResponse(302, {})
+    response.headers["Location"] = "http://127.0.0.1:1/"
+    response.read = lambda *a: b""
+    err = caught(tmp_path, Transport(response))
+    assert (err.raw, err.received) == ("", True)

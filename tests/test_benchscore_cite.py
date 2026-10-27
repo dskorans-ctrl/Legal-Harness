@@ -28,7 +28,7 @@ def test_same_quote_wrong_page_is_extra_and_missed(tmp_path):
     assert (s.found, s.missed, s.extra, s.invented) == (1, 1, 1, 0)
     assert s.missed_ids == ("F1",)
     assert not s.perfect
-    assert s.line("9001.001") == ("bench 9001.001 found=1 of 2 missed=1 invented=0 extra=1 flags=1 of 1 "
+    assert s.line("9001.001", "candidate") == ("bench 9001.001 model=candidate found=1 of 2 missed=1 invented=0 extra=1 flags=1 of 1 "
                                   "flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 2")
 
 

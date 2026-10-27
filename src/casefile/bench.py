@@ -80,6 +80,7 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
 
             candidate = None
             pages_failed = 0
+            model_tag = "candidate" if candidate_path is not None else config.model.name
 
             if candidate_path is not None:
                 # Load candidate text
@@ -101,10 +102,14 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
                 
                 if result.failure:
                     print(f"bench {matter.number} failure {result.failure}", file=out)
+                    if not result.reply_received:
+                        print(f"bench: cannot run: no reply from the model server at "
+                              f"{config.model.host}: {result.failure.removeprefix('bench.model: ')}", file=err)
+                        return 2
 
             # Score
             s = benchscore.score(key, candidate, matter, book.rules, pages_failed)
-            print(s.line(matter.number), file=out)
+            print(s.line(matter.number, model_tag), file=out)
             for detail in s.details():
                 print(detail, file=out)
             imperfect += not s.perfect

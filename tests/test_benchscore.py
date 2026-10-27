@@ -12,9 +12,9 @@ from test_matter import make
 
 RULES = rules_mod.load(ROOT / "playbook" / "rules.toml")
 MATTER = ROOT / "tests" / "fixtures" / "matters" / "9001.001"
-PERFECT = ("bench 9001.001 found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED = ("bench 9001.001 found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
+FLAWED = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 "
           "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 PAGES = {"medical": [("Pain 7/10 in the low back.\nOther real line.", "MED0001"),
@@ -77,7 +77,7 @@ def add_extra_flag(data):
 # (change_function, pages_failed, check_function)
 CASES = [
     # 1. perfect
-    (None, 0, lambda s: s.perfect and s.found == 2 and s.extra == 0 and s.line("9001.001").startswith("bench 9001.001 found=2 of 2 ")),
+    (None, 0, lambda s: s.perfect and s.found == 2 and s.extra == 0 and s.line("9001.001", "candidate").startswith("bench 9001.001 model=candidate found=2 of 2 ")),
     # 2. one key fact dropped
     (drop_second_fact, 0, lambda s: s.missed == 1 and s.missed_ids == ("F2",) and not s.perfect),
     # 3. quote not on the page
@@ -121,9 +121,9 @@ def test_shipped_fixtures(capsys):
     flawed = score(key, parse_text((ROOT / "tests" / "fixtures" / "bench" / "flawed.json").read_text(encoding="utf-8")),
                    matter, RULES, 0)
     with capsys.disabled():
-        print(ideal.line("9001.001"))
-        print(flawed.line("9001.001"))
-    assert ideal.line("9001.001") == PERFECT
+        print(ideal.line("9001.001", "candidate"))
+        print(flawed.line("9001.001", "candidate"))
+    assert ideal.line("9001.001", "candidate") == PERFECT
     assert ideal.perfect
-    assert flawed.line("9001.001") == FLAWED
+    assert flawed.line("9001.001", "candidate") == FLAWED
     assert not flawed.perfect

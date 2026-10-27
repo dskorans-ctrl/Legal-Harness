@@ -7,7 +7,7 @@ from casefile import bench
 from conftest import ROOT, write_config
 
 MATTER = ROOT / "tests" / "fixtures" / "matters" / "9001.001"
-PERFECT = ("bench 9001.001 found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 flags=6 of 6 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
 
 
