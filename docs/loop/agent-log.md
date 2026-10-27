@@ -66,4 +66,4 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 9 | Fix cycle 1 (R2-CH-1, CX-5, CX-6, CX-7, F2) | opus (orchestrator) + gemma4:e4b (local) | 29.7 min | 130 k Opus; Gemma 27.9 k prompt + 26.8 k answer, 926 s (local) | done; 11 tasks, 14 calls, 8 first try, 0 fallbacks; 260 passed, gate 0; chair re-run reproduced every fix |
 | 10 | 8b output critic | opus | 5.3 min | 96 k | 6/10, high 2, med 5, low 6; H1 and H2 verified by the chair (OR-7); owner questions 24 to 29 |
 | 11 | Fix cycle 2 (OR-7: key G6, F27 to F29; bench detail lines) | opus (orchestrator) + gemma4:e4b (local) | 28.7 min | 142 k Opus; Gemma 25.0 k prompt + 27.8 k answer, 973 s (local) | done; 11 tasks, 11 calls, all first try, 0 fallbacks; 263 passed, gate 0; chair re-run reproduced |
-| 12 | 8c blind verifier | opus | running | | |
+| 12 | 8c blind verifier | opus | see notice | see notice | FAIL: R2-3e refused (V2-F1); 10 items ticked; 8 fresh seeds, 3 red, 5 green (test gaps) |

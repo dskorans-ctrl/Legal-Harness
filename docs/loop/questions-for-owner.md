@@ -136,3 +136,11 @@ Held questions, numbered, with any interim ruling made while the owner was away 
   ideal.json and flawed.json and every exact number; M1: the bench prints which fact IDs were missed, which
   flags missed and extra, which candidate facts were invented and which rules fired. Owner questions 24 to
   29 for the rest; M5 (truncation message detail) and the lows go to stage 4 and round 3.
+- OR-8 (2026-10-27): blind verifier 8c FAIL, R2-3e refused on V2-F1 (a non-200 reply stores no answer row;
+  model.py:55 and :59 raise without `raw`). Chair rules D25 means what it says: every received reply,
+  any status, is stored. Fix cycle 3 (the last allowed, Q5): V2-F1 plus tests for the verifier's five green
+  seeds S1 (only folders with matter.toml are matters), S2 (cite must match for found), S4 (missing
+  done_reason is not a stop), S5 (a duplicated extra flag counts once), S6 (imperfect counts accumulate
+  across matters). Unlogged design calls, ratified pending veto: a duplicate candidate fact counts once
+  (neither found twice nor extra); candidate mode writes no run log (no model call is made). Carried to
+  round 3: two matters with the same number are not refused.

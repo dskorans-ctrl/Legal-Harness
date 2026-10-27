@@ -300,25 +300,35 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 ## Round 2: stage 2 benchmark and invented test matter (opened 2026-10-26 on `loop/round-02` at b167fbd)
 Tiers: Q28 (Gemma 4 e4b codes, Opus orchestrates, Codex reviews, extra Fable code review, Sonnet fallback).
 Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter against its answer key.
-- [ ] R2-1. VF-1: a test that the newline join at pathguard.py:55 is load-bearing (seed: drop the join
+- [x] R2-1. VF-1: a test that the newline join at pathguard.py:55 is load-bearing (seed: drop the join
   -> red).
   Build note (orchestrator, 2026-10-27): 94f6a3b, Gemma G1. `newline_join_exit=95 verdict_lines=1`, exit 0;
   seed (join dropped) -> `newline_join_exit=0 verdict_lines=0`, exit 1; restored by cmp.
-- [ ] R2-2. VF-2: config.py:67 and :145 refusals raise ConfigError (exit 2), never a traceback.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `newline_join_exit=95 verdict_lines=1`, `2 passed`;
+    join dropped -> `verdict_lines=2`, `newline_join_exit=0 verdict_lines=0`, `2 failed`; restored, cmp ok.
+- [x] R2-2. VF-2: config.py:67 and :145 refusals raise ConfigError (exit 2), never a traceback.
   Build note: cad2779, Gemma G2 (FUNCTION splice, diff only the two sites) and G3. `resolve_refused=4 of 4
   cli_exit=2`, exit 0; seeds a and b -> `RuntimeError: Symlink loop`, exit 1; restored by cmp.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `resolve_refused=4 of 4 cli_exit=2`, `1 passed`; RuntimeError
+    dropped from config.py:69 and :150 each -> `RuntimeError: Symlink loop`, `1 failed`; restored, cmp ok.
 - R2-3. Stage 2 work items (brief `docs/loop/round-02/round02-build-brief.md`, ruled by the chair 2026-10-26:
   all §1 decisions 1 to 18 accepted; D25 and D26 in spec §9, pending veto):
-- [ ] R2-3a. W3 quote normalisation and matter loader (11 refusals) and W4 invented matter 9001.001 (14 pages).
+- [x] R2-3a. W3 quote normalisation and matter loader (11 refusals) and W4 invented matter 9001.001 (14 pages).
   Build note: d1fd758 (W3: `quotes_ok=8 of 8`, `matter_pages=3 refusals=11 of 11`; seeds a to d red) and
   3d095c0 (W4: `fixture_pages=14 binders=3`; stamp seed -> `last line is not a Bates stamp`). Every page
   read against the bible; ten pages corrected by feedback (names, dates, unplanned conflicts).
-- [ ] R2-3b. W5 answer key loader and `key.json` (26 facts, 5 flags), validated against the pages.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `quotes_ok=8 of 8`; `matter_pages=3 refusals=12 of 12` (not
+    11: the twelfth is fix cycle 1's CX-7 case; dropping UnicodeDecodeError from matter.py's toml except fails
+    test_matter::test_refusals); `fixture_pages=14 binders=3`. Ledger number not amended for the 12th: drift only.
+- [x] R2-3b. W5 answer key loader and `key.json` (26 facts, 5 flags), validated against the pages.
   Amended by fix cycle 2 (OR-7): the key holds 29 facts and 6 flags (F27 to F29, G6 added); key collisions
   refused (fix cycle 1, R2-CX-5).
   Build note: b553411, Gemma G23 to G26. `key_refusals=10 of 10`, `key_facts=26 flags=5 pages=14`,
   firm rules over the key's prose `[]`; seeds a (found_in dropped) and b (one quote character) red.
-- [ ] R2-3c. W6 candidate parser and scorer; `flawed.json` scores exactly `found=23 of 26 missed=3
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `key_facts=29 flags=6 pages=14`; `key_refusals=12 of 12` (10
+    plus the two CX-5 collision cases; not amended in the ledger: drift only); key G6 = conflict MED0007,DEF0002,
+    F27 MED0008, F28 DEF0003, F29 MED0003 as OR-7 says; fact-collision check disabled -> test_key_refusals red.
+- [x] R2-3c. W6 candidate parser and scorer; `flawed.json` scores exactly `found=23 of 26 missed=3
   invented=2 extra=2 flags=4 of 5 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`.
   Build note: 09ad98a, Gemma G27 to G32. `candidate_refusals=7 of 7`, `score_cases=11 of 11`, perfect and
   flawed lines exact; seeds a to e red (d fails with KeyError, not `6 of 7`).
@@ -326,24 +336,51 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14` (exit 1) followed by detail lines naming the missed
   facts, invented facts, missed and extra flags and rule hits; ideal `found=29 of 29 ... extra=2 flags=6 of 6 ...`
   (exit 0).
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `scripts/run.sh casefile bench --matters tests/fixtures/matters
+    --config config.example.toml --candidate tests/fixtures/bench/flawed.json` -> `bench 9001.001 found=26 of 29
+    missed=3 invented=2 extra=2 flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14` then
+    `  missed: F04 F15 F24`, two `  invented:` lines (MED0003 "80 pounds" is on no page; MED0099 is not a page),
+    `  flags_missed: G3`, `  flags_extra: conflict MED0001,MED0004`, `  rules: no-dme-ime DEF0003`, exit 1; ideal
+    -> `found=29 of 29 ... extra=2 flags=6 of 6 ... rules=0 pages_failed=0 of 14`, exit 0; `candidate_refusals=7
+    of 7`, `score_cases=11 of 11`. Unseeded test gaps (code correct by direct probe): V2-S2 (cite not compared)
+    and V2-S5 (duplicate extra flag) stay green; see round02-verify.md.
 - [ ] R2-3e. W7 `ModelError.raw` and the stage 2 runner (counts gate, every received reply an answer row).
   Build note: afed11b, Gemma G33, G34. test_model.py green, `card_version=092368692dd3`; model.py diff is
   `__init__` plus the five raw raises; seed W8 e (raw dropped) -> `answers_failed=5`, exit 1.
-- [ ] R2-3d. W8 stand-in bench recording and runner tests (`benchrun_modes=7 of 7`).
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): REFUSED. `card_version=092368692dd3` and test_model `16
+    passed` reproduce, and every 200 reply gets a row; but a received non-200 reply gets none: stand-in serving a
+    different model tag -> `probe404 failure= bench.model: status=404: b'{"error": "fakemodel: unknown model"}'`,
+    `probe404 answers= 0 failures= 1` (model.py raises without `raw` at `status != 200` and on HTTPError). Finding
+    V2-F1. Also V2-S4: done_reason missing accepted as stop is untested (seed green).
+- [x] R2-3d. W8 stand-in bench recording and runner tests (`benchrun_modes=7 of 7`).
   Build note: afed11b, Gemma G35 to G38. `bench_recording_ok=1 modes=4 pages_in_request=14`,
   `benchrun_modes=7 of 7 answers_ok=1 answers_failed=6 failures=6`; seeds a to f red (a and d via
   AttributeError on a None failure, not `6 of 7`).
-- [ ] R2-3f. W9 `casefile bench` CLI (exit 0 perfect, 1 imperfect, 2 cannot run).
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `bench_recording_ok=1 modes=4 pages_in_request=14`,
+    `benchrun_modes=7 of 7 answers_ok=1 answers_failed=6 failures=6`; my seed (exc.raw stored as `str()` not JSON)
+    -> `benchrun_modes=6 of 7`, `1 failed, 2 passed`; restored, cmp ok.
+- [x] R2-3f. W9 `casefile bench` CLI (exit 0 perfect, 1 imperfect, 2 cannot run).
   Build note: 31a3a9e, Gemma G39 to G41. `bench_exit_perfect=0 bench_exit_flawed=1 bench_exit_badkey=2
   bench_exit_noconfig=2 bench_exit_nolog=2`; standing command status 0 and 1; seeds a to d red.
-- [ ] R2-3g. W10 stage 2 exit test (`stage2 exit=0 ... server_stopped=1`) and W11 prose gate on fixtures.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `bench_exit_perfect=0 bench_exit_flawed=1 bench_exit_badkey=2
+    bench_exit_noconfig=2 bench_exit_nolog=2`; standing commands exit 0 (ideal) and 1 (flawed); two-matter probe
+    (first fails, second perfect) -> `exit=1`, `bench matters=2 imperfect=1`. Unseeded gaps: V2-S1 (discovery)
+    and V2-S6 (`imperfect +=` -> `=`, probe exit 0) stay green; cli.py arg swap seed red.
+- [x] R2-3g. W10 stage 2 exit test (`stage2 exit=0 ... server_stopped=1`) and W11 prose gate on fixtures.
   Build note: 0d922ed (W10: `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`, control
   `stage2-control exit=0 runs=+1 answers_ok=+1`; seeds a, b red) and 4f03e69 (W11: gate `0`, `gate prose PASS
   dashes=0 files=122`; em dash seed -> `dashes=1`). b6a9624 replaced 7 dashes in the Codex review record
   (the gate printed 1 at 600ad8f): orchestrator deviation.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`,
+    perfect line, `stage2-control exit=0 runs=+1 answers_ok=+1`, `2 passed`; gate exit 0, `gate prose PASS dashes=0
+    files=129` (files grew since 4f03e69); em dash appended to key.json -> `gate prose FAIL dashes=1 files=129`;
+    restored, cmp ok. `python -m tests.fakemodel --bench-matter` + `casefile bench` -> perfect line, exit 0, run
+    log 1 run (bench.extract, 092368692dd3, pages_in 14) and 1 ok answer row; listeners 0 after.
 - [ ] R2-4. Regression baselines set in `## Project` from measured numbers.
 - [ ] R2-5. Close: report, Librarian, agent log, spec §11 as-built, handoff, next-round prompt.
 - [ ] V2. Fresh blind verification: every non-deferred R2 item `[x]` with the verifier's own evidence.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): NOT ticked. R2-3e refused (V2-F1: a received non-200
+    reply gets no answer row). All other items `[x]`. Report: docs/loop/round-02/round02-verify.md.
 - PAUSED (owner, 2026-10-26, "Pause local work") after G7. Committed: W1 94f6a3b, W2 cad2779. Uncommitted
   Gemma output left in the tree: src/casefile/quotes.py, src/casefile/matter.py, tests/test_quotes.py,
   tests/test_matter.py (W3 CHECK green, seeds a to d not run). Resume at: W3 seeds and commit, then G8.
@@ -367,8 +404,15 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
 - Fable code-quality review (Q28, `round02-fable-review.md`): fit to merge after fixes; Gemma 7/8/7/5 vs
   Sonnet control 7/9/7/9 (correctness, brief fidelity, test strength, readability); no high; F1 = CX-5,
   F1b = CX-7 (both builds); F2 `from exc`. Rulings OR-5.
-- [ ] R2-6. Fix cycle 1 (Gemma, Opus orchestrating): R2-CH-1, R2-CX-5, R2-CX-6, R2-CX-7, F2; each seed red
+- [x] R2-6. Fix cycle 1 (Gemma, Opus orchestrating): R2-CH-1, R2-CX-5, R2-CX-6, R2-CX-7, F2; each seed red
   before the fix, green after.
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): each fix reverted one line at a time, targeted tests:
+    CH-1 `c >= 0` -> test_benchrun_zero_counts `1 failed`; CX-6 `raw` dropped from model.py non-JSON raise ->
+    test_benchrun_unparsed_reply `1 failed`; CX-7 UnicodeDecodeError dropped -> `2 failed`; CX-5 fact collision
+    off -> test_key_refusals `1 failed`; F2 `from exc` dropped (records) -> test_records_missing_chains `1 failed`;
+    all restored, cmp ok. CLI: 0xff in matter.toml -> `MatterError ... can't decode byte 0xff`, exit 2; duplicate
+    fact F99 -> `BenchKeyError ... fact F99: same cite and quote as fact F01`, exit 2. Note CX-6 covers 200 only:
+    see V2-F1 under R2-3e.
   Note (fix cycle 1, 2026-10-27, not a tick: the verifier ticks): all five red then green; commits 9c82349
   R2-CH-1, 0f2022d R2-CX-5, ba24d90 R2-CX-6, 408991c R2-CX-7, 365f1e0 F2; `260 passed`, gate `0`; Gemma 11
   tasks, 14 calls, no fallback. Report: docs/loop/round-02/round02-fix1-report.md.
@@ -380,8 +424,13 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   (radiculopathy conflict MED0007 vs DEF0002 missing; a correct model fails on flags_extra) and H2 (MED0008
   restriction, DEF0003 "No further treatment", MED0003 "likely work related" unkeyed). Rulings OR-7; owner
   questions 24 to 29.
-- [ ] R2-7. Fix cycle 2 (Gemma): key G6, F27 to F29, ideal and flawed updated, exact numbers updated; bench
+- [x] R2-7. Fix cycle 2 (Gemma): key G6, F27 to F29, ideal and flawed updated, exact numbers updated; bench
   prints missed, invented, flag and rule detail (critic M1).
+    Verifier (blind, round 2, 2026-10-27, tip 2099304): key holds G6 conflict MED0007,DEF0002 and F27 to F29;
+    ideal -> `found=29 of 29 ... flags=6 of 6 flags_missed=0 flags_extra=0 rules=0`, exit 0, no detail lines;
+    flawed -> the amended line, exit 1, six detail lines (`bench_detail_flawed exit=1 detail_lines=6`, quoted
+    under R2-3c); truncated stand-in run -> `missed: F01 ... F29`, `flags_missed: G1 G2 G3 G4 G5 G6`, exit 1.
+    `263 passed in 37.27s`, gate exit 0.
   Note (fix cycle 2, 2026-10-27, not a tick: the verifier ticks): items 1 to 4 red then green at 6c1968c
   (perfect `found=29 of 29 ... flags=6 of 6 ... rules=0`, exit 0; flawed `found=26 of 29 missed=3 invented=2
   extra=2 flags=5 of 6 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`, exit 1); M1 detail lines
@@ -389,3 +438,5 @@ Exit test (spec §7 stage 2): `casefile bench` scores the invented test matter a
   tasks, 11 calls, all first try, no fallback. Report: docs/loop/round-02/round02-fix2-report.md.
   Chair re-run after fix cycle 2 (tip 0d5e0a0): `263 passed in 36.86s`; gate `0`; flawed bench exit 1 with
   the amended line and six detail lines; ideal exit 0 `found=29 of 29 ... flags=6 of 6`; listeners 0.
+- [ ] R2-8. Fix cycle 3 (Gemma; OR-8): V2-F1 (non-200 replies stored as failed answer rows with the body)
+  and tests that turn the verifier's seeds S1, S2, S4, S5, S6 red.
