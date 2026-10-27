@@ -20,6 +20,7 @@ Held questions, numbered, with any interim ruling made while the owner was away 
 7. On the Studio, does Ollama run as your login user (the Ollama app) or as a system launchd daemon?
    The doctor's "127.0.0.1 only" check reads the listener with `lsof`, which sees only your own
    processes without root.
+   ANSWERED 2026-10-27 (round 4 check-in, ledger Q43): the login-user app.
 
 ## Held 2026-10-26 (round 1 output critic; interim rulings by the chair, pending veto)
 8. "DME" meaning durable medical equipment: Q16 blocks the bare word, so "The physician ordered DME,

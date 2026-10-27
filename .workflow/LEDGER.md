@@ -162,6 +162,8 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   a token that runs on is not a stamp (whole-token rule stands). 39: no stamp position recorded. 40: the first
   raw spelling of a stamp is enough. 41: lowercase binder names accepted. Spec D27 to D30, the whole-token
   stamp rule and G9 RATIFIED. Additional instructions: none.
+- Q43: question 7, Ollama on the Studio (owner, 2026-10-27, round 4 check-in; closes Q19)? -> the login-user app
+  (Ollama.app). The doctor's listener check stays `lsof` as the login user; a listener it cannot see is FAIL, never skip.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -648,3 +650,20 @@ invented fixture under `tests/fixtures/`.
   for every read (two seeds red; the warnings reach the log, so the test reads caplog). L4 empty page reason
   `no text after OCR`, failed keeps `ocr timeout`, detail line shows it (two seeds red). Same-shape fix: the
   real-tools fixture test expectation `  empty: scan/004` now carries the reason. Sweep `358 passed`, gate `0`.
+
+## Round 4: stage 4 model client and gates (opened 2026-10-27 on `loop/round-04` at 204f6fd)
+Tiers: Q30 defaults (Fable brief and revision, Codex plan and code review, Opus orchestrator, output critic
+and blind verifier, Sonnet 5.5 code). Ollama on the Studio: login-user app (Q43).
+Exit test (spec §7 stage 4): every gate (spec §4) tested with good and bad answers, including truncated ones.
+All answers are invented fixtures served by the stand-in model server (`tests/fakemodel/`).
+- [ ] R4-1. Stage 4 work items (defined by the round 4 brief, ruled by the chair before any code): the model
+  client and the six gates of spec §4 in order (truncation, punctuation-only JSON repair, schema check, quote
+  check ladder, firm rules on outputs, coverage ledger), with retry once then pages marked failed, never saved empty.
+- [ ] R4-2. Carried: R2-CX-2 prompt truncation detection (OR-4: Ollama does not count cached prompt tokens).
+- [ ] R4-3. Carried verifier test gaps from round 3: S1 (stage 3 exit test asserts record `matter` and `page`),
+  S2 (sidecar `7 of 6` case), S5 (`make_scanned.py --check` text-layer change).
+- [ ] R4-4. Carried verifier lows: bench refuses a duplicate matter number before the first matter runs;
+  `normalize` beyond spaces and hyphens (as the brief rules); leftover step comments in `bench.py` and
+  `benchcandidate.py`; suite time near the 90 s budget (T-11).
+- [~] R4-5. deferred: R1-20 (`bates-cites` sees only bracketed cites) waits for the stage that writes cited prose.
+- [ ] V. Fresh blind verification: every non-deferred R4 item `[x]` with the verifier's own evidence.
