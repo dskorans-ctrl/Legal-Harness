@@ -8,6 +8,10 @@ from urllib import error, request
 class ModelError(RuntimeError):
     """The model did not return a usable answer."""
 
+    def __init__(self, message, raw=None):
+        super().__init__(message)
+        self.raw = raw
+
 
 class NoRedirect(request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -70,15 +74,15 @@ class ModelClient:
         message = raw.get("message")
         content = message.get("content") if isinstance(message, dict) else None
         if not isinstance(content, str):
-            raise ModelError(f"status=200 missing message.content: {str(raw)[:200]}")
+            raise ModelError(f"status=200 missing message.content: {str(raw)[:200]}", raw)
         if not content.strip():
-            raise ModelError(f"status=200 empty message.content: {str(raw)[:200]}")
+            raise ModelError(f"status=200 empty message.content: {str(raw)[:200]}", raw)
         if raw.get("done") is not True:
-            raise ModelError("status=200 done must be true")
+            raise ModelError("status=200 done must be true", raw)
         for field in ("prompt_eval_count", "eval_count"):
             if raw.get(field) is not None and type(raw[field]) is not int:
-                raise ModelError(f"status=200 invalid {field}")
+                raise ModelError(f"status=200 invalid {field}", raw)
         if raw.get("done_reason") is not None and not isinstance(raw["done_reason"], str):
-            raise ModelError("status=200 invalid done_reason")
+            raise ModelError("status=200 invalid done_reason", raw)
         return Answer(content, raw.get("done_reason"), raw.get("prompt_eval_count"),
                       raw.get("eval_count"), raw)
