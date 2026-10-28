@@ -22,22 +22,22 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Standing freezes: none.
 - OCR tools (Q39): ocrmypdf and tesseract under `/opt/homebrew/bin`; `scripts/run.sh` appends it to PATH.
 - Privacy: no real client record, name or fact in any loop session; fixtures are invented.
-- Regression baselines (set at the round 5 merge, 2026-10-28, tip of `loop/round-05`):
-  `scripts/run.sh pytest -q` -> `652 passed` (under 90 s: `scripts/run.sh scripts/suite_time.sh 3` -> `suite_time runs=3 max=51.57
-  verdict=PASS`, exit 0); `scripts/run.sh python -m casefile.gate` -> `0`;
-  `scripts/run.sh python scripts/unused_imports.py src tests scripts` -> `unused_imports=0`;
-  `casefile bench --config config.example.toml --matters tests/fixtures/matters --candidate
-  tests/fixtures/bench/flawed.json` -> exit 1, `bench 9001.001 model=candidate found=26 of 29 missed=3
-  invented=2 extra=2 flags=8 of 9 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14`; the same with
-  `--candidate tests/fixtures/matters/9001.001/ideal.json` -> exit 0, `bench 9001.001 model=candidate found=29
-  of 29 missed=0 invented=0 extra=2 flags=9 of 9 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`;
-  stage 1 exit test `exit=0 verdicts=8 fails=set() test_jobs=1`; stage 2 exit test `stage2 exit=0 runs=+1
-  answers_ok=+1 server_stopped=1`; stage 3 exit test `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6
-  text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 4 exit test `stage4 exit=0 gates=6 of 6
-  cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1` (seven `stage4` lines); stage 5 exit test `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4
-  casefile_lines=48 chain_ok=1 server_stopped=1` (nine `stage5` lines); doctor
-  `runlog_schema PASS schema=2 triggers=21 (counted)`; intake of the fixture `intake 9002.001 scan pages=6 ok=5
-  empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
+- Regression baselines (set at the round 6 merge, 2026-10-28, tip of `loop/round-06`; the key gained DEF0002's seven
+  facts and the bench line `dates_wrong=`, both deliberate): `scripts/run.sh pytest -q` -> `786 passed` (under 90 s:
+  `scripts/run.sh scripts/suite_time.sh 3` -> `verdict=PASS`, max about 67 s); `scripts/run.sh python -m casefile.gate`
+  -> `0`; `scripts/run.sh python scripts/unused_imports.py src tests scripts` -> `unused_imports=0`; `casefile bench
+  --config config.example.toml --matters tests/fixtures/matters --candidate tests/fixtures/bench/flawed.json` -> exit 1,
+  `bench 9001.001 model=candidate found=26 of 36 missed=10 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1
+  flags_extra=1 rules=1 pages_failed=0 of 14`; the same with `--candidate tests/fixtures/matters/9001.001/ideal.json` ->
+  exit 0, `bench 9001.001 model=candidate found=36 of 36 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9
+  flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`; stage 1 exit test `exit=0 verdicts=8 fails=set()
+  test_jobs=1`; stage 2 exit test `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`; stage 3 exit test `stage3
+  exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6 text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 4
+  exit test `stage4 exit=0 gates=6 of 6 cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1`; stage 5 exit
+  test `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=56 chain_ok=1 server_stopped=1`; stage 6 exit
+  test `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1` (eight `stage6` lines); doctor
+  `runlog_schema PASS schema=2 triggers=21 (counted)`; intake of the fixture `intake 9002.001 scan pages=6 ok=5 empty=1
+  failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
 - Records: Librarian.md · docs/loop/round-NN/ · docs/loop/agent-log.md · docs/loop/questions-for-owner.md ·
   docs/loop/tuning-questions.md · docs/loop/HANDOFF.md · docs/loop/next-round.md.
 
@@ -811,17 +811,43 @@ check-in held at the open (Q49 to Q51). Exit test (spec §7 stage 6): Word docum
 the output critic. All records and model answers are invented fixtures served by the stand-in (`tests/fakemodel/`).
 What a deposition or hearing output contains is practice: from `playbook/` and the firm's `deposition-prep` and
 `workers-comp-hearing-prep` skills, and from the owner where they do not settle it.
-- [ ] R6-1. Outputs: the deposition, hearing and report-analysis Word documents built from the case file of the test
+- [x] R6-1. Outputs: the deposition, hearing and report-analysis Word documents built from the case file of the test
   matter, each passing the firm rules gate and the output critic.
-- [ ] R6-2. Cards and schemas: `cards/` and `schemas/` rewritten for the single model (drop the brief outline,
+  Verifier (8c, blind, tip 6fba08f): `pytest -q -s tests/test_stage6_exit.py` -> eight `stage6` lines ending `stage6
+  exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1`; five files -> `packet_ok=6 of 6 outputs_ok=13 of 13
+  report_ok=9 of 9 depo_ok=12 of 12 hearing_ok=12 of 12`, 53 passed. Six docx read with python-docx: quotes on their
+  cited page 490 of 490 (control with one altered quote: off=2); own `rules.check` on text outside quotes: 0 hits
+  (control question: 3 hits); header lines equal `matter.toml`; DEF0002 quoted under two memo conflicts; bills question
+  names Fennimore, Brightwater, Ridgeline, Lakeshore, Okonkwo-Lind, no Marchetti; DME or IME outside quotes: 0. No
+  re-run of the output critic after fix cycles 2 and 3 is recorded; ticked on this CHECK. Findings in
+  `docs/loop/round-06/round06-verify.md` (none blocking).
+- [x] R6-2. Cards and schemas: `cards/` and `schemas/` rewritten for the single model (drop the brief outline,
   argument and authority-check cards; add the medical memo card; anonymization card per the brief, stage 7 uses it),
   card text built from the playbook, every schema inside the D34 subset.
-- [ ] R6-3. Owner answers Q49: the cross-chunk and cross-run reconcile pass (56); memo in spec §2 sections from the
+  Verifier (8c): `tests/test_cards.py tests/test_playbook.py` -> `cards_loaded=15 of 15 schemas_loaded=11 of 11`, 16
+  passed; gate -> `gate playbook PASS invalid=0 unmarked=0 practice=13 samples=3 version=pb-b0f17098b48d`; manifest
+  lists 15 ids including `01-MEMO` and `07-ANON`; `grep -i` for model or server names in `cards/`: none. Gaps: dropping
+  `quote` from the questions schema's required list stays green (786 passed); card wording is guarded only by the
+  version pin.
+- [x] R6-3. Owner answers Q49: the cross-chunk and cross-run reconcile pass (56); memo in spec §2 sections from the
   memo card's date and category (50); conflict quotes beneath each conflict, defense against our records first (54);
   binder names shown as typed, the memo's DME/IME refusal on binder names withdrawn (57).
-- [ ] R6-4. Carried: round 5 verifier L1 (no-reply reason wording in the doctor; memo repeats the no-reply words);
+  Verifier (8c): `tests/test_memo.py` -> `memo_docx_ok=22 of 22`; `tests/test_roles.py tests/test_matterinfo.py` ->
+  `roles_by_name=6 of 6 matterinfo_ok=12 of 12`; suite prints `bench_chunks=3 found=36 of 36 flags=5 of 9` (reconcile
+  withdrawn). memo.docx: the spec §2 sections in order, each conflict followed by `From [cite X]:` quotes, the three
+  defense against ours conflicts first, binder shown as `binder defense-report`. Probe: `role('Imelda Health')` ->
+  `defense` (low).
+- [x] R6-4. Carried: round 5 verifier L1 (no-reply reason wording in the doctor; memo repeats the no-reply words);
   code review L3 (two stamp definitions); M4 stays a recorded limit unless the brief rules otherwise.
-- [ ] V. Fresh blind verification: every non-deferred R6 item `[x]` with the verifier's own evidence.
+  Verifier (8c): `tests/test_extract.py` -> `no_reply_forms=3 of 3` (doctor, memo and bench each add their own
+  consequence to `model.no_reply_reason`); `rules.check_stamps` runs before the run log in `bench.py:53`,
+  `memo_job.py:102`, `outputs.py:310`; suite prints `stamps_compatible=2 of 2` and `stamps_cases=8 of 8`. Three pattern
+  strings remain (`matter.py:11`, `config.py:28`, `rules.toml:62`); one refusal check governs.
+- [x] V. Fresh blind verification: every non-deferred R6 item `[x]` with the verifier's own evidence.
+  Verifier (8c, 2026-10-28): PASS. Regression on the tip: `786 passed`; gate `0`; `unused_imports=0`; `suite_time
+  runs=3 max=66.17 verdict=PASS`; bench flawed exit 1 and ideal exit 0 with the CHECK's lines verbatim; stage 1 to 5
+  lines as pinned. Seeds: 6 (4 red, 2 green: cli hearing flags, questions schema `quote`), all restored with `cmp`.
+  Report: `docs/loop/round-06/round06-verify.md`.
 - Q52: owner request (2026-10-28, mid-round): a seamless pipeline where the attorney loads documents, picks a task
   (deposition prep, hearing prep, brief, etc.), the local model anonymizes, casefile sends the package to Claude by
   API key (and to Codex via MCP where useful), the answer comes back automatically, the local model re-identifies
@@ -926,3 +952,30 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   notice it, the same sections with a note.
   Chair: the fix-cycle cap (three) is reached in round 6; 83, 84, 85 and 86 are new output content and go to the round 7
   brief with the format specification, not into round 6 (pending the owner's say-so at the close check-in).
+- CHECKs for R6-1 to R6-4 (the brief's contract, `docs/loop/round-06/round06-build-brief.md` §2 as amended by §9, §10
+  and the chair rulings above; every run through `scripts/run.sh`; tip 6fba08f): R6-1: `pytest -q -s
+  tests/test_stage6_exit.py` prints eight `stage6` lines ending `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0
+  server_stopped=1`; `tests/test_packet.py tests/test_outputs.py tests/test_report.py tests/test_depo.py
+  tests/test_hearing.py` -> `packet_ok=6 of 6 outputs_ok=13 of 13 report_ok=9 of 9 depo_ok=12 of 12 hearing_ok=12 of
+  12`; the six documents read back with python-docx carry no rule hit outside verified quotes and cites, every quote on
+  its cited page, the header from `matter.toml`, DEF0002 quoted under its conflicts, no defense examiner in the bills
+  question. R6-2: `tests/test_cards.py tests/test_playbook.py` -> `cards_loaded=15 of 15 schemas_loaded=11 of 11`;
+  gate `playbook PASS invalid=0 unmarked=0` with practice entries counted. R6-3: memo in spec §2 sections, conflict
+  quotes, defense against ours first (`tests/test_memo.py` -> `memo_docx_ok=22 of 22`); binder names as typed;
+  `tests/test_roles.py tests/test_matterinfo.py` -> `roles_by_name=6 of 6 matterinfo_ok=12 of 12`; reconcile WITHDRAWN
+  (Q55: `bench_chunks` keeps `flags=5 of 9`). R6-4: `tests/test_extract.py` no-reply wording transport only; one stamp
+  definition (`rules.check_stamps` before the run log). Also: `tests/test_rules.py` -> `rule5_forms=18 of 18
+  bills_forms=7 of 7`; `tests/test_gates.py` -> `gate_cases=39 of 39`; `tests/test_facts.py` -> `casefile_ok=17 of 17`;
+  `tests/test_round06_fix1.py tests/test_round06_fix2.py` -> 57 passed. Regression (new baselines, deliberate: DEF0002
+  key facts, `dates_wrong`): `786 passed`; gate `0`; `unused_imports=0`; `suite_time.sh 3` -> `verdict=PASS`; bench
+  flawed exit 1 `found=26 of 36 missed=10 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 flags_extra=1
+  rules=1 pages_failed=0 of 14`; ideal exit 0 `found=36 of 36 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9
+  flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`; stage 5 `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4
+  casefile_lines=56 chain_ok=1 server_stopped=1`; stage 1 to 4 lines as in `## Project`; no test reaches 127.0.0.1:11434.
+- 8b second grading (fresh Opus, after fix cycles 2 and 3): `OUTPUT CRITIC 7/10 · high 0 · med 6 · low 9`
+  (`docs/loop/round-06/round06-critic2.md`); earlier findings 19 FIXED, 2 NOT FIXED (L7 withdrawn, L8 rejected by the
+  owner), 0 WORSE. Carried to round 7: M1 (fact identity is the folded quote; identical findings on two dates merge),
+  M2 to M6 (deposition practice).
+- Close (2026-10-28): verifier PASS (`docs/loop/round-06/round06-verify.md`). Spec: D52 to D62 (cloud round trip) and the
+  stage 7b roadmap row added pending veto; §11 stage 6 row. Librarian: 17 entries. Baselines moved (`## Project`). Round
+  report `docs/loop/round-06/round06-report.md`. Not started: round 7.

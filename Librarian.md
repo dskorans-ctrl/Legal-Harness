@@ -89,6 +89,22 @@ Cross-project failure classes live in the app-loop skill's catalog
 - Do change counts measure the semantic content added inside every event kind, including a new fact's initial reading?, #R05-OC-3
 - Does a shared error describe only its own layer, with caller-specific consequences and prefixes added once by each command?, #R05-V-1
 - Are all accepted build and fix rulings reconciled with the canonical decisions table before the round closes?, #R05-V-2
+- Does each card admit its legitimate blank and empty answers while independently proving every required input was accounted for?, #R06-PC-3
+- Does the same serialized task packet and gated answer render without a model call or any assumption about the transport message layout?, #R06-PC-6
+- Is every practice entry, rule exception and role-based section restricted to its intended deponent, subject and source population?, #R06-PC-10
+- Does a failed replacement make the older output stale, and does a later success remove the partial and restore current status?, #R06-PC-12
+- Does every exempt diagnostic or wrapper prove the trust of its embedded strings before rejected model text can reach a document?, #R06-CX-1
+- Do split packets conserve every input page and recombine answers without overwriting stronger evidence or claiming unsent pages were searched?, #R06-CX-2
+- Does every override and alternate input route pass the same domain validator as the stored value before work begins?, #R06-CX-5
+- Does a requirement for two separate units reject one compound item even when both required words appear?, #R06-CX-8
+- Does every downstream name and index handle optional metadata on the full accepted input path before calling the model?, #R06-CX-10
+- Can the normal setup flow collect and persist every condition needed to activate its safety guards?, #R06-CX-12
+- Does an output oracle derive its expected content and trust boundaries independently of the production renderer it checks?, #R06-CX-16
+- Can re-extraction correct metadata on an existing fact and page through an explicit event without rewriting history or silently keeping the old value?, #R06-CX-18
+- Have question strategy, danger items and examination coverage been checked against firm practice independently of quote accuracy and rule compliance?, #R06-OC-1
+- Does an evaluative heading use explicit supporting labels rather than infer favorable weight from the source role?, #R06-OC-5
+- Does each reusable subsection derive its heading levels from the parent so the saved document navigation preserves the hierarchy?, #R06-OC-7
+- Does section-wide deduplication render each shared relationship once and distinguish already shown from genuinely absent?, #R06-OC-8
 
 ## Round 1 (2026-10-25 to 2026-10-26)
 
@@ -833,6 +849,182 @@ Round 5 repeats and dispositions (no duplicate entries or pre-flight bullets):
 - Verifier seeds 1 to 5 all went red; no new test gap. L3's copied `.claude/.cc-writes` marker is harmless harness
   debris, recorded for the owner; no behavior failure or new class was demonstrated.
 
+## Round 6 (2026-10-28; stage 6 outputs, cards and schemas)
+
+Plan and code IDs follow report finding order; gaps below are repeats. CX-18 records adjacent A2.
+Records checked: the round 6 brief including §8 to §10, plan and code reviews with chair rulings,
+output critic, verifier, W1, lane A, lane B W5 and continuation, W8, all three fix reports and moved-pin
+records, and the ledger's Round 6 section. Fixed statuses record those reports, not code changes at this close.
+
+### R06-PC-3: one nonblank rule rejected legitimate answers
+**What broke:** `docs/loop/round-06/round06-build-brief.md:1140,1146`: the original blanket blank check rejected optional notes and STATED elements; the anonymization card also refused a clean empty identifier pass.
+**Why:** a shared validator imposed extraction completeness on tasks whose valid answers include blanks or no findings.
+**Caught by:** plan review H3 and M3, accepted in brief §8; L5 also clarified empty dates on undated pages.
+**Countermeasure:** define optional_blank, required_any and echo per card; test optional notes and an empty identifier answer with every page echoed, plus a missing or substituted page ID.
+**Status:** built by W1; optional-note and echo-identity controls red, then green; the anonymization job itself awaits stage 7.
+
+### R06-PC-6: rendering and prompting lacked a portable boundary
+**What broke:** `docs/loop/round-06/round06-build-brief.md:1143-1144,1154`: the original jobs assembled prompts and rendered inline, without a shared serializable packet or answer-only renderer; ID_SENTENCE assumed the nonce was at the top.
+**Why:** presentation and task data were coupled to one transport and request layout.
+**Caught by:** plan review H6, M1 and L3, accepted in §8 under owner Q53.
+**Countermeasure:** one Packet with facts, page IDs, page text, options and playbook version; JSON round trip; render(answers, packet) with no model call; request-layout-neutral card wording.
+**Status:** built by W1 and lane B; packet and body checks pass; renderer-calls-model seed red.
+
+### R06-PC-10: practice was applied outside its subject
+**What broke:** `docs/loop/round-06/round06-build-brief.md:1147`: kind-only injection put defense-examiner practice in our-doctor and client cards; `src/casefile/rules.py:72` later exempted bills on every question card.
+**Why:** a policy selected by broad content type lost the deponent and role conditions that authorize it.
+**Caught by:** plan M4; code M1; critic H2 and M2 found defense-only providers in treatment bills and our records in the defense view.
+**Countermeasure:** filter practice by deponent, narrow the bills exemption to our-doctor bills questions, reject examination fees on every card, and filter providers and defense sections by binder role.
+**Status:** W1 and fix cycles 1 and 2 built scoped checks with red controls; Q59 item 83 still requires the attorney bill memo as the bills source.
+
+### R06-PC-12: freshness ignored a failed replacement attempt
+**What broke:** `src/casefile/outputs.py:145-147,164-167` and `status.py:45-47` in the reviewed revision: a failed section could publish as current in the plan; after partial publication was added, yesterday's successful file still appeared current beside today's partial.
+**Why:** freshness tracked the last successful publication without representing the latest failed attempt.
+**Caught by:** plan M6, code M5; distinct from #R05-OC-1's self-description computed before publication.
+**Countermeasure:** publish failed jobs only as partials with no success event, count an existing partial as stale, and remove the partial after a successful replacement; test success, failure, status and recovery in order.
+**Status:** fixed in W5 and cycle 1; verifier S2 removing partial staleness fails three tests.
+
+### R06-CX-1: diagnostic exemptions laundered rejected model text
+**What broke:** `src/casefile/outputs.py:253-257,273-277` and `memo.py:105-106` in review: exempt reason runs printed a rejected IME sentence and unverified quote without a firm-rule check.
+**Why:** an exemption trusted a container label although its contents included untrusted model strings.
+**Caught by:** code H1; chair traced the reason path and the reviewer rendered a document with check findings [].
+**Countermeasure:** rules-check displayed diagnostics and replace violating spans with [withheld: <rule id>]; preserve full detail in the run log and CLI, with only verified quotes and cites exempt from prose checks.
+**Status:** fixed in cycle 1; raw-reason control red; saved-document oracle independently checks the result.
+
+### R06-CX-2: splitting and recombining a packet lost evidence
+**What broke:** `src/casefile/packet.py:84-86,99-116` dropped factless report and deponent pages on the multibatch path; `outputs.py:333` let a later PARTIAL overwrite an earlier STATED element.
+**Why:** batch partition and reduction did not preserve the full input evidence and strongest accumulated result.
+**Caught by:** code H2; reviewer forced a split and saw every batch contain only defense-report/003; chair traced both losses.
+**Countermeasure:** place every packet page in at least one batch, including pages with no fact; merge elements with found evidence winning and restrict NOT FOUND labels to pages in answering batches.
+**Status:** fixed in cycle 1; separate lost-page and overwritten-element controls red.
+
+### R06-CX-5: a CLI override bypassed the stored-value validator
+**What broke:** `src/casefile/cli.py:68` and `hearing.py:20` in review: --issue accepted made up issue although matter.toml enforced the matter type's issue list.
+**Why:** the same domain value was validated at storage ingestion but trusted on another input route.
+**Caught by:** code M3, reproduced through hearing.prepare.
+**Countermeasure:** validate run overrides against the same issue list before any model call and test an invalid CLI-supplied issue.
+**Status:** fixed in cycle 1; disabling issue validation is red.
+
+### R06-CX-8: one compound item satisfied two separate requirements
+**What broke:** `src/casefile/depo.py:29-34` in review: Were the bills for the treatment sent to you? satisfied both treatment and bills checks.
+**Why:** presence of two topic words was mistaken for two distinct required units.
+**Caught by:** code L1; reviewer probe returned no missing question.
+**Countermeasure:** a compound question satisfies neither topic; test one compound question and two valid separate questions independently of wording-presence checks.
+**Status:** fixed in cycle 1; removing the compound guard is red.
+
+### R06-CX-10: an optional stamp was indexed as mandatory
+**What broke:** `src/casefile/report.py:107-108` in review: unstamped --pages selected successfully, then stamps[0] raised IndexError after the model calls.
+**Why:** a downstream naming step assumed metadata that the accepted input contract makes optional.
+**Caught by:** code L3, confirmed by trace; cycle 1 reproduces the IndexError without the fallback.
+**Countermeasure:** use the page ID when no stamp exists and validate the selection and output name before model calls; exercise the complete unstamped route.
+**Status:** fixed in cycle 1; unstamped-page fallback control red.
+
+### R06-CX-12: the prompt could not collect a safety prerequisite
+**What broke:** `src/casefile/matterinfo.py:130,144` in review: ask omitted the plaintiff count, always persisting one plaintiff and leaving the multi-plaintiff typed-role safeguard reachable only by hand editing.
+**Why:** the normal setup flow could not express the condition that activates a required guard.
+**Caught by:** code L5; cycle 1 count-persistence control reproduced the omission.
+**Countermeasure:** ask and persist the number of plaintiffs, then exercise the multi-plaintiff role requirement through prompted setup rather than a manually constructed file alone.
+**Status:** fixed in cycle 1; forcing one plaintiff is red.
+
+### R06-CX-16: the output oracle reused the implementation under review
+**What broke:** `tests/test_stage6_exit.py:74-96,285,309,330` in review: expected documents came from production renderers and the rule oracle reused their exemption flags, so both agreed on H1's unchecked reasons.
+**Why:** a test derived its expected behavior from the same implementation whose defect it needed to detect.
+**Caught by:** code L9, confirmed by trace and the raw-reason reproduction.
+**Countermeasure:** reopen each saved Word document and independently check its text against the rules, exempting only verified quotes and cites; seed a reason exemption defect.
+**Status:** fixed in cycle 1; disabling the independent oracle is red; verifier's separate quote and rules controls agree.
+
+### R06-CX-18: re-extraction cannot correct existing fact metadata
+**What broke:** `src/casefile/facts.py:281-289`: a matching quote on an already stored page emits neither a cite event nor a date update, even when a later extraction supplies a corrected date.
+**Why:** append-only deduplication treats existing identity as proof that its mutable metadata needs no correction.
+**Caught by:** fix cycle 2 adjacent A2; ledger records the limit and fix3 leaves it unchanged.
+**Countermeasure:** design an append-only metadata-correction event with explicit precedence and provenance; test the same quote and page re-extracted with a corrected date without rewriting history.
+**Status:** open recorded limit; no correction event built in round 6.
+
+### R06-OC-1: verified quotations made strategically harmful questions look acceptable
+**What broke:** `docs/loop/round-06/round06-critic.md:28-35,91-114`: defense primary questions asked the examiner to reaffirm adverse conclusions, omitted document-based cross tools and danger items, and redirect repeated primary.
+**Why:** quotation accuracy and rule compliance were treated as sufficient evidence of practice quality.
+**Caught by:** output critic H1, M7, M8 and L5; chair reproduced the adverse primary questions in the Word file.
+**Countermeasure:** rewrite cards and recordings from the firm skill's document-based cross tests, use-instead tools and danger-zone requirements; retain independent practice criticism and a benchmark, not a claim that code judges strategy.
+**Status:** cycle 2 rewrote the practice and verifier read corrected questions; Q59 items 82 and 85 remain for round 7; no post-fix critic grade is present in the supplied reports.
+
+### R06-OC-5: source role was mistaken for favorable weight
+**What broke:** `docs/loop/round-06/round06-critic.md:56-61`: Our strongest facts listed every non-defense fact, including impeached history, the adverse tote weight and the negative ER straight leg raise.
+**Why:** provenance was substituted for an evaluative label about how a fact helps the case.
+**Caught by:** output critic M1.
+**Countermeasure:** use only facts labelled helpful to us for the strongest-facts section; without labels use Facts (not ranked), and test harmful and unranked facts.
+**Status:** fixed in cycle 2; strongest-facts control red; issue-specific relevance remains Q59 item 86.
+
+### R06-OC-7: shared headings escaped their parent section
+**What broke:** `docs/loop/round-06/round06-critic.md:68-73`: issue headings and category headings were both Heading 2, and an empty doctor-record heading sat beside its categories.
+**Why:** a reusable subsection renderer fixed absolute heading levels without considering its enclosing hierarchy.
+**Caught by:** output critic M3; verifier confirmed nesting after cycle 2.
+**Countermeasure:** pass the heading level into shared grouping helpers and inspect the saved document's hierarchy under each issue; omit headings without content.
+**Status:** fixed in cycle 2; flatten-heading control red.
+
+### R06-OC-8: a shared relationship repeated under every matching fact
+**What broke:** `docs/loop/round-06/round06-critic.md:75-78`: the same G3 conflict block appeared under four DEF0003 opinions and again in the doctor comparison, adding about 70 repeated lines.
+**Why:** a many-to-many relationship was rendered once per parent without a section-level identity set.
+**Caught by:** output critic M4.
+**Countermeasure:** track conflict IDs across the document section and render each block once; distinguish an already-shown conflict from an actual absence when suppressing later copies.
+**Status:** cycle 2 deduplicates, with a red disable-dedup control; verifier note 3 still finds bare none beneath later opinions.
+
+### R06-CH-2: the chair changed the date contract without measuring the key
+**What broke:** `docs/loop/round-06/round06-critic.md:201-202` ruled that a fact date must appear in its quote; `round06-fix3-pins.md:7-24` records 16 key/ideal date values moved back after that rule re-dated opinions to referenced accident or restriction dates.
+**Why:** the chair built a semantic ruling before measuring its effect on the answer key and benchmark, repeating #R03-PC-3 and #R01-OC-M8.
+**Caught by:** chair's post-cycle-2 key measurement: 16 date values moved and flawed dates_wrong rose from 1 to 7; withdrawal recorded in the ledger.
+**Countermeasure:** measure every proposed date rule against the complete key and both benchmark candidates before building; preserve the record-date convention, restore page-level occurrence and parse checks, and explain chronology ordering.
+**Status:** withdrawn and reverted in fix cycle 3; flawed dates_wrong=1, seven new DEF0002 facts retained at 06/20/2025; no duplicate pre-flight bullet for the existing measured-premise class.
+
+Round 6 repeats and dispositions (no duplicate pre-flight bullets):
+
+- Plan H1, H2, H4, L1, L2, L4 and L6, plus builder count, dependency and pin discrepancies: #R03-PC-3.
+  W1 moved parsers, schemas, budgets and stand-in helpers before the lane split. Lane B's DEF0001/DEF0002
+  block was resolved by the chair's defense-binder widening; provider counts were measured as six.
+- Plan H5 repeats #R01-CX-7/#R01-OC-H3; overbroad employment patterns withdrawn, two-way prose controls red.
+  M2 repeats #R04-PC-7: every assertion needs evidence, not just nearby verified fields. M5 repeats
+  #R02-OC-H1 and the two-way prose class; the therapy omission interim was superseded by owner Q54 item 59.
+  M7 repeats #R01-OC-M8 (owner ordered defense against ours, not defense against any role).
+  M8 repeats #R04-PC-7 and #R01-CX-9; the overstated reconcile contract was then withdrawn by Q55.
+- Code M2 repeats #R01-OC-H2's synonym coverage; cycle 1 handles IME and punctuated or joined DME.
+  Its widened prefix rule now misreads Imelda Health as defense (verifier note 5, report finding 7),
+  a #R03-CX-5 boundary problem still pending owner veto. M4 repeats #R03-CX-5 and #R04-CX-1:
+  whole-provider or unique word-bounded selection now refuses ambiguous Dr and lists candidates.
+- Code L2 repeats #R04-PC-7 (numbers in labels untested by the evidence check); fixed in cycle 1.
+  L4 repeats #R03-V-L1 (stamp refusal before the attorney prompt writes matter.toml); fixed.
+  L6 repeats #R04-PC-9 (unstamped outputs need their own warning); fixed. L8 repeats #R03-OC-L1:
+  no missing-other-role demand on an ordinary matter. L10 repeats #R05-CX-3: absent-page facts cannot
+  be listed with an unreachable packet cite; cycle 1 excludes them from the model packet.
+- Code L7 repeats #R04-PC-1's budget limit: packet.fit keeps all deponent pages, which means every page
+  for a client or witness, so an oversize client packet fails with zero facts rather than shrinking.
+  This stays a recorded tuning limit, not a claim that the large-packet path works.
+- Critic H3 and H4 repeat #R02-OC-H1: the key omitted DEF0002 findings. Seven facts were added deliberately
+  (29 to 36 key facts, stage 5 lines 48 to 56). Empty conflict blocks also repeat #R04-PC-6 and
+  #R03-OC-L1: now disclose missing verified facts. M5, M6 and L4 repeat #R04-PC-7:
+  evidence on the page must support the selected assertion or element, not merely exist there.
+  Cycle 2 selects conflict quotes by shared category, with an explicit all-page-facts fallback;
+  treatment rests on a treatment quote and unsupported element labels were corrected in recordings.
+- Critic M9, L1, L2, L3 and L6 repeat #R03-OC-L1: name actual sections, disclose model omissions,
+  use human labels and labelled placeholders, omit empty headings and keep build jargon out.
+  L7 is accepted under the record-date convention after #R06-CH-2's withdrawal; L8 was rejected
+  by owner Q54 item 68 (no outline page cap). Cycle 2 adjacent A1 repeats #R03-CX-2/#R05-CX-2:
+  replacing Word before its output-event append committed was fixed with rollback and red controls.
+- R06-CH-1 (chair seed): W8 blank client_name, documented in agent-log round 6 row 11, went red
+  with header_ok=0 and verdict exit=1; #R03-OC-L1's labelled missing-data class, no new failure.
+- Verifier S1 (cli.py:128 hearing doctor/closing swap) and S3 (questions schema required quote removed)
+  repeat #R01-V-B2/#R03-V-S1: both leave 786 passed. S3 also leaves D44's quote/cite contract
+  untested (#R04-PC-7); under the missing-quote schema mutation, render crashes at outputs.py:91.
+  S4 reverses the two-question card rule and fails only its version pin: #R01-CX-10/#R03-PC-2,
+  a hash detects change but does not prove the practice. Re-pinning can hide the reversed rule.
+  All three gaps remain open. S2, S5 and S6 went red; no new entry for those controls.
+- Verifier note 3 (report finding 5) is #R06-OC-8's bare-none residue, still open. Note 4 (finding 6)
+  repeats #R05-CX-5: the 06/20/2025 DEF0002 negative straight leg raise is only Also cited beneath
+  the 03/11/2025 ER entry; source/date placement and the mirror report's trailing Also cited remain open.
+- Verifier notes 8 to 10 record the accepted stamp-compatibility refusal, no post-fix critic grade in
+  the supplied reports, and an empty untracked cards/06-brief directory. No new demonstrated class.
+  Round 5 #R05-V-1 and #R05-CX-9 are closed by R6-4's independent checks; three pattern strings
+  remain but incompatible stamps refuse before the run log. Q56 is superseded by Q55's whole-matter
+  cloud task direction; #R05-PC-1 remains a disclosed local-path limit until stage 7b replaces it.
+
 ## Open items a future pass must not re-discover
 
 - **Closed in round 5**: verifier L1 mixed-chunk test (#R01-V-B2, #R03-V-S1); verifier L2 citation digits
@@ -841,12 +1033,36 @@ Round 5 repeats and dispositions (no duplicate entries or pre-flight bullets):
   `invented_kinds=2 of 2 rule_excerpt_ok=1` and status's stamped open line.
 - **Edited last case-file line loads clean** (#R05-CX-6, code M4): recorded integrity limit; no independent head
   anchor. Missing complete tail runs recover through #R05-CX-2; editing the last payload remains undetected.
-- **Two stamp definitions** (#R05-CX-9, code L3): `rules.toml` bates_pattern versus config stamp_pattern;
-  defaults agree, divergent owner configuration is not checked for compatibility. Stage 6, plausible risk.
-- **No-reply wording in doctor and memo** (#R05-V-1, verifier L1): every reason says the page stays open even
-  when no page is involved; memo repeats the no-reply words. Carry to round 6 and re-pin both command assertions.
-- **Cross-chunk and cross-run conflicts not seen** (#R05-PC-1, Q56, T-22): only pages sent together can yield
-  conflicts or gaps; three-chunk fixture finds 5 of 9 flags. Limit disclosed, reconciliation still unbuilt.
+- **Closed in round 6**: no-reply caller wording (#R05-V-1, verifier L1), verified as no_reply_forms=3 of 3;
+  incompatible stamp definitions (#R05-CX-9, code L3), refused by check_stamps before any run log, with
+  stamps_compatible=2 of 2 and stamps_cases=8 of 8. Compatibility is enforced; three pattern strings remain.
+- **Q56 superseded by owner Q55** (#R05-PC-1, T-22): the reconcile requirement is withdrawn in favor of
+  whole-matter cloud task runs at stage 7b. The current local path still finds 5 of 9 flags across three chunks;
+  this is a disclosed limit, not a shipped cross-run fix or an open round 6 reconcile requirement.
+- **Verifier S1, CLI hearing flags** (#R01-V-B2, #R03-V-S1): swapping --doctor and --closing at cli.py:128
+  stays green (786 passed); add CLI section assertions per flag, including --outline and --client.
+- **Verifier S3, required quote and cite** (#R01-V-B2, #R04-PC-7): output schemas have no independent
+  assertion of the D44 required evidence keys; dropping questions.required quote stays green. Under that
+  mutation a question without quote crashes render at outputs.py:91; test schema requirements and fail closed.
+- **Verifier S4, card practice wording** (#R01-CX-10, #R03-PC-2): reversed treatment/bills wording is red
+  only through the card version pin; assert the required practice independently so re-pinning cannot hide it.
+- **Verifier note 3, hearing bare none** (#R06-OC-8): Defense report points prints none beneath later
+  DEF0003 opinions after their conflict was already shown; omit it or name the earlier conflict block.
+- **Verifier note 4, chronology source placement** (#R05-CX-5): DEF0002's 06/20/2025 finding appears only
+  as Also cited beneath the 03/11/2025 ER entry; the mirror report also has a trailing Also cited space.
+- **Verifier note 5, Imelda becomes defense** (#R03-CX-5): a word starting Ime matches the code-review
+  M2 ruling literally; show this false positive to the owner with the pending role-rule veto.
+- **Code L7, oversize client packet** (#R04-PC-1): every deponent page is retained, so pages alone over
+  budget defeat shrinking and the question step fails with zero facts; recorded tuning limit.
+- **Fix cycle 2 A2, stored date cannot be corrected** (#R06-CX-18): re-extracting the same quote and
+  page cannot update its date; needs an append-only correction contract and regression control.
+- **Owner Q59 items 82 to 86, round 7**: 82 our-doctor testimony is preserved for the hearing, but purpose
+  still defaults to discovery with no logged implementation ruling (#R06-OC-1); 83 bills providers must come
+  from the attorney's bill memo (#R06-PC-10); 84 add a caption using the placeholder-only format specification
+  (#R03-OC-L1); 85 our-doctor primary must cover mechanism, injury, treatment, records reviewed, opinions and
+  reasonable, necessary, related treatment (#R06-OC-1); 86 filter each hearing issue to relevant facts and put
+  unmatched facts once under Other facts (#R06-PC-10, #R06-OC-5). Items 83 to 86 were parked at the fix-cycle
+  cap; carry 82 explicitly too. Item 87 was skipped by the owner.
 - **Owner questions 7 to 14** (`docs/loop/questions-for-owner.md`): interim rulings in force.
 - **run.sh needs python3 on PATH** before `uv sync` on a fresh checkout (#R01-CX-4; owner question 16).
 - **Closed in round 4**: R2-CX-2 / OR-4 (D31, R4-2; #R04-PC-1); verifier gaps S1, S2, S5

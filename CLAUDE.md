@@ -19,3 +19,6 @@ by round with the `app-loop` skill (`.claude/skills/app-loop/`).
 (one line per mistake that cost time, newest last)
 - 2026-10-27 R2: chair committed a copied review record without running the gate; it held em dashes and the gate
   printed 1 until the builder fixed it. Run the gate before every chair commit.
+- 2026-10-28 R6: chair ruled a fact's date must appear in its quote without measuring it on the key; fix cycle 2 moved
+  16 key dates and flawed `dates_wrong` 1 to 7, and fix cycle 3 (the last) went to the revert. Measure a gate rule on the
+  answer key before ruling it.
