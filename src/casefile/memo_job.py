@@ -4,7 +4,9 @@ import fcntl
 import os
 import sqlite3
 
-from casefile import extract, facts, matterinfo, memo, pages, pipeline, playbook, rules, status
+from docx import Document
+
+from casefile import extract, facts, matterinfo, memo, outputs, pages, pipeline, playbook, rules, status
 from casefile.model import ModelClient, ModelError
 from casefile.matter import Page
 from casefile.runlog import open_db
@@ -55,14 +57,27 @@ def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, 
     if loaded.open_pages:
         binders.sort()
     all_pages = sorted(all_pages, key=lambda page: (binders.index(page.binder), page.number))
+    info = matterinfo.load(folder)
     document = memo.build(casefile, all_pages, counts["open_items"], matter=number,
-                          playbook_version=book.version, model=config.model.name, info=matterinfo.load(folder))
+                          playbook_version=book.version, model=config.model.name, info=info)
+    header = outputs.header(info, number, "memo")
+    findings = outputs.check(outputs.Doc("", header, []), book.rules)
+    errors = [f for f in findings if f.severity == "error"]
+    if errors:
+        raise memo.MemoError("\n".join(f'{f.rule_id}: {f.excerpt}' for f in errors))
     output = folder / "outputs" / "memo.docx"
     temporary = output.with_name("memo.docx.tmp")
     if temporary.is_symlink() or temporary.exists():
         raise memo.MemoError(f"cannot write memo: temporary output already exists: {temporary}")
     try:
         memo.render(document, temporary, rules=book.rules)
+        rendered = Document(temporary)
+        built_line = rendered.paragraphs[1]
+        for paragraph in header:
+            target = built_line.insert_paragraph_before()
+            for run in paragraph.runs:
+                target.add_run(run.text)
+        rendered.save(temporary)
         os.replace(temporary, output)
     finally:
         temporary.unlink(missing_ok=True)

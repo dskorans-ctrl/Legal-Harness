@@ -123,10 +123,13 @@ def _read_memo(number, path, stored, pages, coverage, book, errors):
     built = memo.build(stored, pages, [], matter=NUMBER,
         playbook_version=book.version, model='qwen3.8:27b', info=matterinfo.load(path.parent.parent))
     rule_hits = sum(hit.severity == 'error' for hit in memo.check(built, book.rules))
-    header_ok = int(paragraphs[0].text == f'Medical memo: matter {NUMBER}' and
+    header_ok = int([p.text for p in paragraphs[:9]] == [f'Medical memo: matter {NUMBER}',
+        'Attorney Work Product | Privileged & Confidential', 'Matter type: workers-comp',
+        'Client: Morgan Ashby-Vale', 'Date of accident: 03/11/2025',
+        'Treating physician: Dr. Priya Okonkwo-Lind', 'IAB hearing number: 1234567',
+        'Hearing date: 01/15/2026 9:00 AM', f'Matter {NUMBER}'] and
         re.fullmatch(r'Built \d{4}-\d{2}-\d{2} from case file entry ' + str(stored.outputs[-1]['built_from_seq']) +
-                     re.escape(f'; playbook {book.version}; model qwen3.8:27b'), paragraphs[1].text) is not None)
-    # The shared header joins after lane B merges; W4 verifies the retained two-line header.
+                     re.escape(f'; playbook {book.version}; model qwen3.8:27b'), paragraphs[9].text) is not None)
     sentence = re.fullmatch(r'Pages read in (\d+) runs?; conflicts and gaps are checked only between '
         r'pages sent to the model together\. A cloud task run reads the whole matter \(stage 7b\)\.', conflicts[0].text)
     runs_seen = int(sentence[1]) if sentence else -1
