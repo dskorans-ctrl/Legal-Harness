@@ -213,7 +213,7 @@ def test_round6_bills_forms():
               'treatment reflected in those records was reasonable, necessary, and causally related to the '
               '03/11/2025 work incident?',providers,True),
              ('Doctor, what did you charge for the report?',(),True)]
-    hits = [bool(firm.check(t,unit='question',providers=p)) == want for t,p,want in cases]
+    hits = [bool(firm.check(t,unit='question',providers=p,bills_question=True)) == want for t,p,want in cases]
     print(f'bills_forms={sum(hits)} of 7')
     assert all(hits), f'bills_forms={sum(hits)} of 7'
     assert {f.rule_id for f in firm.check('What bills followed at IME Clinic?',unit='question',providers=('IME Clinic',))} == {'no-dme-ime'}, 'provider mask hid IME'

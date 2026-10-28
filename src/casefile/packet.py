@@ -68,6 +68,8 @@ def build(casefile, pages, *, matter, task, options, playbook_version, facts=Non
     selected = []
     wanted_pages = set()
     for fact in casefile.facts if facts is None else facts:
+        if not set(fact.page_ids) & present:
+            continue
         primary = next((i for i, pid in enumerate(fact.page_ids) if pid in present), 0)
         selected.append(PacketFact(fact.id, fact.quote, fact.cites[primary], fact.page_ids[primary],
                                    fact.dates[primary], fact.category, fact.providers[primary],
@@ -113,6 +115,23 @@ def batches(packet, card, num_ctx):
         result.append(_subset(packet, current))
     if len(result) <= 1 and size(packet) <= budget:
         return [packet]
+    sent = {page.page_id for part in result for page in part.pages}
+    for page in packet.pages:
+        if page.page_id in sent:
+            continue
+        index = next((i for i, part in enumerate(result) if any(p.binder == page.binder for p in part.pages)), 0)
+        base = result[index] if result else replace(packet, facts=(), pages=())
+        trial = replace(base, pages=(*base.pages, page))
+        if size(trial) <= budget:
+            if result:
+                result[index] = trial
+            else:
+                result.append(trial)
+        else:
+            alone = replace(packet, facts=(), pages=(page,))
+            if size(alone) > budget:
+                raise ValueError(f'page too long for one prompt ({model.tokens_at_most(page.text)} bytes, budget {budget} bytes); split the binder')
+            result.append(alone)
     return result
 
 

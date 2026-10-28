@@ -146,7 +146,7 @@ def _references(obj, pages, rules, *, numbers_in="quote"):
                 flag_pages.add(page.page_id)
         if item.get("kind") == "conflict" and len(flag_pages) < 2:
             faults.append(f"{path}: a conflict must cite two different pages")
-        for key in ("text", "about", "note", "why", "absent_note"):
+        for key in ("text", "about", "note", "why", "absent_note", "label"):
             if isinstance(item.get(key), str):
                 location = f"{path}.{key}"
 
@@ -167,7 +167,7 @@ def _references(obj, pages, rules, *, numbers_in="quote"):
                 continue
             source = matches[0].text
         numbers = set(re.findall(r"\d+", source))
-        keys = ("text",) if numbers_in == "quote" else ("text", "note", "why", "absent_note")
+        keys = ("text",) if numbers_in == "quote" else ("text", "note", "why", "absent_note", "label")
         for key in keys:
             for number in dict.fromkeys(re.findall(r"\d+", prose.get(f"{path}.{key}", ""))):
                 if number not in numbers:
@@ -281,7 +281,8 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                 elif gate == "rules":
                     findings = [(path, finding) for path, value in _rules_strings(obj)
                                 for finding in rules.check(value, unit="question" if path.rsplit(".", 1)[-1] in card.question_keys else "text",
-                                                           stamped=all(p.stamps for p in pages), providers=providers)]
+                                                           stamped=all(p.stamps for p in pages), providers=providers,
+                                                           bills_question=card.name == "02-C-OURDOC" and path.startswith("questions["))]
                     instructions = {rule.id: rule.rule for rule in rules.rules}
                     message = "; ".join(f"{path}: {instructions[f.rule_id]} ({f.rule_id}: {f.excerpt})"
                                         for path, f in findings if f.severity == "error")

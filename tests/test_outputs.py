@@ -116,7 +116,7 @@ with outputs.start(config.load(sys.argv[1]), '9001.001', 'report') as s:
         doc.sections[0].paragraphs = [outputs.p('What treatment did you receive and what bills followed?',unit='question')]
         hits = outputs.check(doc, book.rules, providers=outputs.providers(cf))
         assert any(f.rule_id=='treatment-and-bills-apart' for f in hits), 'W5 question was checked as text'
-        doc.sections[0].paragraphs = [outputs.p('Doctor, as to the bills themselves, the charges from Ridgeline Physical Therapy, were those bills reasonable?',unit='question')]
+        doc.sections[0].paragraphs = [outputs.p('Doctor, as to the bills themselves, the charges from Ridgeline Physical Therapy, were those bills reasonable?',unit='question',bills_question=True)]
         assert not [f for f in outputs.check(doc,book.rules,providers=outputs.providers(cf)) if f.severity=='error']
     elif row == 4:
         doc.sections[0].paragraphs = [outputs.Paragraph([outputs.Run('IME',exempt='binder'),outputs.cite('ime/001')])]
@@ -142,7 +142,7 @@ with outputs.start(config.load(sys.argv[1]), '9001.001', 'report') as s:
         new = outputs.publish(folder,'report-test',doc,book.rules,cf,counts,failed_steps=['elements'])
         assert (folder/'outputs/report-test.partial.docx').is_file()
         assert not new.outputs and (folder/'casefile.jsonl').read_bytes()==before, 'W5 partial output was recorded as current'
-        assert status.matter_status(cfg,loaded.number)['outputs']=='none'
+        assert status.matter_status(cfg,loaded.number)['outputs']=='none;partial=report-test.partial.docx'
     elif row in (8,9,10):
         (cfg.paths.state/'runlog.sqlite').unlink()
         if row==8:

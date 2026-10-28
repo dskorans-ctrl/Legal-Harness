@@ -27,6 +27,7 @@ def render(answers, packet, casefile, pages, info, *, open_items, playbook_versi
     own_pages = tuple(page for page in pages if page.page_id in ids)
     records = [fact for fact in casefile.facts if set(fact.page_ids) & ids]
     header = outputs.header(info, packet.matter, 'report')
+    header.extend(outputs.page_warning(pages))
     header.append(outputs.build_line(casefile, playbook_version, model))
     coverage = outputs.Section('Coverage', [outputs.Paragraph([
         outputs.Run('Report page: '), outputs.cite(page.stamps[0] if page.stamps else page.page_id),
@@ -87,27 +88,30 @@ def run(config, number, *, out, err, opener=None, provider='', binder=(), select
         with outputs.start(config, number, 'report', opener=opener, out=out) as started:
             value = prepare(started.casefile, started.loaded.pages, started.book, number=number,
                             provider=provider, binder=binder, selected=selected or pages, defense=defense, info=started.info)
+            own_pages = [p for p in value.pages if p.page_id in value.options['report_pages']]
+            if not own_pages:
+                raise outputs.OutputError('no report pages selected')
+            slug = binder[0] if len(binder) == 1 else (provider.lower().replace(' ', '-') if provider else
+                    '-'.join(p.stamps[0] if p.stamps else p.page_id.replace('/', '-') for p in (own_pages[0], own_pages[-1])))
+            if not slug or any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789-' for c in slug.lower()):
+                slug = own_pages[0].binder
             step, card_id = ('concessions', '04-G') if defense else ('elements', '05-A')
             card = cards.card(card_id, started.book)
             answers, failures = {}, {}
-            merged = {}
+            merged = {'searched_pages': []}
             for part in packet.batches(value, card, config.model.num_ctx):
                 outcome = outputs.ask(part, card, client=started.client, rules=started.book.rules,
                     log=started.log, job='report', playbook_version=started.book.version)
                 if not outcome.ok:
                     failures[step] = outputs.failure_reason(outcome)
                     break
+                merged['searched_pages'].extend(p.page_id for p in part.pages)
                 for key, items in outcome.answer.items():
                     merged.setdefault(key, []).extend(items)
             answers[step] = None if failures else merged
             value.options['failures'] = failures
             document = render(answers, value, started.casefile, started.loaded.pages, started.info,
                 open_items=started.counts['open_items'], playbook_version=started.book.version, model=config.model.name)
-            own_pages = [p for p in value.pages if p.page_id in value.options['report_pages']]
-            slug = binder[0] if len(binder) == 1 else (provider.lower().replace(' ', '-') if provider else
-                    '-'.join((own_pages[0].stamps[0], own_pages[-1].stamps[0])))
-            if not slug or any(c not in 'abcdefghijklmnopqrstuvwxyz0123456789-' for c in slug.lower()):
-                slug = own_pages[0].binder
             return outputs.finish(started, 'report-' + slug, document, failed_steps=failures, out=out)
     except outputs.ERRORS as exc:
         print(f'report: cannot run: {exc}', file=err)

@@ -269,11 +269,11 @@ def test_memo(tmp_path):
                     reason_path, rules=book_rules)
         reason_paragraphs = section(Document(reason_path), "Open items")
         reason_ok = int(len(reason_paragraphs) == 1 and
-                        [run.text for run in reason_paragraphs[0].runs] == ["probe/002", ": failed: ", reason])
+                        [run.text for run in reason_paragraphs[0].runs] == ["probe/002", ": failed: ", 'Never name the exam as a [withheld: no-dme-ime] or [withheld: no-dme-ime] in any form; write "the report".'])
     except memo.MemoError:
         pass
-    assert reason_ok == 1, f'memo_reason_exempt={reason_ok}'
-    print("memo_docx_ok=22 of 22 memo_refused=1 of 1 memo_changed=1 memo_reason_exempt=1")
+    assert reason_ok == 1, f'memo_reason_withheld={reason_ok}'
+    print("memo_docx_ok=22 of 22 memo_refused=1 of 1 memo_changed=1 memo_reason_withheld=1")
 
 
 @pytest.mark.parametrize("count, noun", [(0, "runs"), (1, "run"), (2, "runs")])

@@ -56,11 +56,13 @@ class Rules:
     version: int
     rules: tuple[Rule, ...]
 
-    def check(self, text, *, unit, stamped=True, providers=()):
+    def check(self, text, *, unit, stamped=True, providers=(), bills_question=False):
         if not isinstance(text, str):
             raise TypeError("output text must be str")
         if unit not in {"text", "question"}:
             raise ValueError("unit must be text or question")
+        text = re.sub(r'\[withheld: (?:' + '|'.join(re.escape(v) for v in RULE_IDS) + r')\]',
+                      lambda match: ' ' * len(match[0]), text)
         findings = []
         flags = re.IGNORECASE
         for rule in self.rules:
@@ -69,7 +71,7 @@ class Rules:
             spans = set()
             severity = rule.severity
             if rule.kind == "forbid":
-                for pattern in (*rule.patterns, *(rule.patterns_text_only if unit == "text" else ())):
+                for pattern in (*rule.patterns, *(rule.patterns_text_only if not (unit == "question" and bills_question and re.search(r"\bbills?\b", text, flags)) else ())):
                     spans.update(m.span() for m in re.finditer(pattern, text, flags))
             elif rule.kind == "conjunction":
                 masked = text

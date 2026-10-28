@@ -19,7 +19,7 @@ def committed_coverage(casefile, coverage):
             for key, row in coverage.items()}
 
 
-def snapshot(loaded, casefile, coverage, book=None):
+def snapshot(loaded, casefile, coverage, book=None, *, folder=None):
     """Keep page IDs as keys and every stamp in the attorney's label."""
     coverage = committed_coverage(casefile, coverage)
     dispositions = {}
@@ -42,9 +42,13 @@ def snapshot(loaded, casefile, coverage, book=None):
     counts = {state: sum(item.status == state for item in ordered)
               for state in ("read", "failed", "uncited", "empty")}
     opened = [item for item in ordered if item.status != "read"]
-    stale = casefile.stale_outputs()
+    partials = {path.name.removesuffix('.partial.docx'): path.name
+                for path in (folder / 'outputs').glob('*.partial.docx')} if folder else {}
+    stale = set(casefile.stale_outputs()) | partials.keys()
     outputs = ",".join(f'{name}:{"stale" if name in stale else "current"}'
                        for name in dict.fromkeys(row["name"] for row in casefile.outputs)) or "none"
+    if partials:
+        outputs += ";partial=" + ",".join(partials.values())
     return dict(pages=len(ordered), **counts, open=len(opened), facts=len(casefile.facts),
                 conflicts=sum(flag.kind == "conflict" for flag in casefile.flags),
                 gaps=sum(flag.kind == "gap" for flag in casefile.flags), outputs=outputs,
@@ -59,7 +63,7 @@ def matter_status(config, number) -> dict:
     if database.exists():
         with open_db(database) as log:
             coverage = log.coverage(number, job="memo")
-    return snapshot(loaded, casefile, coverage, playbook.load(config.paths.playbook))
+    return snapshot(loaded, casefile, coverage, playbook.load(config.paths.playbook), folder=config.paths.matters / number)
 
 
 def print_open(items, out):

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import fcntl
 import os
+import re
 from pathlib import Path
 import sqlite3
 import sys
@@ -33,6 +34,7 @@ class Paragraph:
     warning_pages: tuple[str, ...] = ()
     unit: str = 'text'
     page_break: bool = False
+    bills_question: bool = False
 
 
 @dataclass
@@ -96,17 +98,45 @@ def build_line(casefile, playbook_version, model):
              f'{casefile.last_seq}; playbook {playbook_version}; model {model}')
 
 
+def checked_runs(paragraph, rules):
+    """Withhold rule spans from untrusted failure details only in documents."""
+    result = []
+    for run in paragraph.runs:
+        if run.exempt != 'reason':
+            result.append(run)
+            continue
+        value = run.text
+        findings = sorted(rules.check(value, unit='text'), key=lambda f: (f.start, -f.end))
+        spans = []
+        for finding in findings:
+            if spans and finding.start <= spans[-1][1]:
+                start, end, rule_id = spans[-1]
+                spans[-1] = (start, max(end, finding.end), rule_id)
+            else:
+                spans.append((finding.start, finding.end, finding.rule_id))
+        for start, end, rule_id in reversed(spans):
+            value = value[:start] + f'[withheld: {rule_id}]' + value[end:]
+        result.append(Run(value))
+    return result
+
+
+def page_warning(pages):
+    ids = [page.page_id for page in pages if not page.stamps and page.text.strip()]
+    return [Paragraph([Run('These pages carry no Bates stamp and are cited by page id: '),
+                       Run(', '.join(ids), exempt='cite'), Run('.')])] if ids else []
+
+
 def check(doc, rules, stamped=True, providers=()):
     findings = []
-    texts = [(doc.title, 'text')]
+    texts = [(doc.title, 'text', False)]
     for paragraph in doc.header:
-        texts.append((''.join(run.text if not run.exempt else '\n' for run in paragraph.runs), paragraph.unit))
+        texts.append((''.join(run.text if not run.exempt else '\n' for run in checked_runs(paragraph, rules)), paragraph.unit, paragraph.bills_question))
     for section in doc.sections:
-        texts.append((section.title, 'text'))
+        texts.append((section.title, 'text', False))
         for paragraph in section.paragraphs:
-            texts.append((''.join(run.text if not run.exempt else '\n' for run in paragraph.runs), paragraph.unit))
-    for text, unit in texts:
-        findings.extend(rules.check(text, unit=unit, stamped=stamped, providers=providers))
+            texts.append((''.join(run.text if not run.exempt else '\n' for run in checked_runs(paragraph, rules)), paragraph.unit, paragraph.bills_question))
+    for text, unit, bills_question in texts:
+        findings.extend(rules.check(text, unit=unit, stamped=stamped, providers=providers, bills_question=bills_question))
     return findings
 
 
@@ -117,17 +147,17 @@ def render(doc, path, *, rules, stamped=True, providers=()):
     document = Document()
     document.add_heading(doc.title, level=0)
     for paragraph in doc.header:
-        _write_paragraph(document, paragraph)
+        _write_paragraph(document, paragraph, rules)
     for section in doc.sections:
         document.add_heading(section.title, level=1)
         for paragraph in section.paragraphs or [p('none')]:
-            _write_paragraph(document, paragraph)
+            _write_paragraph(document, paragraph, rules)
     document.save(path)
 
 
-def _write_paragraph(document, paragraph):
+def _write_paragraph(document, paragraph, rules):
     target = document.add_heading(level=paragraph.level) if paragraph.level else document.add_paragraph()
-    for run in paragraph.runs:
+    for run in checked_runs(paragraph, rules):
         target.add_run(run.text)
     if paragraph.page_break:
         target.add_run().add_break(__import__('docx.enum.text', fromlist=['WD_BREAK']).WD_BREAK.PAGE)
@@ -165,12 +195,20 @@ def publish(folder, name, doc, rules, casefile, counts, *, failed_steps):
         casefile = facts.append(folder / 'casefile.jsonl', [facts.Event('output', dict(name=name,
             path=str(target), built_from_seq=casefile.last_seq, facts=counts['facts'],
             conflicts=counts['conflicts'], gaps=counts['gaps'], open=counts['open']))])
+        (directory / (name + '.partial.docx')).unlink(missing_ok=True)
     return casefile
 
 
 def provider_pages(casefile, text, *, pages=(), info=None):
+    folded = quotes.fold(text)
+    names = {quotes.fold(name): name for name in providers(casefile)}
+    exact = [name for name in names if name == folded]
+    candidates = exact or [name for name in names if folded and re.search(
+        r'(?<!\w)' + re.escape(folded) + r'(?!\w)', name)]
+    if len(candidates) > 1:
+        raise OutputError('ambiguous provider: ' + ', '.join(names[name] for name in candidates))
     ids = tuple(dict.fromkeys(pid for fact in casefile.facts for pid, provider in zip(fact.page_ids, fact.providers)
-                             if text.casefold() in provider.casefold())) if text else ()
+                             if quotes.fold(provider) in candidates))
     defense = {page.binder for page in pages if page.page_id in ids and roles.role(page.binder, info or matterinfo.MatterInfo()) == 'defense'}
     return tuple(dict.fromkeys((*ids, *(page.page_id for page in pages if page.binder in defense))))
 
@@ -229,13 +267,13 @@ def start(config, number, job, *, opener=None, stdin=None, out=None):
         casefile = facts.load(folder / 'casefile.jsonl')
         if not casefile.facts:
             raise OutputError('run casefile memo first')
+        rules.check_stamps(loaded.pages, book.rules)
         info = matterinfo.load(folder)
         stream = sys.stdin if stdin is None else stdin
         if not info.has_header and stream.isatty():
             info = matterinfo.ask(info, stream, sys.stdout if out is None else out)
-        rules.check_stamps(loaded.pages, book.rules)
         with open_db(config.paths.state / 'runlog.sqlite') as log:
-            counts = status.snapshot(loaded, casefile, log.coverage(number, job='memo'), book)
+            counts = status.snapshot(loaded, casefile, log.coverage(number, job='memo'), book, folder=folder)
             yield Started(config, folder, book, loaded, casefile, info, log,
                           ModelClient(config.model, opener), counts)
 
@@ -330,7 +368,11 @@ def elements(answer, pages, *, title='Elements', reason=None):
     if answer is None:
         section.paragraphs.append(failure(title, reason))
         return section, gaps, subjects
-    found = {item['element']: item for item in answer['elements']}
+    found = {}
+    for item in answer['elements']:
+        if item['element'] not in found or item['status'] == 'STATED':
+            found[item['element']] = item
+    pages = tuple(page for page in pages if page.page_id in answer.get('searched_pages', [p.page_id for p in pages]))
     labels = ', '.join(page.stamps[0] if page.stamps else page.page_id for page in pages)
     for name in ELEMENTS:
         item = found.get(name)
@@ -357,14 +399,14 @@ def labelled_facts(answer, casefile, uses):
             and item['cite'] in (*fact.cites, *fact.page_ids) for item in answer['facts'])]
 
 
-def question_paragraphs(answer, title, *, reason=None, omitted=0):
+def question_paragraphs(answer, title, *, reason=None, omitted=0, bills_question=False):
     if answer is None:
         return [failure(title, reason)]
     result = []
     if omitted:
         result.append(p(f'{omitted} facts were not sent to the model for this section (prompt budget); they are listed in the memo'))
     for n,item in enumerate(answer['questions'], 1):
-        result += [p(f'{n}. {item["text"]}', unit='question'), evidence(item, 'Rests on: ')]
+        result += [p(f'{n}. {item["text"]}', unit='question', bills_question=bills_question), evidence(item, 'Rests on: ')]
         if item['note']:
             result.append(note(item['note']))
     return result

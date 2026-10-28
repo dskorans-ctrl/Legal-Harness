@@ -142,6 +142,13 @@ def ask(info, stdin, stdout) -> MatterInfo:
     if kind and kind not in MATTER_TYPES:
         raise MatterInfoError('header.matter_type: invalid value')
     values = {key: answer(key.replace('_',' ').capitalize()) for key in HEADER[1:-1]}
+    raw_plaintiffs = answer('Number of plaintiffs (blank means 1)')
+    try:
+        plaintiffs = int(raw_plaintiffs) if raw_plaintiffs else 1
+        if plaintiffs < 1:
+            raise ValueError
+    except ValueError as exc:
+        raise MatterInfoError('header.plaintiffs: expected a positive integer') from exc
     choices = WORKERS_COMP_ISSUES if kind == 'workers-comp' else OTHER_ISSUES
     raw = answer('Issues (' + ', '.join(f'{n}: {v}' for n,v in enumerate(choices,1)) + ')')
     try:
@@ -151,7 +158,7 @@ def ask(info, stdin, stdout) -> MatterInfo:
         issues = tuple(dict.fromkeys(choices[n-1] for n in indices))
     except ValueError as exc:
         raise MatterInfoError('hearing.issues: expected comma-separated choice numbers') from exc
-    result = replace(info, matter_type=kind, **values, issues=issues, has_header=True)
+    result = replace(info, matter_type=kind, **values, plaintiffs=plaintiffs, issues=issues, has_header=True)
     if info.folder is not None:
         write(info.folder, result)
     return result

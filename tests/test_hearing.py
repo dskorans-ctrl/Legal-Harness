@@ -33,7 +33,7 @@ def test_hearing_contract(tmp_path,monkeypatch,row,capsys):
     _,cfg,folder,loaded,cf,book=setup_case(tmp_path)
     info=matterinfo.load(folder)
     kwargs=dict(provider='Okonkwo-Lind')
-    if row==2: kwargs['issue']=['Only this issue']
+    if row==2: kwargs['issue']=['DCD']
     if row==3: kwargs['standard']='The attorney supplies the applicable standard.'
     if row==8:
         info=replace(info,issues=())
@@ -85,8 +85,8 @@ def test_hearing_contract(tmp_path,monkeypatch,row,capsys):
         assert [p for p in outline if p.startswith('Issue: ')]==['Issue: permanency','Issue: termination'], 'W7 stored issues were ignored'
         assert outline.count('Standard: STANDARD NEEDED')==2
     elif row==2:
-        assert [p for p in section(doc,'Hearing outline') if p.startswith('Issue: ')]==['Issue: Only this issue']
-        assert values['base'].options['issues']==('Only this issue',)
+        assert [p for p in section(doc,'Hearing outline') if p.startswith('Issue: ')]==['Issue: DCD']
+        assert values['base'].options['issues']==('DCD',)
     elif row==3:
         assert section(doc,'Hearing outline').count('Standard: The attorney supplies the applicable standard.')==2
         assert 'STANDARD NEEDED' not in '\n'.join(lines)

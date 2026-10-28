@@ -7,7 +7,7 @@ from pathlib import Path
 from docx import Document
 
 from casefile.rules import Finding, Rules
-from casefile.outputs import Paragraph, Run, Section
+from casefile.outputs import Paragraph, Run, Section, checked_runs
 
 
 class MemoError(ValueError):
@@ -136,7 +136,7 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
         ("other", "Opinions in other records"))}
     binder_roles = {page.binder: roles.role(page.binder, info) for page in pages}
     for role, section in opinions.items():
-        if role not in binder_roles.values():
+        if role != "other" and role not in binder_roles.values():
             section.paragraphs.append(_paragraph(f'ROLE NEEDED: no binder is marked {role} in matter.toml'))
         missing_roles = [binder for binder, value in binder_roles.items() if value == "ROLE NEEDED"]
         if missing_roles:
@@ -233,7 +233,7 @@ def _runs(paragraph, rules):
     if paragraph.warning_pages:
         return [Run('These pages carry no Bates stamp and are cited by page id: '),
                 Run(', '.join(paragraph.warning_pages), exempt='cite'), Run('.')]
-    return paragraph.runs
+    return checked_runs(paragraph, rules)
 
 
 

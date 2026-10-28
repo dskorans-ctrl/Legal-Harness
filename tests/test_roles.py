@@ -9,7 +9,7 @@ def test_roles():
     info = matterinfo.MatterInfo()
     cases = [('DME-report','defense'), ('defense_medical','defense'),
              ('Defense Medical Exam','defense'), ('medical','ours'), ('records','ours'),
-             ('ime-free-notes','ours')]
+             ('ime-free-notes','defense')]
     count = sum(roles.role(name,info) == expected for name,expected in cases)
     print(f'roles_by_name={count} of 6')
     assert count == 6, f'roles_by_name={count} of 6'

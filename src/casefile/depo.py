@@ -31,13 +31,14 @@ def missing_questions(answer, options):
         return []
     return [f'Missing: the {name} question (firm practice: two separate questions)' for name, pattern in
             (('treatment', r'\btreatment\b'), ('bills', r'\bbills?\b'))
-            if not any(re.search(pattern, item['text'], re.I) for item in answer['questions'])]
+            if not any(re.search(pattern, item['text'], re.I) and not (re.search(r'\btreatment\b', item['text'], re.I) and re.search(r'\bbills?\b', item['text'], re.I)) for item in answer['questions'])]
 
 
 def render(answers, packet, casefile, pages, info, *, open_items, playbook_version, model):
     options = packet.options
     header = outputs.header(info, packet.matter, 'depo', when=options.get('when', ''),
                             deponent=options.get('name') or options['deponent'])
+    header.extend(outputs.page_warning(pages))
     header += [outputs.p('Purpose: ' + options['purpose']), outputs.build_line(casefile, playbook_version, model)]
     labels = answers.get('factsheet')
     failures = options.get('failures', {})
@@ -56,7 +57,8 @@ def render(answers, packet, casefile, pages, info, *, open_items, playbook_versi
         key = 'questions:' + section
         answer = answers.get(key)
         paragraphs = outputs.question_paragraphs(answer, title, reason=failures.get(key),
-                                                omitted=options.get('omitted', {}).get(section, 0))
+                                                omitted=options.get('omitted', {}).get(section, 0),
+                                                bills_question=options['deponent'] == 'our-doctor')
         if section == 'primary':
             missing = missing_questions(answer, options)
             paragraphs = [outputs.p(text) for text in missing] + paragraphs

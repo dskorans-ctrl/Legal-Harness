@@ -60,7 +60,7 @@ def test_matterinfo(tmp_path):
         (folder / 'matter.toml').unlink()
     case('intake',layout)
     def prompt():
-        info = matterinfo.ask(matterinfo.load(folder),Terminal('workers-comp\nInvented Client\n03/11/2025\nInvented Doctor\n7654321\n01/15/2026\n1,2\n'),StringIO())
+        info = matterinfo.ask(matterinfo.load(folder),Terminal('workers-comp\nInvented Client\n03/11/2025\nInvented Doctor\n7654321\n01/15/2026\n1\n1,2\n'),StringIO())
         assert info.has_header and info.issues == ('permanency','termination')
         assert matterinfo.load(folder) == info
         before=(folder / 'matter.toml').read_bytes()

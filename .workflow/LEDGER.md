@@ -893,3 +893,7 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   binders stay page level. The fixture has six provider strings (Fennimore County Hospital, Dr. Priya Okonkwo-Lind,
   Brightwater Family Medicine, Ridgeline Physical Therapy, Dr. Theodore Marchetti, Lakeshore Imaging); measured count
   accepted over the brief's five (`providers_named=6 of 6`).
+- 8a code review (fresh Fable, Q46, 2026-10-28): 17 findings (2 high, 5 med, 10 low). Chair reproduced H1 and H2 by
+  trace and M1 and M2 by probe (M1: fee questions to the examiner pass since the Q59 exemption, a regression). Rulings
+  in `docs/loop/round-06/round06-code-review.md`; fix cycle 1 (Codex) carries H1, H2, M1 to M5, L1 to L6, L8 to L10; L7
+  recorded limit. M2 ruling (IME and unseparated DME count as defense) pending owner veto.

@@ -10,7 +10,7 @@ from threading import Thread
 from docx import Document
 import pytest
 
-from casefile import cards, config, depo, facts, hearing, matterinfo, memo, outputs, packet, pages, playbook, report, status
+from casefile import cards, config, depo, facts, hearing, matterinfo, outputs, packet, pages, playbook, quotes, report, status
 from casefile.runlog import open_db
 from conftest import ROOT, write_config
 from fakemodel import FakeModel
@@ -71,8 +71,32 @@ def _header_ok(doc, cf, book, model, *, who=''):
                      re.escape(f'; playbook {book.version}; model {model}'), actual[index]) is not None)
 
 
-def _rules(doc, expected, rules, providers, errors):
-    # Word retains runs, but not exemption metadata. Require exact run alignment before applying it.
+def _saved_rules(doc, rules, providers, source_pages, *, our_doctor=False):
+    """Check saved Word text against source pages without renderer exemption metadata."""
+    hits = 0
+    for paragraph in doc.paragraphs:
+        value = paragraph.text
+        cited = []
+        def citation(match):
+            label = match[1]
+            matches = [page for page in source_pages if label == page.page_id or label in page.stamps]
+            if len(matches) == 1:
+                cited.append(matches[0])
+                return '\n'
+            return match[0]
+        value = re.sub(r'\[(?:cite|page) ([^\]]+)\]', citation, value)
+        quoted = re.search(r'"(.*)"', value)
+        if quoted and any(quotes.match(quoted[1], page.text) is not None for page in cited):
+            value = value[:quoted.start()] + '\n' + value[quoted.end():]
+        question = re.match(r'^\d+\. ', paragraph.text) is not None
+        hits += sum(hit.severity == 'error' for hit in rules.check(
+            value, unit='question' if question else 'text', providers=providers,
+            bills_question=our_doctor and question))
+    return hits
+
+
+def _rules(doc, expected, rules, providers, errors, source_pages=(), *, our_doctor=False):
+    # Structure is a separate check; the safety oracle uses saved text and source pages.
     templates = [(outputs.p(expected.title), 'Title')]
     templates.extend((p, None) for p in expected.header)
     for section in expected.sections:
@@ -81,7 +105,7 @@ def _rules(doc, expected, rules, providers, errors):
     if len(doc.paragraphs) != len(templates):
         errors.append('reopened document paragraph count differs from checked runs')
         return 0
-    hits = 0
+    hits = _saved_rules(doc, rules, providers, source_pages, our_doctor=our_doctor)
     for actual, (template, style) in zip(doc.paragraphs, templates):
         actual_runs = [r.text for r in actual.runs]
         expected_runs = [r.text for r in template.runs]
@@ -90,9 +114,6 @@ def _rules(doc, expected, rules, providers, errors):
         if actual_runs != expected_runs or style and actual.style.name != style:
             errors.append('reopened document runs differ: ' + actual.text)
             continue
-        prose = ''.join(value if not run.exempt else '\n' for value, run in zip(actual_runs, template.runs))
-        hits += sum(hit.severity == 'error' for hit in rules.check(
-            prose, unit=template.unit, providers=providers))
     return hits
 
 
@@ -256,12 +277,7 @@ def test_stage6_exit(tmp_path, capsys):
             coverage = log.coverage(NUMBER, job='memo')
         memo_line = _read_memo(1, folder / 'outputs/memo.docx', cf, loaded.pages, coverage, book, errors)
         metrics = memo_line.split(' sections=', 1)[1].split(' cites=', 1)[0]
-        memo_doc = memo.build(facts.CaseFile(cf.events[:-1]), loaded.pages, (), matter=NUMBER,
-            playbook_version=book.version, model=settings.model.name, info=info)
-        # Include actual header runs in the rules measurement, not just the memo body.
-        header_hits = sum(hit.severity == 'error' for p in Document(folder / 'outputs/memo.docx').paragraphs[:10]
-                          for hit in book.rules.check(p.text, unit='text'))
-        memo_hits = header_hits + sum(hit.severity == 'error' for hit in memo.check(memo_doc, book.rules))
+        memo_hits = _saved_rules(Document(folder / 'outputs/memo.docx'), book.rules, outputs.providers(cf), loaded.pages)
         rule_hits += memo_hits
         lines.append('stage6 memo sections=' + metrics + f' rule_hits={memo_hits} exit=' + str(result.returncode))
         if result.stderr or 'chunks=1 runs=+1 read=13 open=1 facts=31 conflicts=5 gaps=4' not in result.stdout:
@@ -286,7 +302,8 @@ def test_stage6_exit(tmp_path, capsys):
                                    playbook_version=book.version, model=settings.model.name)
             output = folder / f'outputs/depo-{who}-us.docx'
             doc = _open_output(output, errors)
-            hits = _rules(doc, expected, book.rules, outputs.providers(cf), errors)
+            hits = _rules(doc, expected, book.rules, outputs.providers(cf), errors, loaded.pages,
+                          our_doctor=who == 'our-doctor')
             rule_hits += hits
             lines.append(_depo_line(doc, who, result.returncode, cf, loaded, book,
                 _header_ok(doc, cf, book, settings.model.name, who=name), hits, errors))
@@ -310,7 +327,7 @@ def test_stage6_exit(tmp_path, capsys):
                                   playbook_version=book.version, model=settings.model.name)
         output = folder / 'outputs/hearing.docx'
         doc = _open_output(output, errors)
-        hits = _rules(doc, expected, book.rules, outputs.providers(cf), errors)
+        hits = _rules(doc, expected, book.rules, outputs.providers(cf), errors, loaded.pages)
         rule_hits += hits
         lines.append(_hearing_line(doc, result.returncode, _header_ok(doc, cf, book, settings.model.name), hits))
         if result.stderr:
@@ -332,7 +349,7 @@ def test_stage6_exit(tmp_path, capsys):
             slug = 'defense-report' if defense else 'okonkwo-lind'
             output = folder / f'outputs/report-{slug}.docx'
             doc = _open_output(output, errors)
-            hits = _rules(doc, expected, book.rules, outputs.providers(cf), errors)
+            hits = _rules(doc, expected, book.rules, outputs.providers(cf), errors, loaded.pages)
             rule_hits += hits
             lines.append(_report_line(doc, defense, result.returncode, cf, _header_ok(doc, cf, book, settings.model.name), hits))
             if result.stderr:

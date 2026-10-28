@@ -3,7 +3,7 @@
 from dataclasses import replace
 from datetime import date
 
-from casefile import cards, dates, outputs, packet, report, roles
+from casefile import cards, dates, matterinfo, outputs, packet, report, roles
 
 STARRED = '★ GIVE THE BILLING MEMO TO THE HEARING OFFICER. Hand it up at the outset with the exhibits.'
 INSTRUCTIONS = ('Listen to the whole question; pause; answer only what was asked; do not guess; '
@@ -18,6 +18,9 @@ def prepare(casefile, pages, book, info, *, number, outline=False, client=False,
     if not any(parts.values()):
         parts = dict.fromkeys(parts, True)
     issues = tuple(issue) if issue else info.issues
+    allowed = matterinfo.WORKERS_COMP_ISSUES if info.matter_type == 'workers-comp' else matterinfo.OTHER_ISSUES if info.matter_type else ()
+    if any(value not in allowed for value in issues):
+        raise matterinfo.MatterInfoError('hearing.issues: choose from the matter type list: ' + ', '.join(allowed))
     choices = dict(parts=parts, issues=issues, standard=info.standard if standard is None else standard,
                    relief=info.relief if relief is None else relief, when=when,
                    deponent_pages=[p.page_id for p in pages])
@@ -78,6 +81,7 @@ def render(answers, packets, casefile, pages, info, *, open_items, playbook_vers
     choices, parts = base.options, base.options['parts']
     header_info = replace(info, hearing_date=choices['when']) if choices.get('when') else info
     header = outputs.header(header_info, base.matter, 'hearing')
+    header.extend(outputs.page_warning(pages))
     header.append(outputs.build_line(casefile, playbook_version, model))
     checklist = [outputs.p(STARRED), outputs.p('Totals: not on file; the billing memo is supplied by the attorney (question 28).')]
     for binder in dict.fromkeys(p.binder for p in pages):
@@ -201,13 +205,14 @@ def run(config, number, *, out, err, opener=None, outline=False, client=False, d
                     batches = [value]
                 else:
                     batches = packet.batches(value, card, config.model.num_ctx)
-                merged = {}
+                merged = {'searched_pages': []}
                 for part in batches:
                     outcome = outputs.ask(part, card, client=started.client, rules=started.book.rules,
                         log=started.log, job='hearing', playbook_version=started.book.version)
                     if not outcome.ok:
                         failures[key] = outputs.failure_reason(outcome)
                         break
+                    merged['searched_pages'].extend(p.page_id for p in part.pages)
                     for field, items in outcome.answer.items():
                         if isinstance(items, list):
                             merged.setdefault(field, []).extend(items)
