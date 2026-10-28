@@ -38,7 +38,7 @@ def write_config(tmp_path, **overrides):
             "playbook": tmp_path / "playbook",
         },
         "model": {
-            "host": "http://127.0.0.1:11434",
+            "host": "http://127.0.0.1:9",
             "name": "qwen3.8:27b",
             "num_ctx": 65536,
             "temperature": 0.1,

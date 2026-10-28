@@ -6,6 +6,7 @@ requires-python = ">=3.12,<3.13"
 dependencies = [
     "pillow>=13,<14",
     "pypdf>=6.21,<7",
+    "python-docx>=1.1,<2",
 ]
 
 [project.scripts]

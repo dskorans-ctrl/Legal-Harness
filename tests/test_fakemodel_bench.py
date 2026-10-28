@@ -1,7 +1,7 @@
 import json
 
 from casefile import matter as matters
-from casefile.benchrun import CARD_TEXT
+from casefile.extract import CARD_TEXT
 from conftest import ROOT
 from fakemodel.bench import recordings_for
 from fakemodel.core import FakeModel

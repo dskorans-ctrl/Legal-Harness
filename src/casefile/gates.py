@@ -7,7 +7,7 @@ import json
 import re
 import secrets
 
-from casefile import benchrun, jsonrepair, model, quotes, schema, stamps
+from casefile import extract, jsonrepair, model, quotes, schema, stamps
 from casefile.matter import Page
 
 
@@ -56,7 +56,7 @@ def messages(card, pages: Sequence[Page], nonce, *, matter):
     """The matter number is explicit because a Page carries no matter number."""
     return [{"role": "system", "content": f"prompt_id: {nonce}\n{card.text}"},
             {"role": "user", "content": f"Matter {matter}\n"
-             + "".join(benchrun.page_block(page) for page in pages)}]
+             + "".join(extract.page_block(page) for page in pages)}]
 
 
 def _rules_strings(obj, path=""):
@@ -158,7 +158,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
     initial = messages(card, pages, nonce, matter=matter)
     run_id = log.start_run(job=job, matter=matter, card=card.name, card_version=card.version,
                            playbook_version=playbook_version, model=client.config.name,
-                           pages_in=len(pages), prompt_sha256=benchrun.prompt_sha256(initial))
+                           pages_in=len(pages), prompt_sha256=extract.prompt_sha256(initial))
     verdicts = []
     reason = ""
     obj = None

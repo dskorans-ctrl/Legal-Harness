@@ -6,37 +6,20 @@ import hashlib
 import json
 
 from casefile.benchcandidate import EMPTY, Candidate, CandidateError, parse_text
-from casefile.matter import Matter, Page
+from casefile.extract import CARD_TEXT, page_block, prompt_sha256
+from casefile.matter import Matter
 from casefile.model import ModelClient, ModelError, context_length_error
 
 CARD = "bench.extract"
-CARD_TEXT = (
-    "You are reading the pages of one workers' compensation matter. Use only the text in this request.\n"
-    "Answer with one JSON object and nothing else: {\"facts\": [...], \"flags\": [...]}.\n"
-    "Each fact: {\"cite\": the Bates stamp of the page, \"quote\": an exact span copied from that page, "
-    "\"text\": one sentence that says no more than the quote}.\n"
-    "Each flag: {\"kind\": \"conflict\" or \"gap\", \"cites\": the Bates stamps involved, \"about\": one sentence}.\n"
-    "A conflict is two pages that disagree. A gap is a record a page refers to that is not among these pages.\n"
-    "Never name an examination as a DME or an IME in any form; write \"the report\".\n"
-    "Never write who hired, paid or retained a doctor, any fee, or how many examinations a doctor does.\n"
-    "Never guess, infer or fill in. If a value is not on the page, leave it out.\n")
 
 
 def card_version() -> str:
     return hashlib.sha256(CARD_TEXT.encode()).hexdigest()[:12]
 
 
-def page_block(page: Page) -> str:
-    return f"=== PAGE {page.page_id} BATES {" ".join(page.stamps)} ===\n{page.text}\n"
-
-
 def messages(matter: Matter) -> list[dict]:
     body = f"Matter {matter.number}\n" + "".join(page_block(p) for p in matter.pages)
     return [{"role": "system", "content": CARD_TEXT}, {"role": "user", "content": body}]
-
-
-def prompt_sha256(msgs) -> str:
-    return hashlib.sha256(json.dumps(msgs, sort_keys=True).encode()).hexdigest()
 
 
 def counts_ok(answer) -> bool:

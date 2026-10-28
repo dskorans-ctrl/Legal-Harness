@@ -6,7 +6,7 @@ import re
 
 import pytest
 
-from casefile import benchrun, config, gates, matter, model, rules
+from casefile import extract, config, gates, matter, model, rules
 from casefile.runlog import open_db
 from conftest import ROOT, write_config
 from fakemodel import FakeModel, FakeTransport
@@ -161,7 +161,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         'SELECT * FROM runs WHERE id=?', (outcome.run_id,)).fetchone())
     assert (run['card'], run['card_version'], run['matter'], run['job'], run['playbook_version'],
             run['pages_in']) == (card.name, card.version, number, 'invented-extraction', 'pb-invented', len(pages))
-    assert run['prompt_sha256'] == benchrun.prompt_sha256(gates.messages(card, pages, NONCE, matter=number))
+    assert run['prompt_sha256'] == extract.prompt_sha256(gates.messages(card, pages, NONCE, matter=number))
     for request in requests:
         assert request['truncate'] is False and request['think'] is False
         assert request['options'] == {'num_predict': card.max_answer_tokens, 'num_ctx': 65536, 'temperature': 0.1}
