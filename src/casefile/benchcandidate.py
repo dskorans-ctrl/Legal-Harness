@@ -36,13 +36,11 @@ EMPTY = Candidate((), ())
 def parse(data) -> Candidate:
     """Parse a JSON object representing a candidate into Candidate objects."""
 
-    # Check overall structure
     if not isinstance(data, dict) or set(data) != {"facts", "flags"} or \
        not isinstance(data["facts"], list) or not isinstance(data["flags"], list):
         raise CandidateError("expected a JSON object with keys facts and flags")
 
     facts = []
-    # Process facts
     for n, item in enumerate(data["facts"], start=1):
         if not isinstance(item, dict) or set(item) != {"cite", "quote", "text"}:
             raise CandidateError(f"fact {n}: expected keys cite, quote, text (strings)")
@@ -53,7 +51,6 @@ def parse(data) -> Candidate:
         facts.append(CandidateFact(item["cite"], item["quote"], item["text"]))
 
     flags = []
-    # Process flags
     for n, item in enumerate(data["flags"], start=1):
         if not isinstance(item, dict) or set(item) != {"kind", "cites", "about"}:
             raise CandidateError(f"flag {n}: expected keys kind, cites, about")
@@ -73,7 +70,6 @@ def parse(data) -> Candidate:
 
         flags.append(CandidateFlag(kind, tuple(cites), about))
 
-    # Return result
     return Candidate(tuple(facts), tuple(flags))
 
 

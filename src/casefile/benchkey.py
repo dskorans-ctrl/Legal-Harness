@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from casefile.matter import Matter
-from casefile.quotes import found_in, normalize
+from casefile.quotes import found_in, fold
 from casefile.stamps import normalize as normalize_stamp
 
 FLAG_KINDS = ("conflict", "gap")
@@ -84,7 +84,7 @@ def load(path, matter: Matter) -> Key:
         if not found_in(item["quote"], page.text):
             raise BenchKeyError(f"{path}: fact {fid}: quote not found on page {cite}")
 
-        pair = (cite, normalize(item["quote"]))
+        pair = (cite, fold(item["quote"]))
         if pair in fact_pairs_seen:
             raise BenchKeyError(f"{path}: fact {fid}: same cite and quote as fact {fact_pairs_seen[pair]}")
         fact_pairs_seen[pair] = fid

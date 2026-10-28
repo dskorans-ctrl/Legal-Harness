@@ -2,14 +2,12 @@
 
 import difflib
 import json
-import os
 import shutil
-import subprocess
 
 import pytest
 
 from casefile import quotes, stamps
-from conftest import ROOT, write_config
+from conftest import ROOT
 
 FIXTURE = ROOT / "tests" / "fixtures" / "scanned"
 RATIO_FLOOR = 0.95    # T-12; a constant of the test, printed with the measured minimum, never a parameter
@@ -39,7 +37,8 @@ def judge(expected_page, record):
     value = ratio(expected_page["text"], record["text"])
     want_status = "empty" if expected_page["kind"] == "blank" else "ok"
     return {
-        "id": record["id"] == f"scan/{n:03d}",
+        "id": (record["id"] == f"scan/{n:03d}" and record["matter"] == "9002.001"
+               and record["page"] == n),
         "stamps": got_stamps == want_stamps and all(set(s) == {"raw", "stamp"} for s in record["stamps"]),
         "text": ratio_ok(value) and record["status"] == want_status,
         "must": all(quotes.found_in(span, record["text"]) for span in expected_page["must_contain"]),
@@ -48,17 +47,12 @@ def judge(expected_page, record):
 
 
 @pytest.mark.ocr
-def test_stage3_exit(tmp_path, capsys):
+def test_stage3_exit(tmp_path, capsys, scanned_intake):
     manifest = read_manifest(tmp_path)
-    path = write_config(tmp_path)
-    (tmp_path / "matters" / "9002.001").mkdir()
-    command = ["scripts/run.sh", "casefile", "intake", "--matter", "9002.001", "--binder", "scan",
-               "tests/fixtures/scanned/scanned.pdf"]
-    result = subprocess.run(command, cwd=ROOT, env=dict(os.environ, CASEFILE_CONFIG=str(path)),
-                            capture_output=True, text=True, timeout=180)
-    pages = sorted((tmp_path / "matters" / "9002.001" / "pages" / "scan").glob("0*.json"))
+    result, _, root = scanned_intake
+    pages = sorted((root / "pages" / "scan").glob("0*.json"))
     records = [json.loads(p.read_text(encoding="utf-8")) for p in pages]
-    binder = json.loads((tmp_path / "matters" / "9002.001" / "pages" / "scan" / "binder.json")
+    binder = json.loads((root / "pages" / "scan" / "binder.json")
                         .read_text(encoding="utf-8"))
     verdicts = [judge(page, record) for page, record in zip(manifest["pages"], records)]
     spans = [v["must"] for page, v in zip(manifest["pages"], verdicts) if page["must_contain"]]
@@ -94,7 +88,8 @@ def test_ratio_boundary_is_inclusive():
 def test_changed_digit_fails_must_contain_while_ratio_stays_high(tmp_path):
     manifest = read_manifest(tmp_path)
     page = manifest["pages"][0]
-    record = {"id": "scan/001", "status": "ok", "text": page["text"].replace("10 pounds", "40 pounds"),
+    record = {"id": "scan/001", "matter": "9002.001", "page": 1,
+              "status": "ok", "text": page["text"].replace("10 pounds", "40 pounds"),
               "stamps": [{"raw": s, "stamp": s} for s in page["stamps"]]}
     verdict = judge(page, record)
     assert verdict["ratio"] >= RATIO_FLOOR and verdict["text"] is True

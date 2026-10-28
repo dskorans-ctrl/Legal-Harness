@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import unicodedata
 
 import pytest
@@ -125,6 +126,22 @@ def isolated_config(tmp_path_factory, production_dirs_untouched):
             os.environ.pop("CASEFILE_CONFIG", None)
         else:
             os.environ["CASEFILE_CONFIG"] = old_config
+
+
+@pytest.fixture(scope="session")
+def scanned_intake(tmp_path_factory, isolated_config):
+    """Run the real scanned binder command once in a fresh folder for this session."""
+    base = tmp_path_factory.mktemp("scanned-intake").resolve()
+    path = write_config(base)
+    loaded = config.load(path)
+    root = loaded.paths.matters / "9002.001"
+    assert not root.exists(), f"scanned intake must use a fresh matter folder: {root}"
+    root.mkdir()
+    command = ["scripts/run.sh", "casefile", "intake", "--matter", "9002.001", "--binder", "scan",
+               "tests/fixtures/scanned/scanned.pdf"]
+    result = subprocess.run(command, cwd=ROOT, env=dict(os.environ, CASEFILE_CONFIG=str(path)),
+                            capture_output=True, text=True, timeout=180)
+    yield result, loaded, root
 
 
 @contextmanager

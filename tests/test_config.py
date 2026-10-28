@@ -3,11 +3,13 @@
 from dataclasses import FrozenInstanceError
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 
 import pytest
 
+from casefile import stamps
 from casefile.config import ConfigError, load
 from conftest import ROOT, alias_table, write_config
 
@@ -256,3 +258,24 @@ def test_matters_unexpandable_home(tmp_path, monkeypatch):
     monkeypatch.setattr(os.path, "expanduser", lambda value: value)
     with pytest.raises(ConfigError, match="cannot expand ~ in \\[paths\\].matters"):
         load(path)
+
+
+def test_stamp_pattern_uses_shared_compiler(tmp_path, monkeypatch):
+    path = write_config(tmp_path)
+
+    def refuse(pattern):
+        raise re.error("probe")
+
+    monkeypatch.setattr(stamps, "compile", refuse)
+    with pytest.raises(ConfigError) as caught:
+        load(path)
+    assert str(caught.value) == "[ocr].stamp_pattern is not a valid pattern: probe"
+
+
+def test_invalid_stamp_pattern_cli_exits_2(tmp_path):
+    path = write_config(tmp_path, ocr={"stamp_pattern": "("})
+    result = subprocess.run(["casefile", "config", "show", "--config", str(path)],
+                            capture_output=True, text=True, timeout=30)
+    assert (result.returncode, result.stdout) == (2, "")
+    assert result.stderr.startswith("ConfigError: [ocr].stamp_pattern is not a valid pattern: ")
+    assert "Traceback" not in result.stderr

@@ -56,8 +56,12 @@ def case_joined_tokens():
             and all(stamps(text) == want for text, want in kept.items()) and mixed)
 
 
+def case_normalize_punctuation():
+    return normalize("MED.0001") == "MED0001" and normalize("med_0001") == "MED0001"
+
+
 CASES = [case_main, case_whole_tokens, case_nothing, case_normalize, case_first_raw, case_token_end,
-         case_joined_tokens]
+         case_joined_tokens, case_normalize_punctuation]
 
 
 def test_stamps(capsys):
