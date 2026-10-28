@@ -22,8 +22,9 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Standing freezes: none.
 - OCR tools (Q39): ocrmypdf and tesseract under `/opt/homebrew/bin`; `scripts/run.sh` appends it to PATH.
 - Privacy: no real client record, name or fact in any loop session; fixtures are invented.
-- Regression baselines (set at the round 3 merge, 2026-10-27, tip of `loop/round-03`):
-  `scripts/run.sh pytest -q` -> `358 passed` (under 90 s, T-11); `scripts/run.sh python -m casefile.gate` -> `0`;
+- Regression baselines (set at the round 4 merge, 2026-10-28, tip of `loop/round-04`):
+  `scripts/run.sh pytest -q` -> `537 passed` (under 90 s: `scripts/run.sh scripts/suite_time.sh 3` -> `suite_time runs=3 max=57.46
+  verdict=PASS`, exit 0); `scripts/run.sh python -m casefile.gate` -> `0`;
   `scripts/run.sh python scripts/unused_imports.py src tests scripts` -> `unused_imports=0`;
   `casefile bench --config config.example.toml --matters tests/fixtures/matters --candidate
   tests/fixtures/bench/flawed.json` -> exit 1, `bench 9001.001 model=candidate found=26 of 29 missed=3
@@ -32,8 +33,10 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   of 29 missed=0 invented=0 extra=2 flags=9 of 9 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14`;
   stage 1 exit test `exit=0 verdicts=8 fails=set() test_jobs=1`; stage 2 exit test `stage2 exit=0 runs=+1
   answers_ok=+1 server_stopped=1`; stage 3 exit test `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6
-  text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; intake of the fixture `intake 9002.001 scan
-  pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
+  text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 4 exit test `stage4 exit=0 gates=6 of 6
+  cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1` (seven `stage4` lines); doctor
+  `runlog_schema PASS schema=2 triggers=21 (counted)`; intake of the fixture `intake 9002.001 scan pages=6 ok=5
+  empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
 - Records: Librarian.md · docs/loop/round-NN/ · docs/loop/agent-log.md · docs/loop/questions-for-owner.md ·
   docs/loop/tuning-questions.md · docs/loop/HANDOFF.md · docs/loop/next-round.md.
 
@@ -691,15 +694,28 @@ Tiers: Q45 (Fable brief and revision, Codex `gpt-6-astra` plan and code review, 
 and blind verifier, Codex `gpt-6.1-sol` code). Ollama on the Studio: login-user app (Q43).
 Exit test (spec §7 stage 4): every gate (spec §4) tested with good and bad answers, including truncated ones.
 All answers are invented fixtures served by the stand-in model server (`tests/fakemodel/`).
-- [ ] R4-1. Stage 4 work items (defined by the round 4 brief, ruled by the chair before any code): the model
+- [x] R4-1. Stage 4 work items (defined by the round 4 brief, ruled by the chair before any code): the model
   client and the six gates of spec §4 in order (truncation, punctuation-only JSON repair, schema check, quote
   check ladder, firm rules on outputs, coverage ledger), with retry once then pages marked failed, never saved empty.
-- [ ] R4-2. Carried: R2-CX-2 prompt truncation detection (OR-4: Ollama does not count cached prompt tokens).
-- [ ] R4-3. Carried verifier test gaps from round 3: S1 (stage 3 exit test asserts record `matter` and `page`),
+  Verifier (2026-10-28, aa11799): `stage4 exit=0 gates=6 of 6 cases=14 of 14 runs=+14 answers=+21 empty_saved=0
+  server_stopped=1` (all seven lines as stated); `gate_cases=27 of 27`; `ladder_ok=14 of 14`, `quotes_ok=8 of 8`;
+  `repair_ok=13 of 13`, `schema_ok=14 of 14`, `schemas_loaded=20 of 20`; `triggers=21 blocked_writes=12 of 12
+  upgrade_v1=1 upgrade_atomic=1`; doctor via stand-in `doctor runlog_schema PASS schema=2 triggers=21 (counted)`.
+- [x] R4-2. Carried: R2-CX-2 prompt truncation detection (OR-4: Ollama does not count cached prompt tokens).
+  Verifier (2026-10-28, aa11799): `chat_body_keys=1`, `cached_count_read=1`, `benchrun_modes=8 of 8 answers_ok=1
+  answers_failed=7 failures=7` (75 passed).
+- [x] R4-3. Carried verifier test gaps from round 3: S1 (stage 3 exit test asserts record `matter` and `page`),
   S2 (sidecar `7 of 6` case), S5 (`make_scanned.py --check` text-layer change).
-- [ ] R4-4. Carried verifier lows: bench refuses a duplicate matter number before the first matter runs;
+  Verifier (2026-10-28, aa11799): `stage3 exit=1 pages=6 ids_ok=6 of 6 ...` (asserts `record["matter"]` and
+  `record["page"]`, test_stage3_exit.py:40-41), `intake_refusals=16 of 16 group_killed=1` (case `sidecar 7 of 6`,
+  test_intake.py:171), `check page 5 differs` (40 passed).
+- [x] R4-4. Carried verifier lows: bench refuses a duplicate matter number before the first matter runs;
   `normalize` beyond spaces and hyphens (as the brief rules); leftover step comments in `bench.py` and
   `benchcandidate.py`; suite time near the 90 s budget (T-11).
+  Verifier (2026-10-28, aa11799): `score_cases=14 of 14`, `duplicate_numbers_exit=2`, `stamps_cases=8 of 8`,
+  `key_refusals=13 of 13` (11 passed); no comment lines at all in `bench.py`, `benchcandidate.py`;
+  `suite_time runs=3 max=57.46 verdict=PASS`, exit 0. Regression: `537 passed in 57.80s`, gate `0`,
+  `unused_imports=0`, both bench lines and exits (1, 0) and stage 1 to 3 lines identical to `## Project`.
 - [~] R4-5. deferred: R1-20 (`bates-cites` sees only bracketed cites) waits for the stage that writes cited prose.
 - Plan review and rulings (session 2, 2026-10-27): Codex gpt-6-astra plan review, 16 findings (`docs/loop/round-04/round04-brief-codex.md`); Fable revision accepted 16, rejected 0 (brief §8, 892 lines). Chair ruled D31 to D38 as written in brief §6, logged in spec §9 pending owner veto. Owner questions 47 (uncited pages) and 48 (summary wording) held for the close check-in; interims fail closed (D38). Tuning note for close: the digit-run check of D38 can fail a good answer that reformats a date (`3/2/2026` against `03/02/2026`); fails closed, settled by the benchmark (T-19).
 - Chair ruling (build, 2026-10-27 23:12): W4 and W7 blocked on brief §1.10's `bad_quote` count of 4 faults; the mode's first-digit edit of facts[0].quote also makes D38's digit-run check fire on that fact (`text number 03 not in quote`), which is correct. Ruled `faults=5`, every fault message asserted exactly; no gate changed. Builder API deviation accepted: `gates.messages` takes `matter=` because `matter.Page` carries no matter number.
@@ -717,4 +733,7 @@ All answers are invented fixtures served by the stand-in model server (`tests/fa
   tests/test_bench_multi.py tests/test_stamps.py tests/test_benchkey.py` -> `score_cases=14 of 14 duplicate_numbers_exit=2
   stamps_cases=8 of 8 key_refusals=13 of 13`; no step comments in `bench.py`, `benchcandidate.py`; `scripts/suite_time.sh 3` ->
   `verdict=PASS`, exit 0. Regression: the `## Project` baselines (bench lines, stage 1 to 3 lines, gate `0`, `unused_imports=0`).
-- [ ] V. Fresh blind verification: every non-deferred R4 item `[x]` with the verifier's own evidence.
+- [x] V. Fresh blind verification: every non-deferred R4 item `[x]` with the verifier's own evidence.
+  Verifier (2026-10-28, aa11799): PASS; R4-1 to R4-4 reproduced, R4-5 deferred; 10 seeds, 9 red, 1 test gap (low,
+  mixed stamped and unstamped chunk); every seed restored, `cmp` identical. `docs/loop/round-04/round04-verify.md`.
+- Close (2026-10-28): verifier PASS (`docs/loop/round-04/round04-verify.md`). Carried to the round 5 brief: verifier L1 (no mixed stamped and unstamped chunk test; `gates.py:241` `all` to `any` stays green), verifier L2 (D38 digit check fails a summary holding a bracketed cite; rule with R1-20 before cited prose; T-19), critic M2 (open items by stamp) and L3 (bench invented kinds). Owner questions 47, 48, 49 held; D31 to D38 pending veto. Machine notes: Codex builders need `-c sandbox_workspace_write.network_access=true`; an `ollama` from the owner's local worker listens on 127.0.0.1:11434 here, so verifiers run the doctor in process against the stand-in.

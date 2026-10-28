@@ -40,3 +40,15 @@ benchmark says, and what to watch for.
   doctor smoke timeout 120 s.
 - T-15 (round 3 brief): fixture rendering 300 dpi, body 44 px, stamps 60 px, JPEG quality 90, fixed PDF dates
   (`tests/fixtures/scanned/make_scanned.py`); `scanned.pdf` 895 KB.
+- T-16 (round 4 brief, §1.1): the `prompt_id` nonce sits first in the system message (`gates.messages`), which defeats
+  Ollama's prefix cache for the card text on every call. Move it behind the card only after the Studio's Ollama is
+  shown to honour `truncate: false`; measure prompt eval time on the stage 9 benchmark.
+- T-17 (round 4 brief, D31): the budget is the UTF-8 byte count plus `model.TEMPLATE_TOKENS = 64`
+  (`src/casefile/model.py:11`, used at `gates.py:179`) against `num_ctx - Card.max_answer_tokens` (8192,
+  `gates.py:28`). Measure `prompt_eval_count / bytes` from the run log on the Studio before changing either.
+- T-18 (round 4 brief, §4): suite second lever (`test_config.py::test_matters_alias_table` in process) not needed;
+  measured `suite_time runs=3 max=54.47 verdict=PASS` at the round 4 merge (`scripts/suite_time.sh`, budget 90 s).
+- T-19 (round 4 chair, D38): the digit-run check fails a good answer whose summary rewrites a number (`3/2/2026`
+  against a quote holding `03/02/2026`). Fails closed; count such `gate.quotes` failures on the stage 9 benchmark
+  before deciding whether to compare numbers by value. Also (verifier L2): the check reads digits inside a bracketed
+  cite in the summary (`[cite MED0001]` gives `0001`), so it must skip cites before any stage writes cited prose (R1-20).

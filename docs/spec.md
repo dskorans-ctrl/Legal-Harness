@@ -59,19 +59,27 @@ UI mockup: https://claude.ai/artifact/TcvRDeJAfG3B5MnvEnoQnk
 
 ## §4 Gates (every model answer, in order)
 
-1. Truncation: the answer did not stop early, and the model read as many tokens as were sent.
-2. JSON repair, punctuation only (control characters, trailing commas, missing closers).
+1. Truncation (D31): the prompt was within budget before the call (UTF-8 bytes plus a template allowance, re-checked
+   on the retry), the call asked the server not to cut (`truncate: false`), the answer begins with the call's
+   `prompt_id` and ends with its `end_id` (a fresh nonce per attempt), and `done_reason` and both token counts are
+   present and agree with the context. The counts are stored, never trusted as proof of reading.
+2. JSON repair, punctuation only (a fence, control characters, trailing commas, missing closers only when `end_id`
+   is last); a duplicate key or any other parse error fails (D33).
 3. Schema check against the card's schema.
-4. Quote check ladder: exact, then whitespace, then curly versus straight quotes, then OCR faults
-   (ligatures, line-break hyphens, running headers); otherwise rejected with the pages searched.
+4. Quote check ladder, on the page the quote cites: exact, then whitespace, then curly versus straight quotes and
+   case (which folds ligatures), then OCR faults (a hyphen at a line break between letters; a stamp alone on a line
+   and a "Page N of M" line ignored, owner Q44); every match on token boundaries; otherwise rejected, naming the
+   page searched. Every cite is a page of the chunk, and every number in a fact's summary is in its quote (D35, D38).
 5. Firm rules check (`rules.toml`), on outputs only: never "DME", "IME", "independent medical
    examination" or "defense medical examination" (say "the report"); never who hired, paid or
    retained the doctor, fees or exam volume; treatment and bills never in one question; Bates cites,
    with a warning when records are not stamped.
-6. Coverage ledger: a page counts as read only when all of the above pass.
+6. Coverage ledger: a page counts as read only when all of the above pass and the answer cites it; an answer with
+   no facts and no flags, or with a blank field, fails; a page a passing answer never cites is an open item
+   (`uncited`, D38, owner question 47).
 
-A failure is retried once with the error shown; then the pages are marked failed and listed as open
-items. Never saved as empty.
+A failure is retried once, as a fresh prompt with the error shown and no history (a prompt-side failure is not
+retried); then the pages are marked failed and listed as open items. Never saved as empty.
 
 ## §5 Parts, and what is reused
 
@@ -79,7 +87,7 @@ items. Never saved as empty.
 |---|---|
 | Job runner, one job at a time, Cancel stops model call and OCR together | Python, SQLite |
 | Intake and OCR | ocrmypdf and Tesseract, page text by pypdf (stage 3, D27); Docling for layout and tables when a stage needs them, kept only if the benchmark says so |
-| Model client | Ollama native API (`/api/chat`, never the OpenAI-compatible route), Qwen3.8-27B, `num_ctx` 65536 in the Modelfile and on every call, low temperature, thinking mode per card, stable prompt order (rules and card first, page text last) |
+| Model client | Ollama native API (`/api/chat`, never the OpenAI-compatible route), Qwen3.8-27B, `num_ctx` 65536 in the Modelfile and on every call, low temperature, thinking mode per card, stable prompt order (rules and card first, page text last), `truncate: false` on every gate pipeline call (D31) |
 | Extraction | LangExtract with fuzzy matching off or marked unverified, kept only if it beats direct calls on the benchmark |
 | Gates | Python (§4) |
 | Case file | append-only JSON, versioned |
@@ -267,5 +275,6 @@ and read-only Outbox shares for the operations computer; D16 no local agent loop
 | Stage 1 (round 1, merged 2026-10-26) | built and verified: `scripts/run.sh` and `scripts/run_capture.py` (D12), `src/casefile/` config (D13), pathguard (D24), rules and `playbook/rules.toml` (§4, Q16), playbook loader, append-only run log, model client (loopback, no proxy), doctor (D19, eight checks), privacy scan and gate; stand-in model server `tests/fakemodel/` (D18); 233 tests, gate prints 0; stage 1 exit test `exit=1 verdicts=8 fails={'ocr'} test_jobs=1` (OCR FAIL until stage 3, Q11) |
 | Stage 2 (round 2, merged 2026-10-27) | built and verified: quote normalisation (`quotes.py`), matter loader (`matter.py`), answer key (`benchkey.py`), candidate parser (`benchcandidate.py`), scorer (`benchscore.py`), stage 2 runner with fixed card `bench.extract` (`benchrun.py`, every received reply an answer row), `casefile bench` (`bench.py`, D25: exit 0 perfect, 1 imperfect, 2 cannot run, with detail lines); invented matter `tests/fixtures/matters/9001.001` (14 pages, three binders) with `key.json` (29 facts, 6 flags), `ideal.json` and `tests/fixtures/bench/flawed.json`; stand-in bench recording; prose gate covers fixtures (D26); code by gemma4:e4b-it-qat (Q28), the V2b-F1 fix by Sonnet (Q33); 270 tests, gate prints 0; stage 2 exit test `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`; flawed `found=26 of 29 ... flags=5 of 6 ...` exit 1, ideal `found=29 of 29 ... flags=6 of 6 ...` exit 0. Deferred: prompt truncation detection (R2-CX-2) to stage 4 |
 | Stage 3 (round 3, merged 2026-10-27) | built and verified: `casefile intake` (`intake.py`, D27), `stamps.py` (every stamp raw and normalised, none chosen, whole tokens only; Q35, Q40), doctor OCR on a generated image-only smoke page (D29), `pdfsmoke.py`, invented scanned binder `tests/fixtures/scanned/` (matter 9002.001, 6 pages); bench exit 2 on no reply and `model=` on the line (D28, D30); key 29 facts, 9 flags (Q36, Q41); 358 tests, gate prints 0; stage 3 exit test `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6 text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 1 exit test now `exit=0 verdicts=8 fails=set() test_jobs=1` |
+| Stage 4 (round 4, merged 2026-10-28) | built and verified: model client (`truncate` and `think` sent only by the gate pipeline, cached count read, UTF-8 byte budget, D31); `gates.py` (the six §4 gates in order, retry once as a fresh prompt, `Outcome.answer` None on failure, coverage `read`, `uncited`, `failed`, plain failure reasons naming the cited page; D31, D38); `quotes.py` ladder on token boundaries (D35, Q44); `jsonrepair.py` punctuation only, duplicate keys refused (D33); `schema.py` stdlib subset validator, 20 schemas load (D34); run log schema v2 with `coverage` and `gates`, 21 triggers, v1 upgraded in one transaction (D32); stand-in 17 modes (D36); bench on the ladder, duplicate numbers refused up front, `stamps.compile` (D37); `scripts/suite_time.sh`; 537 tests, gate prints 0; stage 4 exit test `stage4 exit=0 gates=6 of 6 cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1` |
 | Rest of §5 | not built |
 | Cards and schemas | written for the earlier two-model plan; updates listed in §7 |

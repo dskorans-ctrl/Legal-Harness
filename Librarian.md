@@ -60,6 +60,19 @@ Cross-project failure classes live in the app-loop skill's catalog
 - Does a refusal or open-item message name every folder or page involved, say what to do, use words and
   not a pattern, and keep library noise off the line? (#R03-OC-L1)
 - Is every refusal decided before the first side effect (a model call, a log row, a printed result)? (#R03-V-L1)
+- Does prompt survival have evidence independent of counts and server claims, with a byte ceiling and fresh two-message retry?, #R04-PC-1
+- Do recordings and live requests canonicalise dynamic fields symmetrically, including the retry path?, #R04-PC-4
+- Does coverage reject empty arrays and blank placeholder records, and leave every uncited page open?, #R04-PC-6
+- Does validation check every reference and summary number, and label the remaining summary wording as unverified?, #R04-PC-7
+- Does a required missing-data warning run even when no text matches the warning rule?, #R04-PC-9
+- Does each earlier gate admit every punctuation form that a later gate is allowed to repair?, #R04-PC-11
+- Does coverage use stable page IDs and refuse a stamp that resolves to more than one page?, #R04-CX-1
+- Does OCR dehyphenation join only letters and preserve numeric ranges and minus signs in matching and equality?, #R04-CX-3
+- Does every JSON loader reject duplicate object keys at every depth before a dictionary can discard content?, #R04-CX-7
+- Does enum equality preserve JSON types recursively, including booleans nested in arrays and objects?, #R04-CX-9
+- Does a mutation control execute the changed source with isolated or cleared bytecode caches?, #R04-OC-1
+- Does a numeric evidence check distinguish citation identifiers from the numbers asserted in prose?, #R04-V-2
+- Does a quote test reject text present elsewhere in the chunk but absent from the cited page?, #R04-CH-1
 
 ## Round 1 (2026-10-25 to 2026-10-26)
 
@@ -470,22 +483,180 @@ configuration allows.
 - Suite wall time 63 s (fix cycle 1), 66.93 s (merge), 72.67 s (tip) against the 90 s budget (T-11);
   one run was 87 s.
 
+## Round 4 (2026-10-27 to 2026-10-28; stage 4 model client and gates)
+
+### R04-PC-1: counts and a returned nonce did not prove the page-bearing prompt survived
+**What broke:** `src/casefile/model.py:99` (pre-build), brief decision 1.1: acceptable counts and an echoed
+nonce could survive loss of the pages, especially when retry history held the previous answer; `ceil(chars/2)`
+was an estimate, not a token ceiling.
+**Why:** evidence of one retained marker was treated as evidence of the entire input.
+**Caught by:** Astra plan review item 1; accepted in brief §8 item 1.
+**Countermeasure:** D31: UTF-8 byte ceiling plus template allowance before each call, `truncate: false`,
+one nonce at the prompt front, boundary IDs, and a fresh two-message retry without the previous answer;
+counts stored but never trusted as proof of reading; isolated cut-prompt and retry-budget probes.
+**Status:** built by W1/W4/W7; R4-2 verified on aa11799, closing R2-CX-2 / OR-4; D31 pending veto.
+
+### R04-PC-4: recording lookup and live nonce-bearing requests had different canonical forms
+**What broke:** `tests/fakemodel/core.py:32,102` (pre-build): removing the request's first nonce line did
+not match the recording's literal `__PROMPT_ID__`, repeated nonce values or four-message retries; good calls
+would get 404 before reaching the intended gate.
+**Why:** the producer and consumer of a lookup key applied different canonicalisation contracts.
+**Caught by:** Astra plan review item 4; accepted in brief §8 item 4.
+**Countermeasure:** D36: one nonce occurrence, symmetric placeholder substitution, two-message retries,
+and removal of the retry line while retaining its flag; W4 tests live nonces and retry lookup.
+**Status:** fixed in the revised brief and built by W4; stage 4 and retry_ok reproduced by the verifier.
+
+### R04-PC-6: empty extraction and placeholder records could clear coverage
+**What broke:** `src/casefile/benchcandidate.py:40` (plan premise) accepted empty lists; the proposed gates
+could mark the whole chunk read. Later `src/casefile/gates.py:223` accepted a nonempty flags list whose
+only entry had blank `about`, marking its cite read without an extracted statement (code review CX-5).
+**Why:** structural presence was mistaken for substantive extraction and evidence of per-page reading.
+**Caught by:** Astra plan review item 6; chair reproduced Astra code review CX-5.
+**Countermeasure:** D38: reject no facts and no flags; fix cycle 1 also rejects blank fact text or quote,
+blank flag about and empty flag cites; passing answers mark only cited pages read and keep uncited pages open.
+**Status:** built by W3/W4/W7 and fixed in cycle 1; eight blank-record tests seeded red; owner question 47 held.
+
+### R04-PC-7: verified quotations were presented as verification of unsupported summaries and references
+**What broke:** `src/casefile/benchscore.py:76,108` (pre-build): a real quote of pain 7/10 could accompany
+summary text saying 0/10; proposed flag cites had no quote pair and escaped reference checking altogether.
+**Why:** validation of one evidence field was allowed to confer trust on related fields it never checked.
+**Caught by:** Astra plan review item 7; accepted in brief §8 item 7.
+**Countermeasure:** D38 checks every fact cite and flag cite against the chunk and every summary digit run
+against its quote; W4 isolates each fault; the quote alone is verified and summary wording remains the model's reading.
+**Status:** built and verified; owner question 48 held; citation digits require the separate ruling in #R04-V-2.
+
+### R04-PC-9: unstamped records produced no warning when prose had no bracketed cite
+**What broke:** `src/casefile/rules.py:75` and `playbook/rules.toml:56`: setting `stamped=False` only changed
+the severity of matched bracketed cites; the planned unstamped probe had no match and yielded zero warnings.
+**Why:** a warning required by missing metadata depended on a text match that need not exist.
+**Caught by:** Astra plan review item 9; accepted in brief §8 item 9.
+**Countermeasure:** gate 5 emits its own warning naming every unstamped page; rule findings retain their
+warning severity; W7 seed dropping the pipeline warning fails `warning=1`.
+**Status:** built and verified; the missing mixed-chunk severity test is carried under #R01-V-B2 below.
+
+### R04-PC-11: truncation checks blocked punctuation repairs before the repair gate
+**What broke:** `docs/loop/round-04/round04-build-brief.md:880` records the original strict opening-ID
+check rejecting a fenced answer before fence repair. Later `src/casefile/gates.py:127` rejected
+`"end_id":"<nonce>",}` although trailing-comma repair was explicitly permitted (CX-6).
+**Why:** independently specified gates disagreed on the intermediate forms their composition must accept.
+**Caught by:** Astra plan review item 11; chair reproduced Astra code review CX-6.
+**Countermeasure:** gate 1 inspects IDs after pure `unfence`; gate 2 logs fence repair; the end-ID check
+admits one trailing comma before closers; an integration test proves that form reaches repair and passes.
+**Status:** plan corrected and cycle 1 fixed; the tail-comma test failed on the original guard, then passed.
+
+### R04-CX-1: a nonunique stamp was used as page identity
+**What broke:** `src/casefile/gates.py:74` (reviewed revision): two pages whose first stamp was MED0001
+collapsed into one coverage key, and citing only the first marked both read.
+**Why:** a potentially shared citation label was used as the unique identity of a record.
+**Caught by:** Astra code review CX-1; chair reproduced `ids=['MED0001', 'MED0001'] read_both=True`.
+**Countermeasure:** coverage uses `page.page_id`; lookup refuses a normalised stamp matching multiple
+pages; fix cycle 1 tests both ambiguity and distinct coverage keys, with the original lookup seeded red.
+**Status:** fixed in cycle 1; verifier reproduced page-ID coverage on aa11799.
+
+### R04-CX-3: OCR folding manufactured a number by joining a numeric hyphen
+**What broke:** `src/casefile/quotes.py:31` (reviewed revision): `Dose 1-\n2 mg.` matched `Dose 12 mg.`
+at the OCR rung, and the manufactured number also passed the summary digit check.
+**Why:** a word-repair transformation erased punctuation that carries numeric meaning.
+**Caught by:** Astra code review CX-3; chair reproduced the OCR hit.
+**Countermeasure:** join a line-break hyphen only between letters, in both matching and `same`; six
+numeric punctuation tests fail under the original join, alongside the existing changed-digit rejects.
+**Status:** fixed in cycle 1; numeric ranges and minus signs preserved.
+
+### R04-CX-7: duplicate JSON keys silently discarded earlier extracted facts
+**What broke:** `src/casefile/jsonrepair.py:76` (reviewed revision): two `facts` keys parsed with no repair
+or error, retaining only the second list; downstream gates passed and coverage cleared.
+**Why:** ordinary dictionary decoding discarded duplicate input before validation could see the loss.
+**Caught by:** Astra code review CX-7; chair reproduced `repairs=() parsed_facts=[{'x': 2}]`.
+**Countermeasure:** shared `object_pairs_hook` rejects duplicate keys at every depth; both pipeline parses
+and schema, candidate, key and model-envelope loaders use it; adjacent loader probes first failed to refuse.
+**Status:** fixed in cycle 1; original-parser controls went red before the corrected tests passed.
+
+### R04-CX-9: Python equality conflated nested JSON booleans and numbers
+**What broke:** `src/casefile/schema.py:80` (reviewed revision): enum `[[true]]` accepted `[1]` under an
+integer-array schema because Python considers `[True] == [1]`.
+**Why:** host-language equality was substituted for the data format's recursive type-aware equality.
+**Caught by:** Astra code review CX-9; chair reproduced `errors_for_[1]=[]`.
+**Countermeasure:** deep JSON equality distinguishes booleans from numbers inside arrays and objects;
+four enum tests fail when the original comparison is restored.
+**Status:** fixed in cycle 1; verifier also seeded the adjacent boolean-as-number type check red.
+
+### R04-OC-1: a same-size mutation executed stale bytecode
+**What broke:** `.workflow/scratch/round04-fix2.md:22`: a same-size mutation exposed stale Python bytecode
+during cycle 2 controls, so changing the source alone did not establish which code a probe executed.
+**Why:** cached executable artifacts could outlive a source mutation and invalidate its verdict.
+**Caught by:** the fix worker while addressing the output critic; the verifier explicitly excluded the
+same risk with a fresh `PYTHONPYCACHEPREFIX` for its green seed 7.
+**Countermeasure:** clear generated caches or use an isolated bytecode prefix for mutation reruns,
+alongside `cmp` checks that the seed applied and restoration is byte-identical.
+**Status:** cycle 2 controls clear caches; the verifier's mixed-chunk green result survived cache isolation.
+
+### R04-V-2: citation identifiers were treated as unsupported medical numbers
+**What broke:** `src/casefile/gates.py:128` to `131`: summary text holding `[cite MED0001]` fails when
+its quote has no `0001`; the verifier reproduced the same fault with `[cite mixed/002]` and the playbook's
+good `[cite ABC0001]` example.
+**Why:** a numeric evidence check scanned reference syntax and factual prose as one semantic domain.
+**Caught by:** blind verifier, design call 1; non-blocking at stage 4 because extraction text has no bracketed cites.
+**Countermeasure:** rule with R1-20 before any stage writes cited prose: either exclude cite spans from
+the digit check or keep cites outside summary text, then test the chosen contract with a real bracketed cite.
+**Status:** open, deferred; separate from T-19's date-formatting issue, although the close ledger groups them.
+
+### R04-CH-1: quote tests could not detect searching the wrong page
+**What broke:** `src/casefile/gates.py:105` (chair seed): checking a quote against the whole chunk instead
+of its cited page left both gate suites green (`28 passed`).
+**Why:** tests proved that evidence existed somewhere but did not prove its association with the named source.
+**Caught by:** chair seed after the build, recorded in the code review reproduction table and ledger.
+**Countermeasure:** `test_ch1_quote_must_be_on_cited_page` supplies a quote present only on another page;
+the whole-chunk seed must fail `CH-1: quote from another page accepted`.
+**Status:** fixed in cycle 1; original scoped lookup retained and the missing relational test added.
+
+Round 4 repeats and dispositions (no duplicate entries or pre-flight bullets):
+
+- Plan items 2, 8, 12 and 14, and W0/W3 seed-count discrepancies and W4/W7's four-versus-five faults:
+  #R03-PC-3 (premises and regression callers), with #R01-OC-M8 for the Q44 boundary; corrected before acceptance.
+- Plan item 3: #R02-CX-5, key equivalence must follow scorer equivalence; W5 built folded collision refusal.
+- Plan item 5 and item 10: #R01-CX-10 and #R02-CH-1, probes must reach and isolate the intended guard;
+  `unrepairable`, `length_only` and isolated count edits built. Item 13's weak controls share #R01-CX-10
+  (a second change can mask the intended seed) and #R03-PC-3 (timestamps and complete deployed v1 schema).
+- Plan item 15: #R03-V-L1, assert no run-log creation before refusal; W5's file assertion catches moving
+  only `open_db`. Item 16: #R01-CX-11, timing verdict must affect the exit code; W6 built `suite_time.sh`.
+- CX-2: #R03-CX-5, token boundaries at both ends, now applied to every quote rung and `found_in`.
+  CX-5 and CX-6 are the later instances documented in #R04-PC-6 and #R04-PC-11 above.
+- CX-8 and the cycle 2 doctor losing received error replies: #R02-V-F1, every received reply must be stored;
+  decoder `ValueError` and `RecursionError` now become logged, retried gate-2 failures; doctor retains raw replies.
+- CX-4 is not a real reproduced finding: the chair saw triggers restored from 19 to 21 on reopen through
+  `open_db`; no fix and no new failure entry.
+- Critic H1, H2, M2, M3, M4, L1, L2 and L3: #R03-OC-L1, readable and actionable output. Cycle 2 fixed
+  H1/H2/M3/M4/L1/L2; M2 and L3 remain below. M1 also repeats #R01-CX-9 (claim only the search actually run);
+  cycle 2 names the cited page and lists chunk pages only for cite faults. L4 is owner question 49, interim rule id kept.
+- Verifier seed 7 / low L1: #R01-V-B2 (a branch without its own test), also #R03-V-S1. `gates.py:241`
+  `stamped=all(...)` seeded to `any(...)` left `537 passed`, including with isolated bytecode; the mixed-chunk
+  severity test remains open. The brief rules mixed chunks but the spec/as-built wording needs reconciliation.
+
 ## Open items a future pass must not re-discover
 
 - **R1-20**: `bates-cites` sees only bracketed cites; "See page 12" passes: the stage that writes cited prose.
 - **Owner questions 7 to 14** (`docs/loop/questions-for-owner.md`): interim rulings in force.
 - **run.sh needs python3 on PATH** before `uv sync` on a fresh checkout (#R01-CX-4; owner question 16).
-- **R2-CX-2**: prompt truncation not detectable (spec §4 gate 1): stage 4 (OR-4).
+- **Closed in round 4**: R2-CX-2 / OR-4 (D31, R4-2; #R04-PC-1); verifier gaps S1, S2, S5
+  (#R03-V-S1, R4-3); verifier lows (duplicate refusal before work, stamp normalisation and step comments,
+  #R03-V-L1, R4-4); suite time T-11, now three-run PASS `max=57.46` against 90 s.
+- **Verifier mixed-chunk test gap** (#R01-V-B2; #R03-V-S1): `gates.py:241` `stamped=all(...)` to
+  `any(...)` stays green. Add one stamped and one unstamped page with digit-free `[page second]` in fact text;
+  assert gate 5 passes with the cite finding as a warning. Non-blocking, next gate-5 work; reconcile the brief's
+  mixed-chunk ruling with the spec/as-built wording.
+- **D38 citation digits** (#R04-V-2): `[cite MED0001]` in a summary fails the digit-run check when the
+  quote lacks `0001`; rule with R1-20 before the stage that writes cited prose. Non-blocking at stage 4.
+- **Critic deferred M2** (#R03-OC-L1): open items display page IDs without their Bates stamps; stage 5's
+  status view must show the stamp where present while keeping page IDs as keys.
+- **Critic deferred L3** (#R03-OC-L1): bench `invented:` lines do not distinguish no-such-page from
+  quote-not-on-page, and `rules:` omits offending fact text; round 5 must revise the pinned detail lines.
+- **Owner questions 47, 48, 49**: uncited-page closure (#R04-PC-6), summary wording (#R04-PC-7), and rule
+  IDs in output (#R03-OC-L1); interims stand, D31 to D38 pending veto.
 - **Leftover capture folders** from killed test runs before 9f86d07 sit in the shared TMPDIR (invented text).
 - **Closed in round 3**: R1-19 (the doctor's OCR smoke runs for real, D29; R3-2), the OR-5 lows, non-200
   HTTPError with no body stream, duplicate matter numbers, test gaps N2 to N5 (R3-5, R3-6, R3-7 ticked).
-- **Verifier test gaps** S1, S2, S5 (#R03-V-S1): the stage 3 exit test does not assert record `matter` and
-  `page`; no sidecar `7 of 6` segments case; `make_scanned.py --check` text-layer change on page 5 untested.
-- **Verifier lows** (#R03-V-L1): bench finds a duplicate matter number only after the first matter ran;
-  `normalize` strips only spaces and hyphens; leftover step comments in `bench.py` and `benchcandidate.py`.
 - **Owner questions 38 to 41**: stamp suffixes, stamp position, two spellings of one stamp, lowercase
   binder names (#R03-OC-L5). Answered at the round 3 close (ledger Q42).
-- **Suite wall time** 63 to 87 s against the 90 s budget (T-11).
 - **Pending owner veto**: the stamp lookbehind case and the joined-token rule (CX-7, H1; #R03-CX-5).
 - **Conflict excerpts for Claude review**: owner Q41, a later stage.
 - **Intake leak**: a signal between `mkdir` and `created.append` leaks one `.tmp` folder (#R03-CX-2).

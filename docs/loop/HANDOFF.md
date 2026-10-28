@@ -1,41 +1,49 @@
-# casefile: loop handoff (2026-10-27, round 4 session 1 stopped by the owner after the brief)
+# casefile: loop handoff (2026-10-28, round 4 closed; round 5 opened in the same session by owner Q48)
 
-Read this page, then `.workflow/LEDGER.md` (`## Project`, `## Clarified` Q1 to Q44, `## Round 4`), then `Librarian.md`
-(builder pre-flight and open items). Spec (canon): `docs/spec.md`.
+Read this page, then `.workflow/LEDGER.md` (`## Project`, `## Clarified` Q1 to Q48, `## Round 5` if present), then
+`Librarian.md` (builder pre-flight and open items). Spec (canon): `docs/spec.md`.
 
 ## Where things stand
-- Stages 1 to 3 are built, verified and merged to `main` (tip 204f6fd, the round 3 close). Round 4 is open on
-  `loop/round-04` with no code yet.
-- Round 4 done so far: check-in (question 7 answered, Q43: login-user Ollama app); Fable brief written
-  (`docs/loop/round-04/round04-build-brief.md`, tracked copy of `.workflow/scratch/round04-build-brief.md`, 628 lines,
-  decisions 1.1 to 1.12, rows D31 to D37 pending); brief questions 42 to 46 answered (Q44, every interim kept).
-- Not done: the Codex plan review was stopped by the owner before it reported. No decision of the brief is ruled yet.
-- Baselines (ledger `## Project`): `358 passed` (under 90 s; brief §0 measured 95.33 s today, T-11), gate `0`,
-  `unused_imports=0`, flawed bench exit 1 `... flags=8 of 9 ...`, ideal exit 0 `... flags=9 of 9 ...`, stage 1 `exit=0
-  ... fails=set()`, stage 2 `stage2 exit=0 ...`, stage 3 `stage3 exit=1 pages=6 ids_ok=6 of 6 ... min_ratio=1.000`.
-- OCR tools on this Mac (Q39): ocrmypdf 17.13.0 and tesseract 5.5.3 in `/opt/homebrew/bin`; run.sh adds it.
+- Stages 1 to 4 are built, verified and merged to local `main` (round 4 close). `main` is NOT pushed: the owner runs
+  `git push origin main`.
+- Round 4: verifier PASS after two fix cycles; report `docs/loop/round-04/round04-report.md`.
+- Round 5 (spec §7 stage 5: case file, merge, medical memo) is on `loop/round-05`. Its state is in the ledger's
+  `## Round 5` section; if this page was not updated after it, round 5 has not passed its plan review yet.
+- Baselines (ledger `## Project`): `537 passed`, `suite_time runs=3 max=57.46 verdict=PASS`, gate `0`,
+  `unused_imports=0`, bench lines unchanged, stage 1 to 4 exit lines (stage 4: `stage4 exit=0 gates=6 of 6 cases=14
+  of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1`).
 
-## Next session: resume round 4 on `loop/round-04` at step 4 (Codex plan review)
-- Copy the tracked brief back to `.workflow/scratch/round04-build-brief.md` if the scratch copy is gone.
-- Then: Codex plan review (§6) -> Fable revision (§7) -> chair rulings on D31 to D37 (pending veto) -> build (Opus
-  orchestrates, Sonnet 5.5 codes; lane A in the checkout, lane B in worktree `r4-lane-b`) -> critic round (Codex,
-  output critic, blind verifier) -> fix cycles (cap three) -> close. Agent log rows continue from round 4 #3.
-- Brief §0 drift to weigh when ruling: the suite is over T-11 today; decision 1.1 rests on Ollama source claims (a
-  `truncate` request field, `prompt_eval_cached_count`) that cannot be checked on this Mac (no Ollama, Q11).
+## Tiers
+- From round 5 (owner Q46): Opus 5.5 orchestrates; Codex `gpt-6.1-sol` codes and fixes (`codex exec`); Fable reviews
+  the plan and the code (each a fresh Fable agent, read-only); Fable writes the brief; Opus runs the output critic
+  and the blind verifier.
 
-## Held owner questions
-- None held. Question 7 answered (Q43); round 4 brief questions 42 to 46 answered (Q44).
-- New requirement for a later stage (Q41, spec §10): anonymized excerpts around each conflict for Claude review.
+## Held owner questions (`docs/loop/questions-for-owner.md`)
+- 47 what closes an uncited page (interim: nothing; it stays open); 48 label a fact's summary as the model's reading
+  or judge it with a second call (interim: no output treats a summary as verified); 49 rule ids in outputs
+  (interim: shown next to the rule's message). Plus any round 5 questions, numbered from 50.
+- Pending veto: spec §9 D31 to D38 and the round 4 chair rulings (ledger `## Round 4`).
+- Owner input for stage 7: the anonymization convention casefile-anon/1 (ledger Q47).
+
+## Carried into round 5
+- Verifier L1 (no mixed stamped and unstamped chunk test), L2 (D38 digit check reads a bracketed cite: rule with R1-20
+  before cited prose, T-19), critic M2 (open items shown by stamp) and L3 (bench invented kinds), R1-20 (R4-5).
 
 ## Machine rules
 - Every run goes through `scripts/run.sh`; pass `--config config.example.toml` to `casefile` on this Mac.
-- Inside the sandbox, Tesseract needs resolved paths (`$(cd $TMPDIR && pwd -P)`), never `/tmp/claude-501/...`.
-- Codex reviews only (`codex exec -m gpt-6.1-sol -s read-only ... < /dev/null`), sandbox off, background. The
-  sandbox cannot see that process: wait on it with the sandbox off too.
-- `uv add` and `uv sync` need the sandbox off (cache outside the write allowlist).
+- Codex builders: `codex exec -C <tree> -m gpt-6.1-sol -s workspace-write -c sandbox_workspace_write.network_access=true
+  ... < /dev/null`, sandbox off, background. Without the network flag the loopback socket tests fail (gate prints 1).
+  Builders do not commit; the chair re-runs CHECKs, seeds, gates and commits.
+- A lane B worktree needs its own toolchain: `T=$HOME/.casefile-dev/<worktree-name>`, then `UV_PYTHON_INSTALL_DIR=$T/python
+  UV_CACHE_DIR=$T/cache UV_PROJECT_ENVIRONMENT=$T/venv uv sync` with the sandbox off.
+- An `ollama` (the owner's local worker) listens on 127.0.0.1:11434 here. Agents never send matter text to it; run
+  the doctor in process against the stand-in.
+- Privacy: `~/local-worker/log.jsonl` and `~/local-worker/allowed/` hold real client material. No loop agent reads
+  them. Copy invented fixtures only into `allowed/` for local-worker calls, and remove them after.
+- Inside the sandbox, Tesseract needs resolved paths (`$(cd $TMPDIR && pwd -P)`). macOS has no `timeout` command.
 - Run the gate before every chair commit (Mistakes Log). Verify a seed applied (`cmp -s`) before counting it.
-- Leftovers needing the owner's say-so to delete: worktrees `.claude/worktrees/agent-a582821e2b2e41b16` and
-  `.claude/worktrees/r3-lane-b` (branch `r3/lane-b`, merged), branch `control/r2-sonnet`; old
+- Leftovers needing the owner's say-so to delete: worktrees `.claude/worktrees/agent-a582821e2b2e41b16`,
+  `r3-lane-b` (branch `r3/lane-b`), `r4-lane-b` (branch `r4/lane-b`, merged); branch `control/r2-sonnet`; old
   `casefile-run.*` folders in the shared TMPDIR.
 
 ## Cost rules (owner)
