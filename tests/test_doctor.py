@@ -1,11 +1,12 @@
 """Doctor verdicts over invented, in-process model replies."""
 
-from io import StringIO
+from io import BytesIO, StringIO
 import json
 import os
 import shutil
 import subprocess
 from threading import Thread
+from urllib.error import HTTPError
 
 import pytest
 
@@ -97,11 +98,44 @@ def test_empty_answer_fails(tmp_path, context_status_only):
     config = setup_config(tmp_path)
     code, output = invoke(config, fake=FakeModel(mode="empty"))
     assert code == 1, output
-    assert "doctor context FAIL status=200 empty" in output, output
+    assert next(line for line in output.splitlines() if line.startswith('doctor context ')) == (
+        'doctor context FAIL the model sent no answer text | do: rerun doctor; if it repeats, reload the model')
     with runlog.open_db(config.paths.state / "runlog.sqlite") as log:
         assert log.count_test_jobs() == 0
-        assert log.connection.execute("SELECT COUNT(*) FROM answers").fetchone()[0] == 0
+        row = log.connection.execute('SELECT raw_answer FROM answers').fetchone()
+        assert row is not None, 'H1: doctor lost received raw reply'
+        stored = json.loads(row[0])
+        assert stored['message']['content'] == ''
         assert log.connection.execute("SELECT gate FROM failures").fetchone()[0] == "doctor.context"
+
+
+@pytest.mark.parametrize('status,body,detail', [
+    (404, b'{"error":"model missing"}', 'model missing'),
+    (500, b'{"error":"model invented not found"}', 'model invented not found'),
+    (500, b'Model invented was not found', 'Model invented was not found'),
+    (500, b'invented ' * 30 + b'model invented not found', 'invented ' * 16 + 'invented ...'),
+])
+def test_fix2_model_not_found_advice(tmp_path, status, body, detail):
+    config = setup_config(tmp_path)
+    transport = FakeTransport(FakeModel())
+    class MissingModel:
+        def open(self, request, timeout):
+            if request.full_url.endswith('/api/chat'):
+                raise HTTPError(request.full_url, status, 'missing', {}, BytesIO(body))
+            return transport.open(request, timeout)
+    out = StringIO()
+    code = doctor.run(config, out=out, opener=MissingModel(),
+                      lsof_runner=lambda *a, **k: lsof_result(), ocr_smoke=passing_smoke)
+    lines = out.getvalue().splitlines()
+    advice = f'pull the model (ollama pull {config.model.name}) or correct model.name in the config'
+    assert code == 1
+    assert next(line for line in lines if line.startswith('doctor context ')) == (
+        f'doctor context FAIL status={status}: {detail} | do: {advice}'), 'M4: model installation advice differs'
+    assert next(line for line in lines if line.startswith('doctor runlog_job ')) == (
+        f'doctor runlog_job FAIL blocked by context | do: {advice}')
+    with runlog.open_db(config.paths.state / 'runlog.sqlite') as log:
+        assert [tuple(r) for r in log.connection.execute('SELECT status, raw_answer FROM answers')] == [
+            ('failed', body.decode())]
 
 
 def test_wrong_word_fails(tmp_path, capsys, context_status_only):

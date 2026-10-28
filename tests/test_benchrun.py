@@ -85,7 +85,7 @@ def test_benchrun_modes(tmp_path, capsys):
         r = go()
         newest = log.connection.execute("SELECT status, raw_answer FROM answers ORDER BY id DESC LIMIT 1").fetchone()
         check6 = (
-            r.failure.startswith("bench.model: status=200 done must be true") and
+            r.failure == "bench.model: the model did not finish its reply (done must be true)" and
             newest[0] == "failed" and
             '"done": false' in newest[1]
         )
@@ -279,7 +279,8 @@ def test_benchrun_redirect_reply(tmp_path):
         ]
         for cfg, opener, body in cases:
             r = benchrun.run(matter, cfg, log, "pb-test", opener)
-            assert r.failure is not None and r.failure.startswith("bench.model: redirect refused"), (body, r.failure)
+            status = 307 if body == 'invented error redirect body' else 302
+            assert r.failure == f'bench.model: status={status}: {body}'
             assert r.pages_failed == 14
             row = log.connection.execute(
                 "SELECT status, raw_answer FROM answers ORDER BY id DESC LIMIT 1").fetchone()
@@ -335,7 +336,7 @@ def test_benchrun_empty_body_redirect_stores_an_empty_row(tmp_path, capsys):
     ok = int(rows == [("failed", "")])
     with capsys.disabled():
         print(f"empty_302_row={ok}")
-    assert r.failure.startswith("bench.model: redirect refused"), r.failure
+    assert r.failure == 'bench.model: status=302: '
     assert (rows, r.reply_received) == ([("failed", "")], True)
 
 

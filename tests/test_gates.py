@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import json
+import re
 
 import pytest
 
@@ -14,16 +15,24 @@ from fakemodel.bench import extraction_card, recordings_for
 
 FIXTURE = ROOT / 'tests/fixtures/matters/9001.001'
 NONCE = '0123456789abcdef'
-SEARCHED = ("medical/001, medical/002, medical/003, medical/004, medical/005, medical/006, "
-            "medical/007, medical/008, employer/001, employer/002, employer/003, "
-            "defense-report/001, defense-report/002, defense-report/003")
+SEARCHED = ('MED0001, MED0002, MED0003, MED0004, MED0005, MED0006, MED0007, MED0008, '
+            'EMP0001, EMP0002, EMP0003, DEF0001, DEF0002, DEF0003')
 BAD_QUOTE_FAULTS = (
-    f'quote on MED0001 not found (pages searched: {SEARCHED})',
-    f'cite MED0099 is not a page of this chunk (pages searched: {SEARCHED})',
-    f'cite MED0098 is not a page of this chunk (pages searched: {SEARCHED})',
-    'text number 03 not in quote',
-    'text number 99999 not in quote',
+    'facts[0]: quote not found on MED0001, the page it cites (quote: "Date of service: 13/11/2025")',
+    'facts[1].cite: cite MED0099 is not a page of this chunk',
+    'flags[0].cites[2]: cite MED0098 is not a page of this chunk',
+    'facts[0].text: number 03 is not in its quote',
+    'facts[2].text: number 99999 is not in its quote',
 )
+STEPS = ('retried once', 'not retried: the one retry was used')
+RULE_DETAIL = ('facts[0].text: Never name the exam as a DME or IME in any form; write "the report". '
+               '(no-dme-ime: IME)')
+CONTEXT_DETAIL = ('status=400: the prompt is longer than the context length currently available to the model; '
+                  'shorten the prompt, adjust the context length in settings, or use a model ...')
+
+
+def failure_messages(gate, detail, steps=STEPS):
+    return [f'gate.{gate}: {detail}; {step}' for step in steps]
 CASES = (
     'good', 'budget', 'prompt_too_long', 'cut_prompt', 'truncated', 'cut_answer',
     'length_only', 'missing_count', 'zero_count', 'sum_count', 'answer_limit',
@@ -209,32 +218,40 @@ def _case(case, log, loaded, ideal, card, firm, settings):
             expected_rows.append((f'gate.{expected_gate}', 'fail'))
             assert [(r['gate'], r['verdict']) for r in checked if r['attempt'] == 1] == expected_rows, (
                 f'{case} gate rows differ: {[(r["gate"], r["verdict"]) for r in checked]}')
-        if case in {'budget', 'retry_budget'}:
-            assert failures[-1]['message'] == 'over budget'
-        elif case == 'cut_prompt':
-            assert failures[0]['message'] == 'prompt cut (prompt_id missing)'
-        elif case == 'cut_answer':
-            assert failures[0]['message'] == 'answer cut (end_id missing)', failures
-        elif case in {'truncated', 'length_only'}:
-            assert all(r['message'] == 'done_reason=length' for r in failures)
-        elif case in {'missing_count', 'zero_count'}:
-            assert failures[0]['message'] == 'counts must be positive integers'
-        elif case == 'sum_count':
-            assert failures[0]['message'] == 'counts exceed context'
-        elif case == 'answer_limit':
-            assert failures[0]['message'] == 'counts reach max_answer_tokens'
-        elif case == 'bad_quote':
-            for failure in failures:
-                parts = failure['message'].split('; ')
-                assert parts[1:-1] == list(BAD_QUOTE_FAULTS)
-                assert failure['message'] == (
-                    'faults=5; ' + '; '.join(BAD_QUOTE_FAULTS) + '; check source pages and retry')
-        elif case == 'text_number':
-            assert 'text number 99999 not in quote' in failures[0]['message']
-        elif case == 'forbidden_json':
-            assert failures[0]['message'].startswith('no-dme-ime:')
-        elif case == 'empty_answer':
-            assert failures[0]['message'] == 'empty answer'
+        details = {
+            'budget': 'the prompt is too long (over budget)',
+            'retry_budget': 'the prompt is too long (over budget)',
+            'prompt_too_long': CONTEXT_DETAIL,
+            'cut_prompt': 'the prompt was cut (prompt_id missing)',
+            'cut_answer': 'the answer was cut off (end_id missing)',
+            'truncated': 'the answer stopped before it finished (done_reason=length)',
+            'length_only': 'the answer stopped before it finished (done_reason=length)',
+            'missing_count': 'the reply must report positive token counts (prompt_eval_count, eval_count)',
+            'zero_count': 'the reply must report positive token counts (prompt_eval_count, eval_count)',
+            'sum_count': 'the token counts exceed the context size (prompt_eval_count + eval_count > num_ctx)',
+            'answer_limit': 'the answer reached its token limit (eval_count >= max_answer_tokens)',
+            'bad_quote': '5 faults (faults=5): ' + '; '.join(BAD_QUOTE_FAULTS) + '; chunk pages: ' + SEARCHED,
+            'text_number': ('2 faults (faults=2): facts[0].text: number 99999 is not in its quote; '
+                            'facts[0].text: number 10 is not in its quote'),
+            'forbidden_json': RULE_DETAIL,
+            'empty_answer': 'the answer has no facts and no flags',
+            'bad_schema': 'the answer does not match the schema: facts[0].text: missing required key',
+            'unrepairable': "the answer is not valid JSON: Expecting ',' delimiter",
+            'open_items': "the answer is not valid JSON: Expecting ',' delimiter",
+            'fact_cite': '1 fault (faults=1): facts[0].cite: cite MED0099 is not a page of this chunk; chunk pages: ' + SEARCHED,
+            'flag_cite': '1 fault (faults=1): flags[0].cites[2]: cite MED0098 is not a page of this chunk; chunk pages: ' + SEARCHED,
+        }
+        steps = STEPS
+        if case in {'budget', 'retry_budget', 'prompt_too_long', 'cut_prompt'}:
+            why = 'the prompt was cut' if case == 'cut_prompt' else 'the prompt was too long'
+            steps = (f'not retried: {why}; the chunk must be made smaller',)
+        expected = failure_messages(expected_gate, details[case], steps)
+        if case == 'retry_budget':
+            expected = [failure_messages('repair', details['unrepairable'])[0],
+                        *failure_messages('truncation', details[case], steps)]
+        assert [r['message'] for r in failures] == expected
+        final = f'gate.{expected_gate}: {details[case]}; the page stays open until a later run reads it'
+        assert [r['reason'] for r in coverage] == [final] * len(pages)
     if case in {'unrepairable', 'retry_ok'}:
         second = requests[1]['messages']
         assert second[0]['content'].splitlines()[0] != requests[0]['messages'][0]['content'].splitlines()[0]
@@ -262,13 +279,16 @@ def fix_probe(tmp_path):
     settings = config.load(write_config(tmp_path)).model
     firm = rules.load(ROOT / 'playbook/rules.toml')
     with open_db(tmp_path / 'fix.sqlite') as log:
-        def run(pages, obj, transform=lambda text: text):
+        def run(pages, obj, transform=lambda text: text, *, mode='replay', reply_edit=None, active_card=None):
             def edit(reply):
-                reply['message']['content'] = transform(reply['message']['content'])
+                if 'message' in reply:
+                    reply['message']['content'] = transform(reply['message']['content'])
+                if reply_edit:
+                    reply_edit(reply)
             transport = FakeTransport(FakeModel(recordings=[
-                recording(card, pages, '9003.001', obj)]), edit=edit)
+                recording(card, pages, '9003.001', obj)], mode=mode), edit=edit)
             client = model.ModelClient(settings, transport)
-            outcome = gates.ask(card, pages, client=client, rules=firm, log=log,
+            outcome = gates.ask(active_card or card, pages, client=client, rules=firm, log=log,
                                 matter='9003.001', nonce=NONCE)
             return outcome, log, transport
         yield run
@@ -292,8 +312,10 @@ def test_fix1_ambiguous_stamp(fix_probe, reference):
     outcome, log, transport = fix_probe(pages, obj)
     assert not outcome.ok, 'R1: ambiguous stamp accepted'
     cite = 'MED 0001' if reference == 'fact' else 'MED-0001'
-    assert all(f'cite {cite} is ambiguous (pages probe/001, probe/002)' in r['message']
-               for r in rows(log, 'failures', outcome.run_id))
+    path = 'facts[0].cite' if reference == 'fact' else 'flags[0].cites[0]'
+    detail = (f'1 fault (faults=1): {path}: cite {cite} matches more than one page (ambiguous cite); '
+              'chunk pages: MED0001, MED0001')
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == failure_messages('quotes', detail)
     assert len(transport.requests) == 2
     assert {r['page_id']: r['status'] for r in rows(log, 'coverage', outcome.run_id)} == {
         'probe/001': 'failed', 'probe/002': 'failed'}
@@ -326,7 +348,8 @@ def test_fix5_blank_records(fix_probe, field, blank):
     outcome, log, transport = fix_probe(fix_pages(), obj)
     failures = rows(log, 'failures', outcome.run_id)
     assert [(r['gate'], r['message']) for r in failures] == [
-        ('gate.coverage', f'empty answer: {path} blank')] * 2, f'R5: blank {path} bypasses gate 6'
+        ('gate.coverage', message) for message in failure_messages('coverage', f'the answer has a blank value at {path}')
+    ], f'R5: blank {path} bypasses gate 6'
     assert not outcome.ok and outcome.answer is None and outcome.read == ()
     assert len(transport.requests) == 2
     assert [r['status'] for r in rows(log, 'answers', outcome.run_id)] == ['failed', 'failed']
@@ -351,7 +374,7 @@ def test_fix7_duplicate_keys(fix_probe, nested):
     name = 'text' if nested else 'facts'
     assert not outcome.ok, f'R7: duplicate key {name} accepted'
     assert [(r['gate'], r['message']) for r in rows(log, 'failures', outcome.run_id)] == [
-        ('gate.repair', f'duplicate key {name}')] * 2
+        ('gate.repair', message) for message in failure_messages('repair', f'the answer is not valid JSON: duplicate key {name}')]
     assert len(transport.requests) == 2
     contents = [json.loads(r['raw_answer'])['message']['content']
                 for r in rows(log, 'answers', outcome.run_id)]
@@ -368,7 +391,8 @@ def test_fix7_second_parse_uses_same_hook(fix_probe, monkeypatch):
     monkeypatch.setattr(jsonrepair, 'repair', bypass)
     outcome, log, _ = fix_probe(fix_pages(), fix_answer())
     assert not outcome.ok, 'R7: second parse discards duplicate facts'
-    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == ['duplicate key facts'] * 2
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == failure_messages(
+        'repair', 'the answer is not valid JSON: duplicate key facts')
 
 
 @pytest.mark.parametrize('value', ['9' * 5000, '[' * 10000 + '0' + ']' * 10000],
@@ -383,7 +407,12 @@ def test_fix8_decoder_failures_logged_and_retried(fix_probe, value):
     assert not outcome.ok and outcome.answer is None
     failures = rows(log, 'failures', outcome.run_id)
     assert len(failures) == len(transport.requests) == 2
-    assert all(r['gate'] == 'gate.repair' and r['message'].startswith('not JSON:') for r in failures)
+    decoder = (r'Exceeds the limit \(4300 digits\) for integer string conversion: value has 5000 digits; '
+               r'use sys.set_int_max_str_digits\(\) to increase the limit' if value.startswith('9') else
+               r'maximum recursion depth exceeded while decoding a JSON array from a unicode string')
+    assert [r['gate'] for r in failures] == ['gate.repair'] * 2
+    assert all(re.fullmatch(r'gate\.repair: the answer is not valid JSON: ' + decoder + '; ' + re.escape(step),
+                            r['message']) for r, step in zip(failures, STEPS))
     assert [r['status'] for r in rows(log, 'answers', outcome.run_id)] == ['failed', 'failed']
     assert all(value in r['raw_answer'] for r in rows(log, 'answers', outcome.run_id))
     assert {r['status'] for r in rows(log, 'coverage', outcome.run_id)} == {'failed'}
@@ -393,6 +422,98 @@ def test_ch1_quote_must_be_on_cited_page(fix_probe):
     outcome, log, _ = fix_probe(fix_pages(), fix_answer(
         quote='He is unable to work.', text='He is unable to work.'))
     assert not outcome.ok, 'CH-1: quote from another page accepted'
-    assert all('quote on MED0001 not found' in r['message']
-               for r in rows(log, 'failures', outcome.run_id))
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == failure_messages('quotes',
+        '1 fault (faults=1): facts[0]: quote not found on MED0001, the page it cites '
+        '(quote: "He is unable to work.")')
     assert outcome.answer is None and outcome.read == ()
+
+
+@pytest.mark.parametrize('case,gate,detail,no_retry', [
+    ('budget', 'truncation', 'the prompt is too long (over budget)',
+     'the prompt was too long; the chunk must be made smaller'),
+    ('cut_prompt', 'truncation', 'the prompt was cut (prompt_id missing)',
+     'the prompt was cut; the chunk must be made smaller'),
+    ('prompt_too_long', 'truncation', CONTEXT_DETAIL,
+     'the prompt was too long; the chunk must be made smaller'),
+    ('length', 'truncation', 'the answer stopped before it finished (done_reason=length)', None),
+    ('cut_answer', 'truncation', 'the answer was cut off (end_id missing)', None),
+    ('counts', 'truncation', 'the reply must report positive token counts (prompt_eval_count, eval_count)', None),
+    ('repair', 'repair', "the answer is not valid JSON: Expecting ',' delimiter", None),
+    ('schema', 'schema', 'the answer does not match the schema: facts[0].text: missing required key', None),
+    ('empty_answer', 'coverage', 'the answer has no facts and no flags', None),
+    ('empty', 'model', 'the model sent no answer text', None),
+])
+def test_fix2_failure_words(fix_probe, case, gate, detail, no_retry):
+    kwargs = {}
+    transform = lambda text: text
+    if case == 'budget':
+        kwargs['active_card'] = replace(extraction_card(), max_answer_tokens=65536 - 10)
+    elif case == 'length':
+        kwargs['reply_edit'] = lambda reply: reply.update(done_reason='length')
+    elif case == 'counts':
+        kwargs['reply_edit'] = lambda reply: reply.update(eval_count=0)
+    elif case == 'repair':
+        transform = lambda text: text.replace('", "text":', '" "text":', 1)
+    elif case == 'schema':
+        kwargs['mode'] = 'bad_schema'
+    else:
+        kwargs['mode'] = case
+    outcome, log, _ = fix_probe(fix_pages(), fix_answer(), transform, **kwargs)
+    steps = [f'not retried: {no_retry}'] if no_retry else ['retried once', 'not retried: the one retry was used']
+    expected = [f'gate.{gate}: {detail}; {step}' for step in steps]
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == expected, 'H2/L2: failure reasons differ'
+    assert [r['message'] for r in rows(log, 'gates', outcome.run_id) if r['verdict'] == 'fail'] == expected
+    final = f'gate.{gate}: {detail}; the page stays open until a later run reads it'
+    assert [r['reason'] for r in rows(log, 'coverage', outcome.run_id)] == [final] * 2, 'H2: final coverage reason differs'
+    assert dict(outcome.failed) == dict.fromkeys((p.page_id for p in fix_pages()), final)
+    if case == 'empty':
+        assert all(json.loads(r['raw_answer'])['message']['content'] == ''
+                   for r in rows(log, 'answers', outcome.run_id))
+    elif case == 'prompt_too_long':
+        assert [r['raw_answer'] for r in rows(log, 'answers', outcome.run_id)] == [json.dumps({
+            'error': 'the prompt is longer than the context length currently available to the model; '
+                     'shorten the prompt, adjust the context length in settings, or use a model with a longer context length'})]
+
+
+@pytest.mark.parametrize('stamped', [True, False])
+def test_fix2_quote_and_cite_pages(fix_probe, stamped):
+    pages = fix_pages() if stamped else tuple(replace(p, stamps=()) for p in fix_pages())
+    cite = 'MED0001' if stamped else 'probe/001'
+    obj = fix_answer(cite=cite, quote='He is unable to work.', text='He is unable to work.')
+    obj['facts'].append({'cite': 'MED0099', 'quote': 'Missing.', 'text': 'Missing.'})
+    obj['flags'].append({'kind': 'gap', 'cites': ['MED0098'], 'about': 'Missing report.'})
+    searched = 'MED0001, MED0002' if stamped else 'probe/001, probe/002'
+    detail = (f'3 faults (faults=3): facts[0]: quote not found on {cite}, the page it cites '
+              '(quote: "He is unable to work."); facts[1].cite: cite MED0099 is not a page of this chunk; '
+              f'flags[0].cites[0]: cite MED0098 is not a page of this chunk; chunk pages: {searched}')
+    outcome, log, _ = fix_probe(pages, obj)
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == [
+        f'gate.quotes: {detail}; {step}' for step in ('retried once', 'not retried: the one retry was used')], 'M1/L1: searched-page detail differs'
+
+
+@pytest.mark.parametrize('group', ['facts', 'flags'])
+def test_fix2_rule_place_and_instruction(fix_probe, group):
+    obj = fix_answer()
+    if group == 'facts':
+        obj['facts'][0]['text'] = 'The IME found no injury.'
+        path = 'facts[0].text'
+    else:
+        obj['flags'] = [{'kind': 'gap', 'cites': ['MED0001'], 'about': 'The IME is missing.'}]
+        path = 'flags[0].about'
+    detail = (f'{path}: Never name the exam as a DME or IME in any form; write "the report". '
+              '(no-dme-ime: IME)')
+    outcome, log, _ = fix_probe(fix_pages(), obj)
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == [
+        f'gate.rules: {detail}; {step}' for step in ('retried once', 'not retried: the one retry was used')], 'M3: rule location or instruction differs'
+
+
+def test_fix2_reference_place_and_quote_preview(fix_probe):
+    obj = fix_answer()
+    obj['facts'] += [dict(obj['facts'][0]), {'cite': 'MED0002', 'quote': 'Invented ' * 10,
+                                           'text': 'Pain 99999.'}]
+    detail = ('2 faults (faults=2): facts[2]: quote not found on MED0002, the page it cites '
+              '(quote: "Invented Invented Invented Invented Invented Invented Invent"); '
+              'facts[2].text: number 99999 is not in its quote')
+    outcome, log, _ = fix_probe(fix_pages(), obj)
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == [
+        f'gate.quotes: {detail}; {step}' for step in ('retried once', 'not retried: the one retry was used')], 'M3: quote location or preview differs'

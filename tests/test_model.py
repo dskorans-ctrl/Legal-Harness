@@ -75,7 +75,7 @@ def test_cached_count_read(tmp_path, capsys):
     assert answer.prompt_eval_cached_count is None
     for count in ("x", True, 1.5, [], {}):
         raw = dict(payload, prompt_eval_cached_count=count)
-        with pytest.raises(ModelError, match="status=200 invalid prompt_eval_cached_count") as info:
+        with pytest.raises(ModelError, match=r"^the reply has an invalid token count \(prompt_eval_cached_count must be an integer\)$") as info:
             ModelClient(config, Transport(FakeResponse(200, raw))).chat(MESSAGES)
         assert info.value.received is True and info.value.raw == raw
     with capsys.disabled():
@@ -109,18 +109,20 @@ def test_404(tmp_path):
 def test_non_json(tmp_path):
     response = BytesIO(b"invented non-JSON")
     response.getcode = lambda: 200
-    with pytest.raises(ModelError, match="non-JSON"):
+    with pytest.raises(ModelError, match="^status=200: invented non-JSON$"):
         ModelClient(load(write_config(tmp_path)).model, Transport(response)).chat(MESSAGES)
 
 
-@pytest.mark.parametrize("payload,match", [({}, "missing"), ({"message": {"content": "  "}}, "empty")])
-def test_missing_or_blank(tmp_path, payload, match):
-    with pytest.raises(ModelError, match=match):
+@pytest.mark.parametrize("payload", [{}, {"message": {}}, {"message": {"content": "  "}},
+                                     {"message": {"content": 3}}])
+def test_missing_or_blank(tmp_path, payload):
+    with pytest.raises(ModelError, match="^the model sent no answer text$") as caught:
         ModelClient(load(write_config(tmp_path)).model, Transport(FakeResponse(200, payload))).chat(MESSAGES)
+    assert caught.value.raw == payload
 
 
 def test_empty(tmp_path):
-    with pytest.raises(ModelError, match="empty"):
+    with pytest.raises(ModelError, match="^the model sent no answer text$"):
         ModelClient(load(write_config(tmp_path)).model,
                     FakeTransport(FakeModel(mode="empty"))).chat(MESSAGES)
 
@@ -132,10 +134,10 @@ def test_no_proxy():
 def test_redirect_refused(tmp_path):
     response = FakeResponse(302, {})
     response.headers["Location"] = "http://127.0.0.1:1/"
-    with pytest.raises(ModelError, match="redirect refused"):
+    with pytest.raises(ModelError, match=r"^status=302: \{\}$"):
         ModelClient(load(write_config(tmp_path)).model, Transport(response)).chat(MESSAGES)
     handler = next(h for h in build_opener().handlers if hasattr(h, "redirect_request"))
-    with pytest.raises(ModelError, match="redirect refused"):
+    with pytest.raises(ModelError, match="^status=302: $"):
         handler.redirect_request(None, None, 302, "Found", {}, "http://127.0.0.1:1/")
 
 
@@ -163,15 +165,27 @@ def test_http(tmp_path, monkeypatch, proxy):
 def test_requires_completed_answer(tmp_path, done):
     payload = {"message": {"content": "READY"}, "done_reason": "stop", "done": done,
                "prompt_eval_count": 20, "eval_count": 2}
-    with pytest.raises(ModelError, match="done must be true"):
+    with pytest.raises(ModelError, match=r"^the model did not finish its reply \(done must be true\)$"):
         ModelClient(load(write_config(tmp_path)).model,
                     Transport(FakeResponse(200, payload))).chat(MESSAGES)
 
 
 def test_fake_incomplete_answer(tmp_path):
-    with pytest.raises(ModelError, match="done must be true"):
+    with pytest.raises(ModelError, match=r"^the model did not finish its reply \(done must be true\)$"):
         ModelClient(load(write_config(tmp_path)).model,
                     FakeTransport(FakeModel(mode="incomplete"))).chat(MESSAGES)
+
+
+@pytest.mark.parametrize('field,detail', [
+    ('prompt_eval_count', 'the reply has an invalid token count (prompt_eval_count must be an integer)'),
+    ('eval_count', 'the reply has an invalid token count (eval_count must be an integer)'),
+    ('done_reason', 'the reply has no valid stop reason (done_reason must be a string)'),
+])
+def test_fix2_invalid_reply_fields(tmp_path, field, detail):
+    raw = {'message': {'content': 'READY'}, 'done': True, field: []}
+    err = caught(tmp_path, Transport(FakeResponse(200, raw)))
+    assert str(err) == detail
+    assert err.raw == raw
 
 
 class Refusing:
@@ -227,6 +241,7 @@ def test_incomplete_read_keeps_the_partial_body(tmp_path, capsys):
     with capsys.disabled():
         print(f"incomplete_read_row={int(err.raw == 'par' and err.received)}")
     assert (err.raw, err.received) == ("par", True)
+    assert str(err) == 'status=200: par'
 
 
 def test_http_error_without_a_body_stream_has_an_empty_body(tmp_path, capsys):
@@ -299,5 +314,34 @@ def test_redirect_body_failure_is_received(tmp_path, capsys, mode, raw):
     err = info.value
     with capsys.disabled():
         print(f"redirect_{mode} received={err.received} raw={err.raw!r}")
-    assert "redirect refused" in str(err)
+    assert str(err) == f"status=302: {raw}"
     assert (err.received, err.raw) == (True, raw)
+
+
+@pytest.mark.parametrize('route', ['status', 'http_error', 'redirect_handler'])
+@pytest.mark.parametrize('status,body,expected', [
+    (404, b'{"error":"model not found","detail":"private debug"}', 'model not found'),
+    (503, b'  invented\n  server\tbusy  ', 'invented server busy'),
+    (503, json.dumps({'error': 'invented ' * 25}).encode(), 'invented ' * 16 + 'invented ...'),
+    (503, b'bad \xff reply', 'bad \ufffd reply'),
+    (503, b'', ''),
+    (200, b'invented invalid JSON', 'invented invalid JSON'),
+    (200, b'[1, 2]', '[1, 2]'),
+])
+def test_fix2_error_text_and_raw(tmp_path, route, status, body, expected):
+    if route == 'status':
+        response = BytesIO(body)
+        response.getcode = lambda: status
+        opener = Transport(response)
+    elif route == 'http_error':
+        opener = Refusing(HTTPError('http://invented', status, 'error', {}, BytesIO(body)))
+    else:
+        handler = next(h for h in build_opener().handlers if hasattr(h, 'redirect_request'))
+        class Redirect:
+            def open(self, request, timeout):
+                handler.redirect_request(request, BytesIO(body), status, 'error', {}, 'http://invented')
+        opener = Redirect()
+    err = caught(tmp_path, opener)
+    assert str(err) == f'status={status}: {expected}', 'H1: received error text differs'
+    assert err.received is True
+    assert err.raw == body.decode('utf-8', errors='replace')

@@ -14,7 +14,7 @@ from urllib.parse import urlsplit
 
 from . import config as configuration, intake, pdfsmoke, playbook, quotes, runlog
 from . import stamps as stamp_finder
-from .model import ModelClient
+from .model import ModelClient, ModelError
 
 
 CHECKS = ("config", "folders", "playbook", "runlog_schema", "ollama_loopback",
@@ -39,6 +39,8 @@ class State:
     before: int = 0
     passed: dict = field(default_factory=dict)
     root: dict = field(default_factory=dict)   # check name -> the check whose own failure caused it
+    reasons: dict = field(default_factory=dict)
+    model_missing: bool = False
 
 
 def check_config(state):
@@ -145,6 +147,14 @@ def check_context(state):
                 reason = f"answer={answer.content[:40]} want READY"
             else:
                 reason = f"context_length={context_length}"
+    except ModelError as exc:
+        reason = str(exc)
+        body = exc.raw if isinstance(exc.raw, str) else json.dumps(exc.raw)
+        state.model_missing = "model" in body.casefold() and "not found" in body.casefold()
+        if answer is None and exc.received:
+            raw = "" if exc.raw is None else exc.raw
+            log.record_answer(run_id, raw_answer=raw if isinstance(raw, str) else json.dumps(raw),
+                              status="failed")
     except Exception as exc:
         reason = str(exc)
     if answer is not None:
@@ -204,6 +214,10 @@ DEPENDENCIES = {"context": ("playbook", "runlog_schema", "ollama_loopback"),
 
 def next_step(name, reason, state):
     if name == "context":
+        folded = reason.casefold()
+        if state.model_missing or reason.startswith("status=404:") or ("model" in folded and "not found" in folded):
+            return (f"pull the model (ollama pull {state.config.model.name}) "
+                    "or correct model.name in the config")
         if "context_length" in reason or "model not loaded" in reason:
             return f"set num_ctx in Ollama to {state.config.model.num_ctx} or reload the model"
         return "rerun doctor; if it repeats, reload the model"
@@ -242,12 +256,13 @@ def run(config=None, *, out=None, opener=None, lsof_runner=None, ocr_smoke=None)
                 except Exception as exc:
                     ok, reason = False, str(exc)
             state.passed[name] = ok
+            state.reasons[name] = reason
             failed += not ok
             reason = " ".join(str(reason).splitlines())
             if not ok:
                 root = state.root.get(name)
                 hint = (f"fix the {root} line above" if root and root != blocked
-                        else next_step(blocked or name, reason, state))
+                        else next_step(blocked or name, state.reasons.get(blocked, reason), state))
                 reason += " | do: " + hint
             print(f"doctor {name} {'PASS' if ok else 'FAIL'} {reason}", file=out)
         print(f"doctor failed={failed} of 8", file=out)

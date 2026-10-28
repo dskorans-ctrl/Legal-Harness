@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import json
+import re
 from threading import Thread
 from urllib.request import ProxyHandler, Request, build_opener
 
@@ -35,15 +36,14 @@ CASES = (
     ("probe", 1, None),
 )
 TRUNCATED = ("truncated", "cut_answer", "cut_prompt", "prompt_too_long")
-SEARCHED = ("medical/001, medical/002, medical/003, medical/004, medical/005, medical/006, "
-            "medical/007, medical/008, employer/001, employer/002, employer/003, "
-            "defense-report/001, defense-report/002, defense-report/003")
+SEARCHED = ('MED0001, MED0002, MED0003, MED0004, MED0005, MED0006, MED0007, MED0008, '
+            'EMP0001, EMP0002, EMP0003, DEF0001, DEF0002, DEF0003')
 BAD_QUOTE_FAULTS = (
-    f"quote on MED0001 not found (pages searched: {SEARCHED})",
-    f"cite MED0099 is not a page of this chunk (pages searched: {SEARCHED})",
-    f"cite MED0098 is not a page of this chunk (pages searched: {SEARCHED})",
-    "text number 03 not in quote",
-    "text number 99999 not in quote",
+    'facts[0]: quote not found on MED0001, the page it cites (quote: "Date of service: 13/11/2025")',
+    'facts[1].cite: cite MED0099 is not a page of this chunk',
+    'flags[0].cites[2]: cite MED0098 is not a page of this chunk',
+    'facts[0].text: number 03 is not in its quote',
+    'facts[2].text: number 99999 is not in its quote',
 )
 EXPECTED = (
     "stage4 gate=truncation good=pass bad=2 of 2 truncated=4 of 4 retry=1",
@@ -128,7 +128,10 @@ def _check_case(name, attempts, failing, result, ideal, probe_answer):
         assert outcome.answer is None, f"{name}: failed answer saved"
         assert outcome.read == () and outcome.uncited == (), f"{name}: failed pages marked read"
         last = result["failures"][-1]
-        reason = f"{last['gate']}: {last['message']}"
+        detail = last['message'].removeprefix(last['gate'] + ': ').rsplit('; ', 1)[0]
+        if name in {'budget', 'cut_prompt', 'prompt_too_long'}:
+            detail = detail.rsplit('; not retried: ', 1)[0]
+        reason = f"{last['gate']}: {detail}; the page stays open until a later run reads it"
         assert dict(outcome.failed) == dict.fromkeys(expected_ids, reason), f"{name}: failed page reasons"
         assert all(row["status"] == "failed" and row["reason"] == reason for row in coverage)
         assert result["open"] == {(page_id, "bench_extract") for page_id in expected_ids}
@@ -136,21 +139,27 @@ def _check_case(name, attempts, failing, result, ideal, probe_answer):
     assert [(row["gate"], row["message"]) for row in result["failures"]] == [
         (row["gate"], row["message"]) for row in failed_rows], f"{name}: failure log differs"
     expected_reason = {
-        "budget": "over budget", "cut_prompt": "prompt cut (prompt_id missing)",
-        "truncated": "done_reason=length", "cut_answer": "answer cut (end_id missing)",
-        "empty_answer": "empty answer",
+        'budget': 'the prompt is too long (over budget)',
+        'cut_prompt': 'the prompt was cut (prompt_id missing)',
+        'truncated': 'the answer stopped before it finished (done_reason=length)',
+        'cut_answer': 'the answer was cut off (end_id missing)',
+        'empty_answer': 'the answer has no facts and no flags',
+        'prompt_too_long': ('status=400: the prompt is longer than the context length currently available '
+                            'to the model; shorten the prompt, adjust the context length in settings, or use a model ...'),
+        'forbidden_json': ('facts[0].text: Never name the exam as a DME or IME in any form; write "the report". '
+                           '(no-dme-ime: IME)'),
+        'bad_schema': 'the answer does not match the schema: facts[0].text: missing required key',
+        'unrepairable': "the answer is not valid JSON: Expecting ',' delimiter",
+        'retry_ok': "the answer is not valid JSON: Expecting ',' delimiter",
+        'bad_quote': '5 faults (faults=5): ' + '; '.join(BAD_QUOTE_FAULTS) + '; chunk pages: ' + SEARCHED,
     }.get(name)
     if expected_reason:
-        assert all(row["message"] == expected_reason for row in failed_rows), f"{name}: failure reason"
-    if name == "prompt_too_long":
-        assert "context length" in failed_rows[0]["message"]
-    if name == "forbidden_json":
-        assert all(row["message"].startswith("no-dme-ime:") for row in failed_rows)
-    if name == "bad_quote":
-        for row in failed_rows:
-            assert row["message"].split("; ")[1:-1] == list(BAD_QUOTE_FAULTS)
-            assert row["message"] == (
-                "faults=5; " + "; ".join(BAD_QUOTE_FAULTS) + "; check source pages and retry")
+        steps = ['retried once', 'not retried: the one retry was used'][:len(failed_rows)]
+        if name in {'budget', 'cut_prompt', 'prompt_too_long'}:
+            why = 'the prompt was cut' if name == 'cut_prompt' else 'the prompt was too long'
+            steps = [f'not retried: {why}; the chunk must be made smaller']
+        assert [row['message'] for row in failed_rows] == [
+            f'gate.{failing}: {expected_reason}; {step}' for step in steps], f'{name}: failure reason'
 
 
 @pytest.mark.socket
@@ -234,7 +243,8 @@ def test_stage4_exit(tmp_path, capsys):
     repairs = [row["message"] for row in results["repairable"]["gates"] if row["verdict"] == "repaired"]
     repaired = sum(repairs.count(kind) == 1 for kind in ("fence", "control", "trailing-comma", "closers"))
     quote_faults = [row["message"] for row in results["bad_quote"]["failures"]]
-    faults = int(quote_faults[0].split(";", 1)[0].removeprefix("faults=")) if quote_faults else 0
+    count = re.search(r'\(faults=(\d+)\)', quote_faults[0]) if quote_faults else None
+    faults = int(count[1]) if count else 0
     warning = int(any(row["gate"] == "gate.rules" and row["verdict"] == "pass" and row["message"] ==
                       "warning: no Bates stamp on probe/001, probe/002, probe/003; cites are page ids"
                       for row in results["probe"]["gates"]))

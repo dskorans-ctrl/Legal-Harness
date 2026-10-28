@@ -163,11 +163,10 @@ def test_bench_prompt_too_long_stays_exit1(tmp_path, capsys):
     with capsys.disabled():
         print("\n".join(lines))
     assert (code, err) == (1, "")
-    message = ("the prompt is longer than the context length currently available to the model; "
-               "shorten the prompt, adjust the context length in settings, or use a model with a longer context length")
-    raw = json.dumps({"error": message})
     assert lines == [
-        f"bench 9001.001 failure bench.truncation: status=400: {raw.encode('utf-8')[:200]!r}",
+        'bench 9001.001 failure bench.truncation: status=400: '
+        'the prompt is longer than the context length currently available to the model; '
+        'shorten the prompt, adjust the context length in settings, or use a model ...',
         "bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 "
         "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14",
         "  missed: " + " ".join(f"F{i:02}" for i in range(1, 30)),

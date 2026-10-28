@@ -59,69 +59,82 @@ def messages(card, pages: Sequence[Page], nonce, *, matter):
              + "".join(benchrun.page_block(page) for page in pages)}]
 
 
-def _rules_strings(obj):
+def _rules_strings(obj, path=""):
     if isinstance(obj, str):
-        yield obj
+        yield path or "answer", obj
     elif isinstance(obj, dict):
         for key, value in obj.items():
             if key not in _SKIP_RULES:
-                yield from _rules_strings(value)
+                yield from _rules_strings(value, f"{path}.{key}" if path else key)
     elif isinstance(obj, list):
-        for value in obj:
-            yield from _rules_strings(value)
+        for index, value in enumerate(obj):
+            yield from _rules_strings(value, f"{path}[{index}]")
 
 
 def _page_id(page):
     return page.page_id
 
 
-def _objects(obj):
+def _objects(obj, path=""):
     if isinstance(obj, dict):
-        yield obj
-        for value in obj.values():
-            yield from _objects(value)
+        yield path or "answer", obj
+        for key, value in obj.items():
+            yield from _objects(value, f"{path}.{key}" if path else key)
     elif isinstance(obj, list):
-        for value in obj:
-            yield from _objects(value)
+        for index, value in enumerate(obj):
+            yield from _objects(value, f"{path}[{index}]")
+
+
+def _page_label(page):
+    return page.stamps[0] if page.stamps else page.page_id
 
 
 def _references(obj, pages):
     faults, rungs, cited = [], [], set()
-    searched = ", ".join(_page_id(page) for page in pages)
+    cite_fault = False
 
-    def lookup(cite):
+    def lookup(cite, path):
+        nonlocal cite_fault
         matches = [page for page in pages
                    if stamps.normalize(cite) in page.stamps or cite == page.page_id]
         if len(matches) > 1:
-            faults.append(f"cite {cite} is ambiguous (pages "
-                          + ", ".join(page.page_id for page in matches) + ")")
+            cite_fault = True
+            faults.append(f"{path}: cite {cite} matches more than one page (ambiguous cite)")
             return None
         if not matches:
-            faults.append(f"cite {cite} is not a page of this chunk (pages searched: {searched})")
+            cite_fault = True
+            faults.append(f"{path}: cite {cite} is not a page of this chunk")
             return None
         cited.add(matches[0].page_id)
         return matches[0]
 
-    for item in _objects(obj):
+    for path, item in _objects(obj):
         if "cite" in item:
-            page = lookup(item["cite"])
+            page = lookup(item["cite"], f"{path}.cite")
             if page is not None and item.get("quote", "").strip():
                 hit = quotes.match(item["quote"], page.text)
                 if hit is None:
-                    faults.append(f"quote on {item['cite']} not found (pages searched: {searched})")
+                    label = (stamps.normalize(item["cite"]) if stamps.normalize(item["cite"]) in page.stamps
+                             else _page_label(page))
+                    faults.append(f'{path}: quote not found on {label}, the page it cites '
+                                  f'(quote: "{item["quote"][:60]}")')
                 else:
                     rungs.append(hit.rung)
-        for cite in item.get("cites", []):
-            lookup(cite)
-    for fact in obj.get("facts", []):
+        for index, cite in enumerate(item.get("cites", [])):
+            lookup(cite, f"{path}.cites[{index}]")
+    for index, fact in enumerate(obj.get("facts", [])):
         if not fact["quote"].strip():
             continue
         numbers = set(re.findall(r"\d+", fact["quote"]))
         for number in dict.fromkeys(re.findall(r"\d+", fact["text"])):
             if number not in numbers:
-                faults.append(f"text number {number} not in quote")
+                faults.append(f"facts[{index}].text: number {number} is not in its quote")
     if faults:
-        return f"faults={len(faults)}; " + "; ".join(faults) + "; check source pages and retry", cited
+        noun = "fault" if len(faults) == 1 else "faults"
+        detail = f"{len(faults)} {noun} (faults={len(faults)}): " + "; ".join(faults)
+        if cite_fault:
+            detail += "; chunk pages: " + ", ".join(_page_label(page) for page in pages)
+        return detail, cited
     return " ".join(f"{rung}={rungs.count(rung)}" for rung in
                     ("exact", "whitespace", "curly", "ocr")), cited
 
@@ -165,7 +178,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
         answer = None
         budget = sum(model.tokens_at_most(m["content"]) for m in msgs) + model.TEMPLATE_TOKENS
         if budget > client.config.num_ctx - card.max_answer_tokens:
-            message, retryable = "over budget", False
+            message, retryable = "the prompt is too long (over budget)", False
         else:
             try:
                 answer = client.chat(msgs, options={"num_predict": card.max_answer_tokens},
@@ -187,17 +200,17 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                     text = jsonrepair.unfence(answer.content).strip()
                     p, e = answer.prompt_eval_count, answer.eval_count
                     if answer.done_reason != "stop":
-                        message = f"done_reason={answer.done_reason}"
+                        message = f"the answer stopped before it finished (done_reason={answer.done_reason})"
                     elif not all(type(c) is int and c > 0 for c in (p, e)):
-                        message = "counts must be positive integers"
+                        message = "the reply must report positive token counts (prompt_eval_count, eval_count)"
                     elif p > client.config.num_ctx or p + e > client.config.num_ctx:
-                        message = "counts exceed context"
+                        message = "the token counts exceed the context size (prompt_eval_count + eval_count > num_ctx)"
                     elif e >= card.max_answer_tokens:
-                        message = "counts reach max_answer_tokens"
+                        message = "the answer reached its token limit (eval_count >= max_answer_tokens)"
                     elif not re.match(r'\{\s*"prompt_id"\s*:\s*' + re.escape(json.dumps(nonce)), text):
-                        message, retryable = "prompt cut (prompt_id missing)", False
+                        message, retryable = "the prompt was cut (prompt_id missing)", False
                     elif not _end_id(text, nonce):
-                        message = "answer cut (end_id missing)"
+                        message = "the answer was cut off (end_id missing)"
                 elif gate == "repair":
                     try:
                         repaired = jsonrepair.repair(answer.content, nonce=nonce)
@@ -205,7 +218,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                         obj.pop("prompt_id", None)
                         obj.pop("end_id", None)
                     except jsonrepair.RepairError as exc:
-                        message = str(exc)
+                        message = "the answer is not valid JSON: " + str(exc).removeprefix("not JSON: ")
                     else:
                         for kind in repaired.repairs:
                             verdict = Verdict(attempt, GATE_NAMES[gate], "repaired", kind)
@@ -215,19 +228,23 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                         if repaired.repairs:
                             continue
                 elif gate == "schema":
-                    message = "; ".join(schema.validate(obj, card.schema))
+                    faults = schema.validate(obj, card.schema)
+                    if faults:
+                        message = "the answer does not match the schema: " + "; ".join(faults)
                 elif gate == "quotes":
                     detail, cited = _references(obj, pages)
-                    if detail.startswith("faults="):
+                    if re.match(r"\d+ faults? \(faults=", detail):
                         message = detail
                 elif gate == "rules":
-                    findings = [finding for value in _rules_strings(obj)
+                    findings = [(path, finding) for path, value in _rules_strings(obj)
                                 for finding in rules.check(value, unit=card.unit,
                                                            stamped=all(p.stamps for p in pages))]
-                    message = "; ".join(f"{f.rule_id}: {f.excerpt}" for f in findings if f.severity == "error")
+                    instructions = {rule.id: rule.rule for rule in rules.rules}
+                    message = "; ".join(f"{path}: {instructions[f.rule_id]} ({f.rule_id}: {f.excerpt})"
+                                        for path, f in findings if f.severity == "error")
                 elif gate == "coverage":
                     if not obj.get("facts") and not obj.get("flags"):
-                        message = "empty answer"
+                        message = "the answer has no facts and no flags"
                     else:
                         blanks = [f"{group}[{index}].{key}" for group, keys in
                                   (("facts", ("text", "quote")), ("flags", ("about", "cites")))
@@ -235,7 +252,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                                   for key in keys if not (item[key].strip() if isinstance(item[key], str)
                                                          else item[key])]
                         if blanks:
-                            message = "; ".join(f"empty answer: {path} blank" for path in blanks)
+                            message = "; ".join(f"the answer has a blank value at {path}" for path in blanks)
                 if message:
                     break
                 detail = ""
@@ -243,7 +260,8 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                     detail, _ = _references(obj, pages)
                 elif gate == "rules":
                     unstamped = [p.page_id for p in pages if not p.stamps]
-                    warnings = [f"{f.rule_id}: {f.excerpt}" for f in findings if f.severity == "warning"]
+                    warnings = [f"{path}: {f.rule_id}: {f.excerpt}" for path, f in findings
+                                if f.severity == "warning"]
                     if unstamped:
                         warnings.insert(0, "warning: no Bates stamp on " + ", ".join(unstamped)
                                         + "; cites are page ids")
@@ -261,20 +279,27 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
             break
         message = " ".join(message.split())
         name = GATE_NAMES.get(gate, f"gate.{gate}")
-        verdict = Verdict(attempt, name, "fail", message)
+        if not retryable:
+            why = "the prompt was cut" if "prompt_id missing" in message else "the prompt was too long"
+            next_step = f"not retried: {why}; the chunk must be made smaller"
+        else:
+            next_step = "retried once" if attempt == 1 else "not retried: the one retry was used"
+        failure = f"{name}: {message}; {next_step}"
+        verdict = Verdict(attempt, name, "fail", failure)
         verdicts.append(verdict)
-        log.record_gate(run_id, attempt=attempt, gate=name, verdict="fail", message=message)
-        log.record_failure(run_id, name, message)
+        log.record_gate(run_id, attempt=attempt, gate=name, verdict="fail", message=failure)
+        log.record_failure(run_id, name, failure)
         reason = f"{gate} check: {message}"
         if not retryable:
             break
     read = tuple(_page_id(page) for page in pages if _page_id(page) in cited) if ok else ()
     uncited = tuple(_page_id(page) for page in pages if _page_id(page) not in cited) if ok else ()
-    failed = () if ok else tuple((_page_id(page), f"{name}: {message}") for page in pages)
+    final_reason = "" if ok else f"{name}: {message}; the page stays open until a later run reads it"
+    failed = () if ok else tuple((_page_id(page), final_reason) for page in pages)
     for page in pages:
         page_id = _page_id(page)
         status = ("read" if page_id in read else "uncited") if ok else "failed"
-        why = ("" if status == "read" else f"no fact or flag cites {page_id}") if ok else f"{name}: {message}"
+        why = ("" if status == "read" else f"no fact or flag cites {page_id}") if ok else final_reason
         log.record_coverage(run_id, matter=matter, page_id=page_id, card=card.name,
                             status=status, reason=why)
     return Outcome(ok, obj if ok else None, attempt, tuple(verdicts), read, uncited, failed, run_id)

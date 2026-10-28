@@ -115,3 +115,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 17 | Merge lane B and regression | chair | about 6 min | n/a | 8a2973b; 447 passed; gate 0; unused_imports=0; bench lines unchanged; stage 1 to 4 lines; suite_time 3 runs max=54.47 PASS |
 | 18 | 8a code review | codex gpt-6-astra (read-only, high) | 6.9 min | 136 k | done; 9 findings (3 high, 6 med); chair reproduced 8, 1 not reproduced |
 | 19 | Fix cycle 1 (R04-CX-1 to 3, 5 to 9, CH-1) | codex gpt-6.1-sol | 10.1 min | 290 k | done; 45 test cases, each red first; adjacent: bounded found_in, duplicate keys refused in four more loaders; 492 passed; baselines unchanged; chair probes all fail closed |
+| 20 | 8b output critic | opus | 3.9 min | 102 k | done; 6/10, high 2, med 4, low 4; chair reproduced H1, M1, M4; 7 to fix cycle 2, 2 deferred, 1 owner question (49) |
+| 21 | Fix cycle 2 (critic H1, H2, M1, M3, M4, L1, L2) | codex gpt-6.1-sol | 20.0 min | 187 k | done; 29 controls red then green; adjacent: doctor kept received error replies; 537 passed; baselines unchanged; chair read every reason from the critic's driver |

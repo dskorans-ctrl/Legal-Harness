@@ -249,3 +249,6 @@ exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged,
     quote as the verified text and label the summary as the model's reading, or should a second model call judge
     each summary against its quote before the memo uses it? Interim: no output of this round or the next uses a
     summary as verified; the quote is the verified thing.
+49. The firm rule ids (for example `no-dme-ime`) appear in what the bench and the open-items reasons print, next to
+    the offending words. Should an output you read show the rule id, or only the rule's own message and the words it
+    caught? (Round 4 output critic, L4; the playbook does not say.) Interim: the id stays, next to the rule's message.

@@ -20,6 +20,21 @@ def context_length_error(message: str) -> bool:
     return "context length" in folded or "exceeds the available context" in folded
 
 
+def reply_error(status, payload):
+    """Keep the received body intact while making a short, readable error line."""
+    text = payload.decode("utf-8", errors="replace")
+    try:
+        body = jsonrepair.loads(text)
+    except (ValueError, UnicodeError):
+        body = None
+    detail = body.get("error") if isinstance(body, dict) else None
+    detail = " ".join((detail if isinstance(detail, str) else text).split())
+    if len(detail) > 160:
+        detail = detail[:157].rsplit(" ", 1)[0] if " " in detail[:157] else ""
+        detail = detail.rstrip() + " ..."
+    return f"status={status}: {detail}"
+
+
 class ModelError(RuntimeError):
     """The model did not return a usable answer."""
 
@@ -39,7 +54,7 @@ class NoRedirect(request.HTTPRedirectHandler):
             reply = short.partial
         except (OSError, http.client.HTTPException):
             reply = b""
-        raise ModelError(f"redirect refused: {code} to {newurl}", reply.decode("utf-8", errors="replace"),
+        raise ModelError(reply_error(code, reply), reply.decode("utf-8", errors="replace"),
                          received=True)
 
 
@@ -76,7 +91,7 @@ class ModelClient:
                 status = response.getcode()
                 if 300 <= status < 400:
                     reply = response.read()
-                    raise ModelError(f"redirect refused: {status} to {response.headers.get('Location', '')}",
+                    raise ModelError(reply_error(status, reply),
                                      reply.decode("utf-8", errors="replace"), received=True)
                 payload = response.read()
         except error.HTTPError as exc:
@@ -86,27 +101,25 @@ class ModelClient:
                 reply = short.partial
             except (OSError, http.client.HTTPException):
                 reply = b""
-            if 300 <= exc.code < 400:
-                raise ModelError(f"redirect refused: {exc.code} to {exc.headers.get('Location', '')}",
-                                 reply.decode("utf-8", errors="replace"), received=True) from exc
-            raise ModelError(f"status={exc.code}: {reply[:200]!r}", reply.decode("utf-8", errors="replace"),
+            raise ModelError(reply_error(exc.code, reply), reply.decode("utf-8", errors="replace"),
                              received=True) from exc
         except http.client.IncompleteRead as exc:
             partial = exc.partial.decode("utf-8", errors="replace")
-            raise ModelError(f"incomplete read: {exc}", partial, received=received) from exc
+            message = reply_error(status, exc.partial) if received else "the server sent no complete reply"
+            raise ModelError(message, partial, received=received) from exc
         except (OSError, error.URLError, http.client.HTTPException) as exc:
             raise ModelError(str(exc) or type(exc).__name__, received=received) from exc
         if status != 200:
-            raise ModelError(f"status={status}: {payload[:200]!r}", payload.decode("utf-8", errors="replace"),
+            raise ModelError(reply_error(status, payload), payload.decode("utf-8", errors="replace"),
                              received=True)
         text = payload.decode("utf-8", errors="replace")
         try:
             result = jsonrepair.loads(payload)
         except (ValueError, UnicodeError) as exc:
-            raise ModelError(f"status={status} non-JSON: {exc}: {payload[:200]!r}", text,
+            raise ModelError(reply_error(status, payload), text,
                              received=True) from exc
         if not isinstance(result, dict):
-            raise ModelError(f"status={status} expected JSON object: {payload[:200]!r}", text, received=True)
+            raise ModelError(reply_error(status, payload), text, received=True)
         return result
 
     def chat(self, messages, *, options=None, think=None, truncate=None):
@@ -122,16 +135,16 @@ class ModelClient:
         raw = self._request("/api/chat", body)
         message = raw.get("message")
         content = message.get("content") if isinstance(message, dict) else None
-        if not isinstance(content, str):
-            raise ModelError(f"status=200 missing message.content: {str(raw)[:200]}", raw, received=True)
-        if not content.strip():
-            raise ModelError(f"status=200 empty message.content: {str(raw)[:200]}", raw, received=True)
+        if not isinstance(content, str) or not content.strip():
+            raise ModelError("the model sent no answer text", raw, received=True)
         if raw.get("done") is not True:
-            raise ModelError("status=200 done must be true", raw, received=True)
+            raise ModelError("the model did not finish its reply (done must be true)", raw, received=True)
         for field in ("prompt_eval_count", "eval_count", "prompt_eval_cached_count"):
             if raw.get(field) is not None and type(raw[field]) is not int:
-                raise ModelError(f"status=200 invalid {field}", raw, received=True)
+                raise ModelError(f"the reply has an invalid token count ({field} must be an integer)",
+                                 raw, received=True)
         if raw.get("done_reason") is not None and not isinstance(raw["done_reason"], str):
-            raise ModelError("status=200 invalid done_reason", raw, received=True)
+            raise ModelError("the reply has no valid stop reason (done_reason must be a string)",
+                             raw, received=True)
         return Answer(content, raw.get("done_reason"), raw.get("prompt_eval_count"),
                       raw.get("eval_count"), raw.get("prompt_eval_cached_count"), raw)

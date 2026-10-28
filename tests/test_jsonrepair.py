@@ -118,7 +118,11 @@ def test_fix7_adjacent_json_loaders(tmp_path, loader):
                 return response
         client = model.ModelClient(config.load(write_config(tmp_path)).model, Opener())
         action, error, key = lambda: client.chat([]), model.ModelError, 'done'
-    with pytest.raises(error, match=f'duplicate key {key}') as caught:
+    with pytest.raises(error) as caught:
         action()
     if loader == 'model':
+        assert str(caught.value) == f'status=200: {source}'
         assert caught.value.received and caught.value.raw == source
+    else:
+        prefix = {'schema': f'cannot load schema {path}: ', 'key': f'{path}: ', 'candidate': ''}[loader]
+        assert str(caught.value) == f'{prefix}duplicate key {key}'
