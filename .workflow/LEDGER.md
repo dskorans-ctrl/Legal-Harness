@@ -884,3 +884,12 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   overrides; a blank prints NEEDED; a non-interactive run with no `matter.toml` prints NEEDED and does not block.
   Dropped: the petition fixture page, `00-HEADER` card and its model call per job (the fixture stays 14 pages, key 29
   facts; the baseline move recorded above is withdrawn). The issues list replaces Q62's free-typed issues.
+- Q58: is the example caption in `cards/00-intake/classify.md:29` invented (question 81)? -> owner: "it's invented". Kept.
+- Chair ruling (build, lane B W6 blocked, 2026-10-28, pending veto): W6 expects defense-doctor questions citing DEF0001
+  and DEF0002, but `outputs.provider_pages` (Q61) selects only pages with a fact naming the provider, and the key cites
+  only DEF0003 in that binder. Ruled: provider selection is page level, except that when a selected page lies in a
+  binder whose role is `defense`, the packet takes every page of that binder (a defense examination binder is one
+  examiner's report; its history and records-reviewed pages carry no key fact but are the examiner's words). Our
+  binders stay page level. The fixture has six provider strings (Fennimore County Hospital, Dr. Priya Okonkwo-Lind,
+  Brightwater Family Medicine, Ridgeline Physical Therapy, Dr. Theodore Marchetti, Lakeshore Imaging); measured count
+  accepted over the brief's five (`providers_named=6 of 6`).

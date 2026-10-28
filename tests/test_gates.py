@@ -39,6 +39,7 @@ CASES = (
     'repairable', 'unrepairable', 'bad_schema', 'bad_quote', 'fact_cite', 'text_number',
     'flag_cite', 'forbidden_json', 'quoted_ime', 'unstamped', 'empty_answer', 'retry_ok',
     'retry_budget', 'no_reply', 'open_items', 'request_body',
+    'date_ok', 'date_not_on_page', 'date_bad_form', 'provider_not_on_page', 'date_empty_ok',
     'text_cite_ok', 'text_cite_bad', 'text_see_page', 'mixed_chunk', 'no_coverage', 'required_any', 'echo',
 )
 
@@ -79,7 +80,7 @@ def content_edit(change):
 def gate_totals():
     passed = []
     yield passed
-    print(f'gate_cases={len(passed)} of 34', flush=True)
+    print(f'gate_cases={len(passed)} of 39', flush=True)
 
 
 @pytest.mark.parametrize('case', CASES)
@@ -89,7 +90,7 @@ def test_gate_cases(case, tmp_path, gate_totals):
     card = extraction_card()
     firm = rules.load(ROOT / 'playbook/rules.toml')
     settings = config.load(write_config(tmp_path)).model
-    assert len(CASES) == 34
+    assert len(CASES) == 39
     with open_db(tmp_path / f'{case}.sqlite') as log:
         _case(case, log, loaded, ideal, card, firm, settings)
     gate_totals.append(case)
@@ -104,7 +105,19 @@ def _case(case, log, loaded, ideal, card, firm, settings):
                            'repairable', 'unrepairable', 'bad_schema', 'bad_quote',
                            'forbidden_json', 'empty_answer', 'retry_ok'} else 'replay'
     edit = None
-    if case == 'budget':
+    if case in {'date_ok', 'date_not_on_page', 'date_bad_form', 'provider_not_on_page', 'date_empty_ok'}:
+        if case == 'date_bad_form':
+            pages = (matter.Page('probe', 1, 'Service on 11 March 2025. Normal gait.', ('MED0001',)),)
+            obj = {'facts': [{'cite': 'MED0001', 'quote': 'Normal gait.', 'text': 'Normal gait.',
+                              'date': '11 March 2025', 'category': 'other', 'provider': ''}], 'flags': []}
+            recordings = [recording(card, pages, number, obj)]
+        else:
+            change = {'date_ok': {'date': '03/11/2025'}, 'date_not_on_page': {'date': '03/12/2025'},
+                      'provider_not_on_page': {'provider': 'Invented Absent Clinic'},
+                      'date_empty_ok': {'date': ''}}[case]
+            ideal['facts'][0].update(change)
+            edit = content_edit(lambda obj: obj['facts'][0].update(change))
+    elif case == 'budget':
         card = replace(card, max_answer_tokens=65536 - 10)
     elif case == 'length_only':
         edit = lambda reply: reply.update(done_reason='length')
@@ -187,7 +200,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         nonce = request['messages'][0]['content'].splitlines()[0].split(': ')[1]
         assert sum(m['content'].count(nonce) for m in request['messages']) == 1
     successful = {'good', 'repairable', 'quoted_ime', 'unstamped', 'retry_ok', 'request_body',
-                  'text_cite_ok', 'mixed_chunk'}
+                  'text_cite_ok', 'mixed_chunk', 'date_ok', 'date_empty_ok'}
     if case in successful:
         assert outcome.ok, f'{case}: unexpectedly failed: {outcome.failed}'
         assert outcome.failed == ()
@@ -222,13 +235,14 @@ def _case(case, log, loaded, ideal, card, firm, settings):
     else:
         expected_gate = {
             'unrepairable': 'repair', 'bad_schema': 'schema', 'bad_quote': 'quotes', 'fact_cite': 'quotes',
+            'date_not_on_page': 'quotes', 'date_bad_form': 'quotes', 'provider_not_on_page': 'quotes',
             'text_number': 'quotes', 'flag_cite': 'quotes', 'forbidden_json': 'rules',
             'empty_answer': 'coverage', 'open_items': 'repair',
             'text_cite_bad': 'quotes', 'text_see_page': 'quotes',
         }.get(case, 'truncation')
         assert not outcome.ok, f'{case}: unexpectedly passed'
         assert outcome.answer is None, f'{case}: answer must be None, got {outcome.answer!r}'
-        assert outcome.read == () and outcome.uncited == () and len(outcome.failed) == 14
+        assert outcome.read == () and outcome.uncited == () and len(outcome.failed) == len(pages)
         assert {r['status'] for r in coverage} == {'failed'}
         assert all(r['status'] == 'failed' for r in received)
         expected_failures = (['gate.repair', 'gate.truncation'] if case == 'retry_budget'
@@ -247,6 +261,9 @@ def _case(case, log, loaded, ideal, card, firm, settings):
             assert [(r['gate'], r['verdict']) for r in checked if r['attempt'] == 1] == expected_rows, (
                 f'{case} gate rows differ: {[(r["gate"], r["verdict"]) for r in checked]}')
         details = {
+            'date_not_on_page': '1 fault (faults=1): facts[0].date: 03/12/2025 is not a date written on MED0001',
+            'date_bad_form': '1 fault (faults=1): facts[0].date: 11 March 2025 is not a recognised date form',
+            'provider_not_on_page': '1 fault (faults=1): facts[0].provider: not on MED0001',
             'budget': 'the prompt is too long (over budget)',
             'retry_budget': 'the prompt is too long (over budget)',
             'prompt_too_long': CONTEXT_DETAIL,
@@ -509,7 +526,19 @@ def test_ch1_quote_must_be_on_cited_page(fix_probe):
 def test_fix2_failure_words(fix_probe, case, gate, detail, no_retry):
     kwargs = {}
     transform = lambda text: text
-    if case == 'budget':
+    if case in {'date_ok', 'date_not_on_page', 'date_bad_form', 'provider_not_on_page', 'date_empty_ok'}:
+        if case == 'date_bad_form':
+            pages = (matter.Page('probe', 1, 'Service on 11 March 2025. Normal gait.', ('MED0001',)),)
+            obj = {'facts': [{'cite': 'MED0001', 'quote': 'Normal gait.', 'text': 'Normal gait.',
+                              'date': '11 March 2025', 'category': 'other', 'provider': ''}], 'flags': []}
+            recordings = [recording(card, pages, number, obj)]
+        else:
+            change = {'date_ok': {'date': '03/11/2025'}, 'date_not_on_page': {'date': '03/12/2025'},
+                      'provider_not_on_page': {'provider': 'Invented Absent Clinic'},
+                      'date_empty_ok': {'date': ''}}[case]
+            ideal['facts'][0].update(change)
+            edit = content_edit(lambda obj: obj['facts'][0].update(change))
+    elif case == 'budget':
         kwargs['active_card'] = replace(extraction_card(), max_answer_tokens=65536 - 10)
     elif case == 'length':
         kwargs['reply_edit'] = lambda reply: reply.update(done_reason='length')

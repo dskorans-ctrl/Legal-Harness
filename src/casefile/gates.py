@@ -128,6 +128,17 @@ def _references(obj, pages, rules, *, numbers_in="quote"):
                                   f'(quote: "{item["quote"][:60]}")')
                 else:
                     rungs.append(hit.rung)
+        if "cite" in item and page is not None:
+            from casefile.dates import parse as parse_date
+
+            if item.get("date"):
+                value = item["date"]
+                if quotes.match(value, page.text) is None:
+                    faults.append(f"{path}.date: {value} is not a date written on {_page_label(page)}")
+                elif parse_date(value) is None:
+                    faults.append(f"{path}.date: {value} is not a recognised date form")
+            if item.get("provider") and quotes.match(item["provider"], page.text) is None:
+                faults.append(f"{path}.provider: not on {_page_label(page)}")
         flag_pages = set()
         for index, cite in enumerate(item.get("cites", [])):
             page = lookup(cite, f"{path}.cites[{index}]")

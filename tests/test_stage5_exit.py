@@ -11,7 +11,7 @@ from urllib.request import ProxyHandler, Request, build_opener
 from docx import Document
 import pytest
 
-from casefile import config, extract, facts, matter, playbook
+from casefile import config, extract, facts, matter, memo, playbook
 from casefile.runlog import open_db
 from conftest import ROOT, write_config
 from fakemodel import FakeModel
@@ -31,16 +31,18 @@ EXPECTED = (
     "stage5 run=2 mode=bad_schema exit=1 chunks=1 runs=+1 read=13 open=1 facts=31 conflicts=5 gaps=4 new_facts=0 new_flags=0",
     "stage5 run=3 mode=replay exit=0 chunks=1 runs=+1 read=14 open=0 facts=32 conflicts=5 gaps=4 new_facts=1 new_flags=0",
     "stage5 run=4 mode=replay exit=0 chunks=0 runs=+0 read=14 open=0 facts=32 conflicts=5 gaps=4 new_facts=0 new_flags=0",
-    "stage5 memo=1 quotes=31 of 31 by_page=1 cites=45 readings=31 conflicts=5 gaps=4 runs_seen=1 open=1 open_status=uncited rule_hits=0 changed=first",
-    "stage5 memo=2 quotes=31 of 31 by_page=1 cites=45 readings=31 conflicts=5 gaps=4 runs_seen=1 open=1 open_status=failed rule_hits=0 changed=0",
-    "stage5 memo=3 quotes=32 of 32 by_page=1 cites=46 readings=32 conflicts=5 gaps=4 runs_seen=2 open=0 open_status=none rule_hits=0 changed=1",
+    "stage5 memo=1 sections=15 chronology=31 dated=31 of 31 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=87 readings=31 gaps=4 runs_seen=1 open=1 open_status=uncited rule_hits=0 changed=first",
+    "stage5 memo=2 sections=15 chronology=31 dated=31 of 31 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=87 readings=31 gaps=4 runs_seen=1 open=1 open_status=failed rule_hits=0 changed=0",
+    "stage5 memo=3 sections=15 chronology=32 dated=32 of 32 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=89 readings=32 gaps=4 runs_seen=2 open=0 open_status=none rule_hits=0 changed=1",
     "stage5 status read=13 then 14 open=1 then 0 outputs=memo:current",
     "stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=48 chain_ok=1 server_stopped=1",
 )
 BAD_REASON = ("gate.schema: the answer does not match the schema: facts[0].text: missing required key; "
               "the page stays open until a later run reads it")
-SECTIONS = ("What changed since the last memo", "Outputs out of date", "Open items", "Conflicts",
-            "Gaps and missing records", "Verified facts by record")
+SECTIONS = ("What changed since the last memo", "Outputs out of date", "Open items",
+    "Treatment chronology", "Providers", "Diagnoses", "Restrictions and work status", "Medical history",
+    "Our doctors' opinions", "Defense doctors' opinions", "Opinions in other records", "Gaps and missing records",
+    "Conflicts", "Facts without a date, by page", "Facts on pages not in this matter")
 
 
 def _section(document, title):
@@ -55,104 +57,102 @@ def _cite(cite, page_id):
 
 
 def _read_memo(number, path, stored, pages, coverage, book, errors):
-    rules = book.rules
-    document = Document(path)
-    paragraphs = document.paragraphs
-    opened = _section(document, "Open items")
-    verified = _section(document, "Verified facts by record")
-    conflicts = _section(document, "Conflicts")
-    gaps = _section(document, "Gaps and missing records")
-    quote_texts = [f'"{fact.quote}"' for fact in stored.facts]
-    quote_runs = [run.text for p in paragraphs for run in p.runs if run.text in quote_texts]
-    quotes = sum(quote_runs.count(text) == 1 for text in quote_texts)
-    expected_page_texts = []
-    for page in pages:
-        label = f'{" ".join(page.stamps)} ({page.page_id})' if page.stamps else page.page_id
-        expected_page_texts.append(("Heading 2", f"{page.binder.capitalize()} page {label}"))
-        if not any(fact.page_ids[0] == page.page_id for fact in stored.facts):
-            state = coverage[(page.page_id, extract.card().name)][0]
-            expected_page_texts.append(("Normal", "No fact was quoted from this page." if state == "read"
-                                        else f"Open item: {state} (see Open items)."))
-        for fact in stored.facts:
-            if fact.page_ids[0] != page.page_id:
-                continue
-            expected_page_texts.append(("Normal", f'"{fact.quote}" {_cite(fact.cites[0], fact.page_ids[0])}'))
-            if len(fact.cites) > 1:
-                expected_page_texts.append(("Normal", "Also cited: " + " and ".join(
-                    _cite(cite, page_id) for cite, page_id in zip(fact.cites[1:], fact.page_ids[1:]))))
-            expected_page_texts.extend(("Normal", f"Model's reading: {reading}") for reading in fact.readings)
-    by_page = int([(p.style.name, p.text) for p in verified] == expected_page_texts)
-    readings = sum(p.text.startswith("Model's reading: ") for p in verified)
-    expected_flags = {}
-    for kind in ("conflict", "gap"):
-        texts = []
-        for flag in stored.flags:
-            if flag.kind != kind:
-                continue
-            prefix = "Conflict between " if kind == "conflict" else "Gap at "
-            texts.append(prefix + " and ".join(_cite(cite, page_id)
-                         for cite, page_id in zip(flag.cites, flag.page_ids)) + ".")
-            texts.extend(f"Model's reading: {about}" for about in flag.abouts)
-        expected_flags[kind] = texts
-    for kind, section in (("conflict", conflicts[1:]), ("gap", gaps)):
-        if [p.text for p in section] != expected_flags[kind]:
-            errors.append(f"memo={number}: {kind} entries or model readings differ")
-    if [p.text for p in paragraphs if p.style.name == "Heading 1"] != list(SECTIONS):
-        errors.append(f"memo={number}: section order differs")
-    if paragraphs[0].text != f"Medical memo: matter {NUMBER}" or paragraphs[0].style.name != "Title":
-        errors.append(f"memo={number}: title differs")
-    output = stored.outputs[-1]
-    if not re.fullmatch(r"Built \d{4}-\d{2}-\d{2} from case file entry " + str(output["built_from_seq"]) +
-                        re.escape(f"; playbook {book.version}; model qwen3.8:27b"), paragraphs[1].text):
-        errors.append(f"memo={number}: build line differs: {paragraphs[1].text}")
+    from casefile import dates, matterinfo
+
+    doc = Document(path)
+    paragraphs = doc.paragraphs
+    chronology = _section(doc, 'Treatment chronology')
+    opened = _section(doc, 'Open items')
+    conflicts = _section(doc, 'Conflicts')
+    gaps = _section(doc, 'Gaps and missing records')
+    records = stored.facts
+    expected_chronology = []
+    for fact in sorted(records, key=lambda f: dates.parse(f.dates[0])):
+        expected_chronology.append(f'{fact.dates[0]}, {fact.providers[0] or fact.page_ids[0].rsplit('/',1)[0]}, {fact.category}: '
+                                  f'"{fact.quote}" {_cite(fact.cites[0], fact.page_ids[0])}')
+    actual_chronology = [p.text for p in chronology if any(run.text.startswith('"') for run in p.runs)]
+    if actual_chronology != expected_chronology:
+        errors.append(f'memo={number}: chronology differs')
+    dated = sum(bool(f.dates[0]) for f in records)
+    labels = {p.page_id: p.stamps[0] if p.stamps else p.page_id for p in pages}
+    roles = {'medical':'ours', 'employer':'ours', 'defense-report':'defense'}
+    flags = [f for f in stored.flags if f.kind == 'conflict']
+    flags.sort(key=lambda f: 0 if {'defense','ours'} <= {roles[p.rsplit('/',1)[0]] for p in f.page_ids} else 1)
+    expected_conflicts = []
+    for flag in flags:
+        expected_conflicts.append('Conflict between ' + ' and '.join(_cite(c,p) for c,p in zip(flag.cites,flag.page_ids)) + '.')
+        expected_conflicts.extend("Model's reading: " + about for about in flag.abouts)
+        for cite, page_id in zip(flag.cites, flag.page_ids):
+            expected_conflicts.append('From ' + _cite(cite,page_id) + ':')
+            expected_conflicts.extend(f'"{fact.quote}"' for fact in records if page_id in fact.page_ids)
+    conflict_quotes_ok = int([p.text for p in conflicts[1:]] == expected_conflicts)
+    if not conflict_quotes_ok:
+        errors.append(f'memo={number}: scoped conflict quotes or ordering differ')
+    defense_first = int([p.text for p in conflicts if p.text.startswith('Conflict between ')] ==
+                        [p for p in expected_conflicts if p.startswith('Conflict between ')])
+    expected_gaps = []
+    for flag in stored.flags:
+        if flag.kind == 'gap':
+            expected_gaps.append('Gap at ' + ' and '.join(_cite(c,p) for c,p in zip(flag.cites,flag.page_ids)) + '.')
+            expected_gaps.extend("Model's reading: " + about for about in flag.abouts)
+    if [p.text for p in gaps] != expected_gaps:
+        errors.append(f'memo={number}: gaps differ')
+    if [p.text for p in paragraphs if p.style.name == 'Heading 1'] != list(SECTIONS):
+        errors.append(f'memo={number}: section order differs')
+    providers = _section(doc, 'Providers')
+    associations = {}
+    for fact in records:
+        for provider, day, cite, page_id in zip(fact.providers,fact.dates,fact.cites,fact.page_ids):
+            if provider:
+                associations.setdefault(provider, []).append((day,cite,page_id))
+    expected_providers = []
+    for provider, entries in associations.items():
+        days = sorted([d for d,_,_ in entries if dates.parse(d)], key=dates.parse)
+        citations = list(dict.fromkeys((c,p) for _,c,p in entries))
+        expected_providers.append(f'{provider}: first {days[0]}, last {days[-1]}, pages ' +
+                                  ' and '.join(_cite(c,p) for c,p in citations))
+    if [p.text for p in providers] != expected_providers:
+        errors.append(f'memo={number}: provider dates or cites differ')
     expected_open = []
-    reasons = []
     for page in pages:
         state, reason, _ = coverage[(page.page_id, extract.card().name)]
-        if state != "read":
-            label = f'{" ".join(page.stamps)} ({page.page_id})' if page.stamps else page.page_id
-            expected_open.append(f"{label}: {state}: {reason}")
-            reasons.append(reason)
-    if [p.text for p in opened] != (expected_open or ["none"]):
-        errors.append(f"memo={number}: open items differ: {[p.text for p in opened]}")
-    open_entries = [] if [p.text for p in opened] == ["none"] else opened
-    exempt_reasons = set()
-    for paragraph, reason in zip(open_entries, reasons):
-        if len(paragraph.runs) == 2 and paragraph.runs[1].text == reason:
-            exempt_reasons.add(paragraph._p)
-        else:
-            errors.append(f"memo={number}: reason is not a separate run")
-    rule_hits = 0
-    for paragraph in paragraphs:
-        own_words = "".join("\n" if run.text in quote_texts or
-                            (paragraph._p in exempt_reasons and i == 1) else run.text
-                            for i, run in enumerate(paragraph.runs))
-        rule_hits += sum(hit.severity == "error" for hit in rules.check(own_words, unit="text", stamped=True))
-    sentence = re.fullmatch(r"Pages read in (\d+) runs?; conflicts and gaps are checked only between "
-                            r"pages sent to the model together\.", conflicts[0].text)
+        if state != 'read':
+            expected_open.append(f'{labels[page.page_id]} ({page.page_id}): {state}: {reason}')
+    if [p.text for p in opened] != (expected_open or ['none']):
+        errors.append(f'memo={number}: open items differ')
+    built = memo.build(stored, pages, [], matter=NUMBER,
+        playbook_version=book.version, model='qwen3.8:27b', info=matterinfo.load(path.parent.parent))
+    rule_hits = sum(hit.severity == 'error' for hit in memo.check(built, book.rules))
+    header_ok = int(paragraphs[0].text == f'Medical memo: matter {NUMBER}' and
+        re.fullmatch(r'Built \d{4}-\d{2}-\d{2} from case file entry ' + str(stored.outputs[-1]['built_from_seq']) +
+                     re.escape(f'; playbook {book.version}; model qwen3.8:27b'), paragraphs[1].text) is not None)
+    # The shared header joins after lane B merges; W4 verifies the retained two-line header.
+    sentence = re.fullmatch(r'Pages read in (\d+) runs?; conflicts and gaps are checked only between '
+        r'pages sent to the model together\. A cloud task run reads the whole matter \(stage 7b\)\.', conflicts[0].text)
     runs_seen = int(sentence[1]) if sentence else -1
-    read_runs = {row[2] for row in coverage.values() if row[0] == "read"}
+    read_runs = {row[2] for row in coverage.values() if row[0] == 'read'}
     if runs_seen != len(read_runs):
-        errors.append(f"memo={number}: runs_seen={runs_seen} coverage_read_runs={len(read_runs)}")
-    changed_text = [p.text for p in _section(document, SECTIONS[0])]
-    expected_change = ("First memo for this matter" if number == 1 else
-                       "1 fact added, 0 cites added, 1 reading added, 0 flags added" if number == 3 else
-                       "0 facts added, 0 cites added, 0 readings added, 0 flags added")
+        errors.append(f'memo={number}: read-run count differs')
+    changed_text = [p.text for p in _section(doc, SECTIONS[0])]
+    expected_change = ('First memo for this matter' if number == 1 else
+        '1 fact added, 0 cites added, 1 reading added, 0 flags added' if number == 3 else
+        '0 facts added, 0 cites added, 0 readings added, 0 flags added')
     if changed_text != [expected_change]:
-        errors.append(f"memo={number}: changes differ: {changed_text}")
-    changed = "first" if changed_text == ["First memo for this matter"] else (
-        changed_text[0].split(" ", 1)[0] if changed_text else "missing")
-    if [p.text for p in _section(document, SECTIONS[1])] != ["none"]:
-        errors.append(f"memo={number}: outputs out of date differ")
-    cites = sum(p.text.count("[cite ") for p in paragraphs)
-    expected_cites = sum(len(f.cites) for f in stored.facts) + sum(len(f.cites) for f in stored.flags)
-    if cites != expected_cites:
-        errors.append(f"memo={number}: cites={cites} casefile_cites={expected_cites}")
-    open_status = open_entries[0].text.split(": ")[1] if open_entries else "none"
-    return (f"stage5 memo={number} quotes={quotes} of {len(stored.facts)} by_page={by_page} cites={cites} "
-            f"readings={readings} conflicts={sum(p.text.startswith('Conflict between ') for p in conflicts)} "
-            f"gaps={sum(p.text.startswith('Gap at ') for p in gaps)} runs_seen={runs_seen} "
-            f"open={len(open_entries)} open_status={open_status} rule_hits={rule_hits} changed={changed}")
+        errors.append(f'memo={number}: changes differ')
+    if [p.text for p in _section(doc, SECTIONS[1])] != ['none']:
+        errors.append(f'memo={number}: outputs out of date differ')
+    changed = 'first' if number == 1 else changed_text[0].split(' ',1)[0]
+    entries = [] if not expected_open else opened
+    open_status = entries[0].text.split(': ')[1] if entries else 'none'
+    readings = sum(p.text.startswith("Model's reading") for p in chronology)
+    cites = sum(p.text.count('[cite ') for p in paragraphs)
+    if not header_ok or rule_hits:
+        errors.append(f'memo={number}: header or firm rules differ')
+    return (f'stage5 memo={number} sections=15 chronology={len(actual_chronology)} dated={dated} of {len(records)} '
+        f'providers={len(providers)} conflicts={len(flags)} conflict_quotes_ok={conflict_quotes_ok} '
+        f'defense_first={defense_first} header_ok={header_ok} cites={cites} readings={readings} '
+        f'gaps={len(expected_gaps)//2} runs_seen={runs_seen} open={len(entries)} open_status={open_status} '
+        f'rule_hits={rule_hits} changed={changed}')
 
 
 @pytest.mark.socket

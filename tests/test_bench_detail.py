@@ -10,20 +10,21 @@ from conftest import ROOT, write_config
 MATTERS = ROOT / "tests" / "fixtures" / "matters"
 IDEAL = MATTERS / "9001.001" / "ideal.json"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 flags=9 of 9 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 flags=8 of 9 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 FLAWED_DETAIL = [
     "  missed: F04 F15 F24",
     '  invented: MED0003 "Patient was lifting 80 pounds." (quote not on the page)',
     '  invented: MED0099 "Date of service: 03/11/2025" (no such page)',
+    "  dates_wrong: F01 (03/12/2025 for 03/11/2025)",
     "  flags_missed: G3",
     "  flags_extra: conflict MED0001,MED0004",
     '  rules: no-dme-ime DEF0003 "IME"',
 ]
 LONG_QUOTE = "Patient was given a lumbar brace and told to rest for two full weeks at home."
-PROBE_LINE = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=1 extra=2 flags=9 of 9 flags_missed=0 "
+PROBE_LINE = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=1 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
               "flags_extra=0 rules=1 pages_failed=0 of 14")
 PROBE_DETAIL = [
     '  invented: MED0002 "Patient was given a lumbar brace and told to rest for two fu" (quote not on the page)',
@@ -85,7 +86,7 @@ def test_hyphen_rung_detail(tmp_path):
     code = bench.main(root.parent, config, candidate, out=out, err=err)
     assert code == 0, err.getvalue()
     assert out.getvalue().splitlines() == [
-        "bench 9001.001 model=candidate found=1 of 1 missed=0 invented=0 extra=0 flags=0 of 0 "
+        "bench 9001.001 model=candidate found=1 of 1 missed=0 invented=0 extra=0 dates_wrong=0 flags=0 of 0 "
         "flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 1",
         "  rungs: exact=0 whitespace=0 curly=0 ocr=1",
         "bench matters=1 imperfect=0",

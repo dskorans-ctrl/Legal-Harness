@@ -11,9 +11,9 @@ from test_matter import make
 
 RULES = rules_mod.load(ROOT / "playbook" / "rules.toml")
 MATTER = ROOT / "tests" / "fixtures" / "matters" / "9001.001"
-PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 flags=9 of 9 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 flags=8 of 9 flags_missed=1 "
+FLAWED = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 "
           "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 PAGES = {"medical": [("Pain 7/10 in the low back.\nOther real line.", "MED0001"),
@@ -168,3 +168,16 @@ def test_changed_digit_is_invented(tmp_path):
     assert result.invented == 1
     assert result.found == 1
     assert result.missed_ids == ("F1",)
+
+
+def test_date_only_fault(tmp_path):
+    from dataclasses import replace
+
+    loaded = matters.load(MATTER)
+    key = benchkey.load(MATTER / "key.json", loaded)
+    key = replace(key, facts=(replace(key.facts[0], date="03/12/2025"), *key.facts[1:]))
+    candidate = parse_text((MATTER / "ideal.json").read_text(encoding="utf-8"))
+    result = score(key, candidate, loaded, RULES, 0)
+    assert result.dates_wrong == 1
+    assert not result.perfect, "date_only_fault: wrong date counted but accepted as perfect"
+    assert result.date_faults == (("F01", "03/11/2025", "03/12/2025"),)

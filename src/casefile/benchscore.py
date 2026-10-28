@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from casefile.benchcandidate import Candidate
 from casefile.benchkey import Key
 from casefile.matter import Matter
-from casefile import quotes
+from casefile import dates, quotes
 from casefile.stamps import normalize as normalize_stamp
 
 
@@ -29,6 +29,9 @@ class Score:
     rule_hits: tuple[tuple[str, str, str], ...] = ()
     rungs: tuple[tuple[str, int], ...] = ()
 
+    dates_wrong: int = 0
+    date_faults: tuple[tuple[str, str, str], ...] = ()
+
     @property
     def missed(self) -> int:
         return self.key_total - self.found
@@ -40,11 +43,12 @@ class Score:
     @property
     def perfect(self) -> bool:
         return (self.missed == 0 and self.invented == 0 and self.flags_missed == 0
-                and self.flags_extra == 0 and self.rules == 0 and self.pages_failed == 0)
+                and self.flags_extra == 0 and self.rules == 0 and self.pages_failed == 0
+                and self.dates_wrong == 0)
 
     def line(self, matter_number: str, model: str) -> str:
         return (f"bench {matter_number} model={model} found={self.found} of {self.key_total} missed={self.missed} "
-                f"invented={self.invented} extra={self.extra} flags={self.flags_found} of "
+                f"invented={self.invented} extra={self.extra} dates_wrong={self.dates_wrong} flags={self.flags_found} of "
                 f"{self.flags_total} flags_missed={self.flags_missed} flags_extra={self.flags_extra} "
                 f"rules={self.rules} pages_failed={self.pages_failed} of {self.pages_in}")
 
@@ -55,6 +59,8 @@ class Score:
             out.append("  missed: " + " ".join(self.missed_ids))
         for cite, quote, reason in self.invented_facts:
             out.append(f'  invented: {cite} "{quote}" ({reason})')
+        for fid, wrong, right in self.date_faults:
+            out.append(f"  dates_wrong: {fid} ({wrong} for {right})")
         if self.flags_missed_ids:
             out.append("  flags_missed: " + " ".join(self.flags_missed_ids))
         for kind, cites in self.flags_extra_items:
@@ -68,6 +74,7 @@ class Score:
 
 def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: int) -> Score:
     matched = set()
+    date_faults = {}
     invented = []
     invented_facts = []
     extra = 0
@@ -95,6 +102,8 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
             extra += 1
         else:
             matched.add(hit.id)
+            if dates.parse(fact.date) != dates.parse(hit.date):
+                date_faults[hit.id] = (hit.id, fact.date, hit.date)
 
     key_sets = {(f.kind, frozenset(f.cites)): f.id for f in key.flags}
     cand_sets = {(f.kind, frozenset(normalize_stamp(c) for c in f.cites)) for f in candidate.flags}
@@ -143,5 +152,7 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
         invented_facts=tuple(invented_facts),
         flags_extra_items=tuple(flags_extra_items_list),
         rule_hits=tuple(rule_hits),
+        dates_wrong=len(date_faults),
+        date_faults=tuple(date_faults.values()),
         rungs=tuple(rungs.items())
     )

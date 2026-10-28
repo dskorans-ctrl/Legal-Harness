@@ -384,3 +384,11 @@ govern folder labels. 47, 48, 49, 51, 52, 53, 55 and 58: every interim kept.
 
 
 ANSWERED 2026-10-28 (owner, ledger Q53): 70 standard commercial API terms with 30 day retention are acceptable (the BAA part stays open); 71 mode A (approve once per task at Run, with the two halts; brief packets per packet); 72 Codex as the read-only second-review critic, off by default; 73 either model allowed under those terms (Opus 5.5 stays the default until the benchmark says otherwise). 74 to 80 held with their interims.
+
+## Held 2026-10-28 (round 6 build, chair)
+
+81. `cards/00-intake/classify.md:29` (in the seed cards since 2026-10-25, commit 5a55b54; moved, not written, in round 6)
+    uses an example caption with a doctor's name, two party names and a date. Is it invented? If it came from a
+    real matter it must be replaced. Interim: kept as is (the chair cannot tell); the card is a stage 8 card and runs
+    no job in round 6.
+ANSWERED 2026-10-28 (owner, ledger Q58): 81 the `classify.md` example caption is invented; kept.

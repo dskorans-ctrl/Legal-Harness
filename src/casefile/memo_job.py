@@ -4,7 +4,7 @@ import fcntl
 import os
 import sqlite3
 
-from casefile import extract, facts, memo, pages, pipeline, playbook, rules, status
+from casefile import extract, facts, matterinfo, memo, pages, pipeline, playbook, rules, status
 from casefile.model import ModelClient, ModelError
 from casefile.matter import Page
 from casefile.runlog import open_db
@@ -56,7 +56,7 @@ def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, 
         binders.sort()
     all_pages = sorted(all_pages, key=lambda page: (binders.index(page.binder), page.number))
     document = memo.build(casefile, all_pages, counts["open_items"], matter=number,
-                          playbook_version=book.version, model=config.model.name)
+                          playbook_version=book.version, model=config.model.name, info=matterinfo.load(folder))
     output = folder / "outputs" / "memo.docx"
     temporary = output.with_name("memo.docx.tmp")
     if temporary.is_symlink() or temporary.exists():
@@ -85,11 +85,9 @@ def run(config, number, *, out, err, opener=None) -> int:
         if not loaded.pages and not loaded.open_pages:
             raise pages.PagesError(f"no pages to read in {number}")
         rules.check_stamps(loaded.pages, book.rules)
-        memo.check_binders(loaded.pages, book.rules)
         # Open intake pages still contribute headings and labels to the memo.
         open_pages = tuple(Page(page_id.rsplit("/", 1)[0], int(page_id.rsplit("/", 1)[1]), "", stamps)
                            for page_id, stamps, _, _ in loaded.open_pages)
-        memo.check_binders(open_pages, book.rules)
         folder = config.paths.matters / number
         path = folder / "casefile.jsonl"
         with (folder / "casefile.jsonl.lock").open("a") as lock:
@@ -99,7 +97,7 @@ def run(config, number, *, out, err, opener=None) -> int:
     except ModelError as exc:
         print(f"memo: cannot run: {exc}; the pages of this run stay open until a later run reads them", file=err)
         return 2
-    except (rules.RulesError, playbook.PlaybookError, pages.PagesError, facts.CaseFileError, memo.MemoError,
+    except (matterinfo.MatterInfoError, rules.RulesError, playbook.PlaybookError, pages.PagesError, facts.CaseFileError, memo.MemoError,
             OSError, sqlite3.Error) as exc:
         print(f"memo: cannot run: {exc}", file=err)
         return 2

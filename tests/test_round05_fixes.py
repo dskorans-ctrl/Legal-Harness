@@ -124,7 +124,7 @@ def test_m1_absent_first_page_keeps_every_fact(tmp_path, present):
     assert quotes[0].text == expected
     heading = next(p.text for p in reversed(paragraphs[:paragraphs.index(quotes[0])])
                    if p.style.name.startswith("Heading"))
-    assert heading == ("Medical page MED0007 (medical/007)" if present else "Facts on pages not in this matter")
+    assert heading == ("Page MED0007 (medical/007), binder medical" if present else "Facts on pages not in this matter")
     if present:
         assert "Also cited: [cite MED0001]" in [p.text for p in paragraphs]
 
@@ -253,13 +253,13 @@ def test_l5_refusal_is_one_line_per_finding(tmp_path):
     built = build(merged(answer()))
     built.sections[-1].paragraphs.append(memo.Paragraph([
         memo.Run('"IME"', exempt="quote"), memo.Run(" [page medical/001]")]))
-    built.sections[3].paragraphs.append(memo.Paragraph([memo.Run("IME summary")]))
+    built.sections[12].paragraphs.append(memo.Paragraph([memo.Run("IME summary")]))
     rules = playbook.load(Path(__file__).resolve().parents[1] / "playbook").rules
     with pytest.raises(memo.MemoError) as caught:
         memo.render(built, tmp_path / "outputs/memo.docx", rules=rules)
     assert str(caught.value).splitlines() == [
         "no-dme-ime: IME (in Conflicts)",
-        "bates-cites: [page medical/001] (in Verified facts by record)",
+        "bates-cites: [page medical/001] (in Facts on pages not in this matter)",
     ], "L5: refusal repeats text or loses its section"
 
 

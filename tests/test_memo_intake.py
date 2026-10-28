@@ -45,7 +45,7 @@ def test_memo_intake(tmp_path, scanned_intake):
         "  open: scan/004: empty: no text after OCR"]
     document = Document(folder / "outputs/memo.docx")
     texts = [paragraph.text for paragraph in document.paragraphs]
-    label_ok = int("Scan page KMR2344 TWP7731 (scan/003)" in texts)
+    label_ok = int("Page KMR2344 TWP7731 (scan/003), binder scan" in texts)
     assert label_ok == 1
     quotes = [paragraph for paragraph in document.paragraphs if paragraph.text.startswith('"')]
     assert len(quotes) == 5

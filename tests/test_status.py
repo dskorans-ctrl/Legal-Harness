@@ -23,7 +23,7 @@ FIXTURE = ROOT / "tests/fixtures/matters/9001.001"
 def totals():
     checked = {"status": 0, "binder": 0}
     yield checked
-    print(f'status_ok={checked["status"]} of 6 binder_refused={checked["binder"]}', flush=True)
+    print(f'status_ok={checked["status"]} of 6 binder_shown={checked["binder"]}', flush=True)
 
 
 def setup_matter(tmp_path):
@@ -108,23 +108,22 @@ def test_status_six_cases(tmp_path, monkeypatch, capsys, totals):
     totals["status"] = 6
 
 
-def test_binder_refused_before_side_effects(tmp_path, monkeypatch, capsys, totals):
-    path, settings, folder = setup_matter(tmp_path)
+def test_binder_shown(tmp_path, totals):
+    from fakemodel.bench import recording_for
+
+    _, settings, folder = setup_matter(tmp_path)
     metadata = folder / "matter.toml"
     metadata.write_text(metadata.read_text(encoding="utf-8").replace('"medical"', '"ime"'), encoding="utf-8")
     (folder / "records/medical").rename(folder / "records/ime")
-    transport = FakeTransport(FakeModel(recordings=recordings_for(FIXTURE)))
-    monkeypatch.setattr(memo_job, "ModelClient", lambda settings, opener=None:
-                        model.ModelClient(settings, opener=transport))
-    monkeypatch.setattr(sys, "argv", ["casefile", "memo", "--matter", "9001.001", "--config", str(path)])
-    assert cli.main() == 2
-    printed = capsys.readouterr()
-    assert printed.out == ""
-    assert printed.err == ("memo: cannot run: binder ime fails the firm rule no-dme-ime (ime); "
-                           "remove the binder by hand and intake it under another name (question 34)\n")
-    assert not (settings.paths.state / "runlog.sqlite").exists(), "binder_refused: run log opened before refusal"
-    assert not transport.requests and not (folder / "casefile.jsonl").exists()
-    assert not (folder / "outputs").exists()
+    loaded = matter.load(folder)
+    answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
+    transport = FakeTransport(FakeModel(recordings=[recording_for(extract.card(), loaded.pages, loaded.number, answer)]))
+    code, _, error = invoke(settings, transport)
+    assert code == 1 and not error, f"binder_shown=0: {error}"
+    paragraphs = Document(folder / "outputs/memo.docx").paragraphs
+    heading = next(p for p in paragraphs if p.text == 'Page MED0001 (ime/001), binder ime')
+    assert heading.runs[-1].text == 'ime', 'binder_shown=0'
+    assert len(transport.requests) == 1
     totals["binder"] = 1
 
 
