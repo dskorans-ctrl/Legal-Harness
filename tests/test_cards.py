@@ -11,9 +11,9 @@ from conftest import ROOT
 
 VERSIONS = {'01-MEMO':'ed0e58680bc9','00-BILLS':'7805311400a2','00-CLASSIFY':'0919de24f802',
             '00-PROCEDURAL':'58ef7e481a89','00-TESTIMONY':'acf3b1c3a5ef','01-P0':'c87983a810e7',
-            '02-A':'e83286bb8aae','02-C-CLIENT':'df86b9f3b6f5','02-C-DEFDOC':'d80bb17d74dc',
-            '02-C-OURDOC':'2e52a8d65bd7','02-C-WITNESS':'4476def99975','03-CLIENT':'c75a00f1761b',
-            '04-G':'1949bb5a0b36','05-A':'7965c9947fd6','07-ANON':'bd075ed6a208'}
+            '02-A':'858d1b9eac5b','02-C-CLIENT':'f243ad762b1f','02-C-DEFDOC':'ae10f8ca6acf',
+            '02-C-OURDOC':'1b3ca3e1e2da','02-C-WITNESS':'ddd72eea4d3e','03-CLIENT':'dbead8527c45',
+            '04-G':'ddc04735074c','05-A':'633ccbbab4bd','07-ANON':'bd075ed6a208'}
 
 
 def test_cards():

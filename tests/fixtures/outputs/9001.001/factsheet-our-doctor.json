@@ -1,0 +1,190 @@
+{
+  "facts": [
+    {
+      "cite": "MED0001",
+      "quote": "Date of service: 03/11/2025",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0001",
+      "quote": "Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0001",
+      "quote": "Pain 7/10 in the low back, no radiation.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0001",
+      "quote": "Patient denies any prior back injury or back pain.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Straight leg raise negative bilaterally.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Lumbar spine x-ray, three views, ordered; report to follow.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Diagnosis: acute lumbar strain.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0002",
+      "quote": "Off work for 3 days, then return as tolerated.",
+      "use": "both",
+      "note": ""
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.",
+      "use": "danger",
+      "note": "Prior symptoms may support a different explanation."
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Restrictions: no lifting over 10 pounds and no repetitive bending through 04/11/2025.",
+      "use": "both",
+      "note": ""
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Referred to physical therapy, two visits per week for six weeks.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0004",
+      "quote": "Lumbar flexion 40 degrees, extension 10 degrees.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0005",
+      "quote": "Patient reports new numbness into the left calf since approximately 04/10/2025.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0005",
+      "quote": "Recommend MRI of the lumbar spine before further progression.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0005",
+      "quote": "Discharge summary to follow at visit 12.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0006",
+      "quote": "L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0007",
+      "quote": "Positive straight leg raise on the left at 45 degrees.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0007",
+      "quote": "Impression: L4-L5 disc protrusion with left L5 radiculopathy.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0008",
+      "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0008",
+      "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0008",
+      "quote": "The patient has not reached maximum medical improvement.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "EMP0001",
+      "quote": "Employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "EMP0003",
+      "quote": "Average weekly wage: $912.40",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "The examinee is at maximum medical improvement as of today's examination.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "No work restrictions are indicated.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0008",
+      "quote": "Restrictions: sedentary duty, no lifting over 15 pounds, until re-evaluation on 06/20/2025.",
+      "use": "both",
+      "note": ""
+    },
+    {
+      "cite": "DEF0003",
+      "quote": "No further treatment is medically necessary.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0003",
+      "quote": "Lumbar strain, likely work related.",
+      "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "EMP0001",
+      "quote": "Date of hire: 08/02/2021",
+      "use": "none",
+      "note": ""
+    },
+    {
+      "cite": "EMP0002",
+      "quote": "Lift up to 50 pounds repeatedly during the shift.",
+      "use": "our_case",
+      "note": ""
+    }
+  ]
+}

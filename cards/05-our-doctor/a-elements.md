@@ -1,28 +1,12 @@
-# CARD 05-A: Elements check
-Tier: LOCAL | Output: JSON (schema: elements) | Temperature: 0
+# Elements of our doctor's records
 
-## Your one job
-For our doctor's report or notes, mark each of 14 elements STATED, PARTIAL, or NOT_FOUND.
-
-## Elements
-treating_relationship, mechanism, history_prior_conditions, exam_findings, imaging_reviewed, diagnosis, causation, treatment_reasonable_necessary_related, bills_reasonable_related, work_status_restrictions, mmi, permanency_rating, future_treatment, records_reviewed
-
-## Rules
-- STATED: the doctor wrote it. Quote it.
-- PARTIAL: something related but not the element itself (a diagnosis but no causation statement; "related" with no probability wording). Quote what is there; `absent_note` says what is missing in one neutral sentence.
-- NOT_FOUND: give `pages_searched`.
-- Treatment and bills are separate elements. A treatment statement does not cover bills.
-- Copy work status marks exactly (temporary or permanent).
-- Never suggest what the doctor should write.
-
-## Example
-```json
-{"elements":[
-{"element":"causation","status":"PARTIAL","quote":"lumbar radiculopathy related to work injury","cite":"(B1 148)","absent_note":"No probability wording.","pages_searched":"B1 140-175"},
-{"element":"bills_reasonable_related","status":"NOT_FOUND","quote":"","cite":"","absent_note":"","pages_searched":"B1 140-175"}],
-"coverage":"Our doctor records B1 140-175. Elements reported: 2 of 14 shown in example."}
-```
-In real output, list all 14 elements.
-
-## Final check
-- 14 elements. Nothing STATED without the doctor's own words.
+Input: a fact packet with quote, cite and page id per fact and the cited doctor's pages.
+Return only elements, each with element, status (STATED or PARTIAL), quote, cite and absent_note.
+The fixed order is treating_relationship, mechanism, history_prior_conditions, exam_findings,
+imaging_reviewed, diagnosis, causation, treatment_reasonable_necessary_related,
+bills_reasonable_related, work_status_restrictions, mmi, permanency_rating, future_treatment, records_reviewed.
+STATED means the doctor wrote the element; copy the doctor's own words and leave absent_note empty.
+PARTIAL means a related statement is present; quote it and state the missing part neutrally in absent_note.
+Omit every element with no statement on the pages. Code computes NOT FOUND from the omitted elements.
+Treatment and bills always remain separate. Preserve temporary or permanent marks and qualifiers.
+Never suggest what the doctor should write. No invented negative quote and no pages_searched field.

@@ -1,20 +1,17 @@
-# CARD 02-C-DEFDOC: Cross of the defense doctor (one topic)
-Tier: STRONG (run on the stronger model, or attorney writes from this card) | Output: JSON (schema: questions) | Temperature: 0.1
+# CARD 02-C-DEFDOC: Cross of the defense doctor
 
 ## Your one job
-Write cross questions on ONE topic that rest on documents and the doctor's own words. Never on medicine.
-
-## You receive
-- Snapshot, doctor name, the topic, the fact sheet, and the defense report analysis findings for that topic.
+Write short questions on documents, the doctor's own words and the process shown in the report.
+Never ask the doctor to explain medicine. Apply every practice test supplied with this card.
 
 ## Run every question through these 9 tests. Fail any one: cut it.
 1. Could he answer "it depends" or "yes, but"?
 2. Does it ask why, how, or what causes?
 3. Does it ask him to agree to a general medical principle?
-4. Is there an obvious other explanation in the chart (age, prior condition, effort, bilateral finding)? Then move it to danger_zone.
+4. Is there an obvious other explanation in the chart (age, prior condition, effort, bilateral finding)? Exclude that question; keep the fact labelled danger.
 5. Does it depend on reading layout or wording he can read differently?
 6. Does it rest on something the patient reported or declined?
-7. Does the finding cut both ways? Then move it to danger_zone.
+7. Does the finding cut both ways? Exclude that question; keep the fact labelled danger.
 8. Is the answer not fixed by a document we have? (Allowed exception: his current clinical practice and his face-to-face time with the claimant.)
 9. Does the quoted passage sit inside reasoning that argues against us?
 
@@ -27,20 +24,10 @@ Write cross questions on ONE topic that rest on documents and the doctor's own w
 - Labels like "symptom magnification": ask which findings. Ask what, never why.
 - Tests his report shows he did not do.
 
-## Never
-- Who hired, paid, retained, or referred him. Fees. How many of these exams he does. Never write DME or IME.
-
-## Example
-```json
-{"deponent":"Victor Hale, M.D.","section":"primary","topic":"Records reviewed",
-"questions":[
-{"text":"Doctor, your report lists the records you reviewed on page 2, correct?","cite":"Hale report 6/4/26 p.2","verified":"V","note":""},
-{"text":"The Coastal Neurology records are not on that list, correct?","cite":"Hale report 6/4/26 p.2; (B1 72-100)","verified":"V","note":"Do not ask what the neurology records mean."}],
-"missing":[],
-"danger_zone":[{"fact":"Neurology records include a seizure diagnosis after the accident","cite":"(B1 74)","why_not_to_open":"Opens a separate cause and work-capacity issue."}],
-"points_for_our_expert":["Significance of the EMG never being performed"],
-"coverage":"Topic: records reviewed. Questions: 2."}
-```
-
-## Final check
-- Every question passes all 9 tests. Danger zone and points for our expert filled in when relevant.
+## Input and answer
+Read the fact packet, its cited pages and labels. Return only the questions schema: section, questions
+({text, cite, quote, note}), points_for_our_expert ({text, quote, cite}). Copy section from the request.
+Every question and expert point rests on a quote on its cited page. Notes may be empty. No missing list.
+When taken_by=us, primary is ours, cross the other side's likely questions, redirect ours after cross.
+When taken_by=defense, primary is theirs, cross ours, redirect theirs. Purpose is discovery or trial.
+Never script a client's answer. Never supply an unsupported assertion.

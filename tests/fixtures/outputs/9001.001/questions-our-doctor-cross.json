@@ -1,0 +1,12 @@
+{
+  "section": "cross",
+  "questions": [
+    {
+      "text": "The patient reported a lumbar strain in 2019, correct?",
+      "cite": "MED0003",
+      "quote": "Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.",
+      "note": ""
+    }
+  ],
+  "points_for_our_expert": []
+}

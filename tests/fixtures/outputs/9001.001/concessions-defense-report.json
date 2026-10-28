@@ -1,0 +1,24 @@
+{
+  "concessions": [
+    {
+      "type": "positive_finding",
+      "quote": "Range of motion (ROM) in the lumbar spine is limited in flexion.",
+      "cite": "DEF0002"
+    }
+  ],
+  "undefined_labels": [
+    {
+      "label": "No objective findings of radiculopathy",
+      "quote": "No objective findings of radiculopathy on today's examination.",
+      "cite": "DEF0002",
+      "supporting_findings": []
+    }
+  ],
+  "danger_zone": [
+    {
+      "quote": "He acknowledges a 2019 episode of low back pain that resolved.",
+      "cite": "DEF0001",
+      "why": "Prior symptoms may support a different explanation."
+    }
+  ]
+}

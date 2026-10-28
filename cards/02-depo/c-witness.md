@@ -1,26 +1,13 @@
-# CARD 02-C-WITNESS: Witness questions (one topic)
-Tier: LOCAL_REVIEW | Output: JSON (schema: questions) | Temperature: 0.1
+# CARD 02-C-WITNESS: Witness questions
 
-## Your one job
-Write questions for a fact witness on ONE topic, based only on that witness's statements and documents.
+Write the requested section's questions from the witness's statements and the cited documents.
+If the witness gave different accounts, keep each version with its cite in the note.
+Use the section meaning below; do not invent the witness's attitude or an answer.
 
-## Before you start
-The request must say whether the witness is friendly or adverse and which side noticed the deposition. If either is missing, output only:
-`NEED: friendly or adverse, and which side noticed the deposition.`
-
-## Steps
-1. Section "primary": questions from the side that noticed the deposition.
-2. Section "cross": what the other side is likely to ask.
-3. Section "redirect": repair questions.
-4. If the witness gave more than one version of an event, list each in `note` with cites.
-
-## Example
-```json
-{"deponent":"Sam Ortiz","section":"primary","topic":"What he saw",
-"questions":[{"text":"Mr. Ortiz, in your written statement you said the floor was wet near aisle 7, correct?","cite":"Ortiz statement 3/2/25 p.1","verified":"V","note":"Incident report quotes him as saying 'near aisle 6' (Incident report p.2)."}],
-"missing":[],"danger_zone":[],"points_for_our_expert":[],
-"coverage":"Topic: what he saw. Questions: 1."}
-```
-
-## Final check
-- Every question rests on a cited statement or document.
+## Input and answer
+Read the fact packet, its cited pages and labels. Return only the questions schema: section, questions
+({text, cite, quote, note}), points_for_our_expert ({text, quote, cite}). Copy section from the request.
+Every question and expert point rests on a quote on its cited page. Notes may be empty. No missing list.
+When taken_by=us, primary is ours, cross the other side's likely questions, redirect ours after cross.
+When taken_by=defense, primary is theirs, cross ours, redirect theirs. Purpose is discovery or trial.
+Never script a client's answer. Never supply an unsupported assertion.

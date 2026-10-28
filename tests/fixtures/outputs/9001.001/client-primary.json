@@ -1,0 +1,18 @@
+{
+  "section": "primary",
+  "questions": [
+    {
+      "text": "What were you lifting when your back pain began?",
+      "cite": "MED0001",
+      "quote": "Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
+      "note": ""
+    },
+    {
+      "text": "What treatment have you received since the incident?",
+      "cite": "MED0007",
+      "quote": "Subsequent treatment included physical therapy at Ridgeline Physical Therapy.",
+      "note": ""
+    }
+  ],
+  "points_for_our_expert": []
+}
