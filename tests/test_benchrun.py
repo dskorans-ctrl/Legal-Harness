@@ -1,4 +1,4 @@
-"""The stage 2 runner: seven probes, each with exactly one thing wrong, and the run-log rows."""
+"""The stage 2 runner: eight probes and the run-log rows."""
 
 import json
 
@@ -49,6 +49,7 @@ def test_benchrun_modes(tmp_path, capsys):
         req_shape_ok = (
             sent["options"] == {"num_ctx": 65536, "temperature": 0.1} and
             sent["stream"] is False and
+            sent["truncate"] is False and
             sent["messages"][1]["content"].startswith("Matter 9001.001\n=== PAGE medical/001 BATES MED0001 ===")
         )
         checks.append(check1 and req_shape_ok)
@@ -98,6 +99,15 @@ def test_benchrun_modes(tmp_path, capsys):
         check7 = r.failure.startswith("bench.counts") and r.pages_failed == 14
         checks.append(check7)
 
+        fake.mode = "prompt_too_long"
+        r = go()
+        newest = log.connection.execute(
+            "SELECT status, raw_answer FROM answers ORDER BY id DESC LIMIT 1").fetchone()
+        checks.append(r.failure.startswith("bench.truncation: status=400:") and
+                      r.pages_failed == 14 and r.reply_received is True and
+                      newest[0] == "failed" and
+                      json.loads(newest[1])["error"].startswith("the prompt is longer than the context length"))
+
         # Read run log
         db = log.connection
         runs = [tuple(row) for row in db.execute("SELECT job, matter, pages_in FROM runs ORDER BY id")]
@@ -108,12 +118,13 @@ def test_benchrun_modes(tmp_path, capsys):
         ok = sum(checks)
 
         with capsys.disabled():
-            print(f"benchrun_modes={ok} of 7 answers_ok={ok_answers} answers_failed={failed_answers} failures={len(gates)}")
+            print(f"benchrun_modes={ok} of 8 answers_ok={ok_answers} answers_failed={failed_answers} failures={len(gates)}")
 
-        assert checks == [True] * 7
-        assert runs == [("bench", "9001.001", 14)] * 7
-        assert (ok_answers, failed_answers) == (1, 6)
-        assert gates == ["bench.truncation", "bench.answer", "bench.answer", "bench.truncation", "bench.model", "bench.counts"]
+        assert gates == ["bench.truncation", "bench.answer", "bench.answer", "bench.truncation",
+                         "bench.model", "bench.counts", "bench.truncation"]
+        assert checks == [True] * 8
+        assert runs == [("bench", "9001.001", 14)] * 8
+        assert (ok_answers, failed_answers) == (1, 7)
 
     finally:
         log.close()

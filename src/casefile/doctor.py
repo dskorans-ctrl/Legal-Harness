@@ -76,7 +76,7 @@ def check_runlog_schema(state):
     ).fetchone()[0]
     state.before = state.log.count_test_jobs()
     version = state.log.schema_version
-    return version == 1 and count == 15, f"schema={version} triggers={count} (counted)"
+    return version == 2 and count == 21, f"schema={version} triggers={count} (counted)"
 
 
 def check_ollama_loopback(state):

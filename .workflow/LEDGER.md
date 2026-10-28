@@ -194,6 +194,11 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   matter folder (§8b). Chair's privacy note: the convention's evidence came from a de-identified real matter, and
   `~/local-worker/log.jsonl` holds real client prompts; before any port, the stage 7 builder copies code only, and
   the chair confirms `fixtures/anon-matter/` is invented before it enters the repo.
+- Q48: after round 4 (owner, 2026-10-27, going offline)? -> "if this round finishes, just start the next one without
+  me. Once I'm up I'll push to main and we'll do the handoff." Overrides "one round per session" and the session's
+  "do not start round 5" for tonight only. Round 4 closes in full (merge to local `main`, records, handoff draft);
+  round 5 opens on `loop/round-05` with Q46 tiers; the owner check-in is replaced by held questions in
+  `docs/loop/questions-for-owner.md` with interim rulings by the pillars, pending veto (skill autonomy rule). No push.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 

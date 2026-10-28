@@ -156,7 +156,7 @@ def test_m8_matters_beside_config_and_exact_errors(tmp_path):
 def test_l1_schema_reason_only_reports_this_run(tmp_path):
     _, output = invoke(setup_config(tmp_path))
     line = next(line for line in output.splitlines() if line.startswith("doctor runlog_schema "))
-    assert line == "doctor runlog_schema PASS schema=1 triggers=15 (counted)"
+    assert line == "doctor runlog_schema PASS schema=2 triggers=21 (counted)"
 
 
 def test_l2_runlog_job_blocked_by_context(tmp_path):

@@ -13,7 +13,8 @@ import pytest
 
 from casefile.config import load
 from casefile.doctor import MESSAGES
-from casefile.model import ModelClient, ModelError, build_opener
+from casefile.model import (TEMPLATE_TOKENS, ModelClient, ModelError, build_opener,
+                            context_length_error, tokens_at_most)
 from conftest import write_config
 from fakemodel.core import FakeModel, FakeResponse, FakeTransport
 from fakemodel.server import serve
@@ -38,6 +39,65 @@ def test_fields(tmp_path):
     assert (answer.content, answer.done_reason) == ("READY", "stop")
     assert answer.prompt_eval_count == answer.raw["prompt_eval_count"]
     assert answer.eval_count == answer.raw["eval_count"]
+
+
+def test_chat_body_keys(tmp_path, capsys):
+    config = load(write_config(tmp_path)).model
+    transport = FakeTransport(FakeModel())
+    client = ModelClient(config, transport)
+    base = {"model": config.name, "messages": MESSAGES, "stream": False,
+            "options": {"num_ctx": 65536, "temperature": 0.1}}
+    cases = [({}, base), ({"think": None, "truncate": None}, base),
+             ({"think": False, "truncate": False}, dict(base, think=False, truncate=False)),
+             ({"think": True, "truncate": True}, dict(base, think=True, truncate=True)),
+             ({"think": False}, dict(base, think=False)),
+             ({"truncate": False}, dict(base, truncate=False))]
+    bodies = []
+    for kwargs, expected in cases:
+        client.chat(MESSAGES, **kwargs)
+        bodies.append(json.loads(transport.requests[-1][0].data) == expected)
+    ok = int(all(bodies))
+    with capsys.disabled():
+        print(f"chat_body_keys={ok}")
+    assert ok == 1, bodies
+
+
+def test_cached_count_read(tmp_path, capsys):
+    config = load(write_config(tmp_path)).model
+    payload = {"message": {"content": "READY"}, "done_reason": "stop", "done": True,
+               "prompt_eval_count": 20, "eval_count": 2}
+    for count in (7, 0, None):
+        raw = dict(payload, prompt_eval_cached_count=count)
+        answer = ModelClient(config, Transport(FakeResponse(200, raw))).chat(MESSAGES)
+        assert answer.prompt_eval_cached_count == count
+        assert answer.raw == raw
+    answer = ModelClient(config, Transport(FakeResponse(200, payload))).chat(MESSAGES)
+    assert answer.prompt_eval_cached_count is None
+    for count in ("x", True, 1.5, [], {}):
+        raw = dict(payload, prompt_eval_cached_count=count)
+        with pytest.raises(ModelError, match="status=200 invalid prompt_eval_cached_count") as info:
+            ModelClient(config, Transport(FakeResponse(200, raw))).chat(MESSAGES)
+        assert info.value.received is True and info.value.raw == raw
+    with capsys.disabled():
+        print("cached_count_read=1")
+
+
+@pytest.mark.parametrize("text,want", [("", 0), ("abc", 3), ("ﬁ", 3), ("’", 3)])
+def test_tokens_at_most(text, want, capsys):
+    actual = tokens_at_most(text)
+    with capsys.disabled():
+        print(f"tokens_at_most({json.dumps(text, ensure_ascii=False)})={actual}")
+    assert actual == want
+    assert TEMPLATE_TOKENS == 64
+
+
+@pytest.mark.parametrize("message,want", [
+    ("the prompt is longer than the context length currently available to the model", True),
+    ("CONTEXT LENGTH exceeded", True), ("Exceeds The Available Context", True),
+    ("invented server busy", False), ("", False),
+])
+def test_context_length_error(message, want):
+    assert context_length_error(message) is want
 
 
 def test_404(tmp_path):

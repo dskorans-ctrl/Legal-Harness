@@ -152,3 +152,25 @@ def test_bench_received_bad_answer_stays_exit1(tmp_path, capsys):
     assert (code, err) == (1, "")
     assert lines[0].startswith("bench 9001.001 failure bench.truncation")
     assert lines[1].endswith("pages_failed=14 of 14")
+
+
+def test_bench_prompt_too_long_stays_exit1(tmp_path, capsys):
+    """The stand-in's context refusal is truncation, with every page failed and the reply stored."""
+    from fakemodel.bench import recordings_for
+    from fakemodel.core import FakeModel, FakeTransport
+    opener = FakeTransport(FakeModel(recordings=recordings_for(MATTER), mode="prompt_too_long"))
+    code, lines, err = run_runner_mode(tmp_path, opener)
+    with capsys.disabled():
+        print("\n".join(lines))
+    assert (code, err) == (1, "")
+    message = ("the prompt is longer than the context length currently available to the model; "
+               "shorten the prompt, adjust the context length in settings, or use a model with a longer context length")
+    raw = json.dumps({"error": message})
+    assert lines == [
+        f"bench 9001.001 failure bench.truncation: status=400: {raw.encode('utf-8')[:200]!r}",
+        "bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 "
+        "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14",
+        "  missed: " + " ".join(f"F{i:02}" for i in range(1, 30)),
+        "  flags_missed: G1 G2 G3 G4 G5 G6 G7 G8 G9",
+        "bench matters=1 imperfect=1",
+    ]

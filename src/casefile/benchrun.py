@@ -7,7 +7,7 @@ import json
 
 from casefile.benchcandidate import EMPTY, Candidate, CandidateError, parse_text
 from casefile.matter import Matter, Page
-from casefile.model import ModelClient, ModelError
+from casefile.model import ModelClient, ModelError, context_length_error
 
 CARD = "bench.extract"
 CARD_TEXT = (
@@ -65,14 +65,15 @@ def run(matter: Matter, config, log, playbook_version: str, opener=None) -> RunR
                            prompt_sha256=prompt_sha256(msgs))
     client = ModelClient(config.model, opener)
     try:
-        answer = client.chat(msgs, options={"num_ctx": config.model.num_ctx})
+        answer = client.chat(msgs, options={"num_ctx": config.model.num_ctx}, truncate=False)
     except ModelError as exc:
         # Every received reply is a row (OR-8), even when its body never came; no reply stores none.
         if exc.raw is not None or exc.received:
             raw_answer = "" if exc.raw is None else exc.raw if isinstance(exc.raw, str) else json.dumps(exc.raw)
             log.record_answer(run_id, raw_answer=raw_answer, status="failed")
-        log.record_failure(run_id, "bench.model", str(exc))
-        return RunResult(EMPTY, n, f"bench.model: {exc}", exc.received)
+        gate = "bench.truncation" if exc.received and context_length_error(str(exc)) else "bench.model"
+        log.record_failure(run_id, gate, str(exc))
+        return RunResult(EMPTY, n, f"{gate}: {exc}", exc.received)
 
     fields = dict(done_reason=answer.done_reason, prompt_eval_count=answer.prompt_eval_count,
                   eval_count=answer.eval_count)
