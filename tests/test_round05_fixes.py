@@ -124,7 +124,7 @@ def test_m1_absent_first_page_keeps_every_fact(tmp_path, present):
     assert quotes[0].text == expected
     heading = next(p.text for p in reversed(paragraphs[:paragraphs.index(quotes[0])])
                    if p.style.name.startswith("Heading"))
-    assert heading == ("medical page MED0007 (medical/007)" if present else "Facts on pages not in this matter")
+    assert heading == ("Medical page MED0007 (medical/007)" if present else "Facts on pages not in this matter")
     if present:
         assert "Also cited: [cite MED0001]" in [p.text for p in paragraphs]
 

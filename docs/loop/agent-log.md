@@ -141,3 +141,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 14 | W8 builder (stage 5 exit test) | codex gpt-6.1-sol | 13.2 min | 128 k | done; stage5 exit=0 runs=4 of 4 memos=3 of 3, 8 controls red; chair read the produced memo |
 | 15 | 8a code review (fresh agent, Q46) | fable | 10.4 min | 232 k | done; 11 findings (2 high, 4 med, 5 low); chair ran the reviewer's probe: 9 reproduced |
 | 16 | Fix cycle 1 (8a H1, H2, M1, M2, M3, L1, L2, L5, CH-1) | codex gpt-6.1-sol | about 25 min | 171 k | done; 16 seeds red then green; adjacent: duplicate flag ids, reading source identity; 633 passed; baselines unchanged; chair re-ran the reviewer's probe |
+| 17 | 8b output critic | opus | 4.3 min | 119 k | done; 7/10, high 0, med 2, low 5; answer key complete; chair reproduced M1, L1; 6 to fix cycle 2, L5 owner question 58 |
+| 18 | Fix cycle 2 (critic M1, M2, L1 to L4) | codex gpt-6.1-sol | about 6 min | 163 k | done; 12 controls red then green; 652 passed; stage 5 stale pin moved to `none`; chair read the regenerated memo |

@@ -297,3 +297,9 @@ exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged,
     by hand and intake it under another name, question 34); intake does not check names this round.
 
 56 (amended by the chair, 2026-10-28 02:20, after a measurement): the limit is not only across runs. Pages are sent to the model in chunks that fit its context; a conflict or gap whose two pages land in different chunks is not seen even in one run. On the invented matter split into three chunks, 4 of its 9 known conflicts and gaps were lost (`flags=5 of 9`); in one chunk all 9 are found. A real binder of hundreds of pages will run as many chunks. Interim unchanged: the memo states the limit plainly. A later stage could add a second pass that compares facts across chunks.
+
+58. (Round 5 output critic, L5.) The memo's model sentences and page headings can say "defense report" (a binder you
+    named `defense-report`, and the model's own wording such as "The defense report says ..."). The firm rule bans
+    "DME" and "IME" and says to write "the report"; it does not catch "defense report". Should our own words avoid
+    "defense report" too (headings would then show the binder differently, and the rule would gain that phrase), or is
+    "defense report" acceptable? Interim: unchanged; the phrase is shown; no rule added.

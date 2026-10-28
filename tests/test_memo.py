@@ -1,6 +1,7 @@
 """Read the generated Word paragraphs and runs for the fourteen W5 checks."""
 
 import copy
+from datetime import datetime, timezone
 from pathlib import Path
 
 from docx import Document
@@ -63,6 +64,116 @@ def section(document, title):
     return paragraphs[start:end]
 
 
+def rendered(tmp_path, stored, pages=PAGES, opened=()):
+    path = tmp_path / "memo.docx"
+    memo.render(build(stored, pages, opened), path,
+                rules=rules.load(Path(__file__).resolve().parents[1] / "playbook/rules.toml"))
+    return Document(path)
+
+
+@pytest.mark.parametrize("other", ["absent", "stale", "current"])
+def test_m1_memo_lists_only_other_stale_outputs(tmp_path, other):
+    stored = facts.CaseFile()
+
+    def output(name):
+        return facts.Event("output", dict(name=name, path=f"/invented/{name}.docx",
+            built_from_seq=stored.last_seq, facts=0, conflicts=0, gaps=0, open=0))
+
+    stored.extend([output("memo")])
+    if other != "absent":
+        stored.extend([output("report")])
+    stored.extend([case_file().events[0]])
+    if other == "current":
+        stored.extend([output("report")])
+    document = rendered(tmp_path, stored)
+    expected = ["report" if other == "stale" else "none"]
+    assert [p.text for p in section(document, "Outputs out of date")] == expected, "M1: stale outputs differ"
+
+
+@pytest.mark.parametrize("state", ["read", "uncited", "failed", "empty"])
+def test_m2_every_unquoted_page_has_an_explanation(tmp_path, state):
+    page = matter.Page("medical", 2, "Invented page text." if state != "empty" else "", ("MED0002",))
+    opened = [] if state == "read" else [memo.OpenItem(page.page_id, memo.label(page), state, "Invented reason.")]
+    stored = facts.CaseFile()
+    # A flag can read a page without placing a fact quote beneath its heading.
+    stored.extend([facts.Event("flag", dict(id="G1", kind="gap", cites=["MED0002"],
+        page_ids=[page.page_id], about="The next visit is missing.", run_id=1))])
+    document = rendered(tmp_path, stored, (page,), opened)
+    paragraphs = section(document, "Verified facts by record")
+    expected = "No fact was quoted from this page." if state == "read" else f"Open item: {state} (see Open items)."
+    assert [p.text for p in paragraphs[1:]] == [expected], "M2: unquoted page explanation differs"
+
+
+@pytest.mark.parametrize("additions, expected", [
+    ((0, 0, 0, 0, 0), "0 facts added, 0 cites added, 0 readings added, 0 flags added"),
+    ((1, 0, 0, 0, 0), "1 fact added, 0 cites added, 1 reading added, 0 flags added"),
+    ((0, 1, 1, 1, 1), "0 facts added, 1 cite added, 1 reading added, 1 flag added, 1 flag reading added"),
+    ((2, 2, 0, 2, 2), "2 facts added, 2 cites added, 2 readings added, 2 flags added, 2 flag readings added"),
+])
+def test_l1_changed_counts_and_grammar(tmp_path, additions, expected):
+    stored = case_file()
+    stored.extend([facts.Event("output", dict(name="memo", path="/invented/memo.docx",
+        built_from_seq=stored.last_seq, facts=3, conflicts=1, gaps=1, open=0))])
+    for kind, count in zip(facts.CHANGE_KINDS, additions):
+        template = next(event for event in case_file().events if event.kind == kind)
+        for index in range(count):
+            payload = dict(template.payload)
+            if "id" in payload:
+                payload["id"] = f"new-{kind}-{index}"
+            stored.extend([facts.Event(kind, payload)])
+    document = rendered(tmp_path, stored)
+    assert [p.text for p in section(document, "What changed since the last memo")] == [expected], "L1: change counts differ"
+
+
+@pytest.mark.parametrize("title, expected", [
+    ("Open items", ["none"]),
+    ("Conflicts", ["Pages read in 0 runs; conflicts and gaps are checked only between pages sent to the model together.", "none"]),
+    ("Gaps and missing records", ["none"]),
+    ("Outputs out of date", ["none"]),
+])
+def test_l2_empty_sections_say_none(tmp_path, title, expected):
+    document = rendered(tmp_path, facts.CaseFile())
+    assert [p.text for p in section(document, title)] == expected, f"L2: {title} lacks none"
+
+
+@pytest.mark.parametrize("has_text", [True, False])
+def test_l3_warning_names_only_unstamped_pages_with_text(tmp_path, has_text):
+    pages = (matter.Page("probe", 1, "Invented text." if has_text else "", ()),
+             matter.Page("probe", 2, " \n\t", ()),
+             matter.Page("probe", 3, "More invented text." if has_text else "", ()),
+             matter.Page("probe", 4, "Stamped text.", ("MED0004",)),
+             matter.Page("probe", 5, "", ()))
+    opened = [memo.OpenItem(page.page_id, memo.label(page), "empty", "no text after OCR")
+              for page in pages if not page.text.strip()]
+    document = rendered(tmp_path, facts.CaseFile(), pages, opened)
+    paragraphs = section(document, "Verified facts by record")
+    first_heading = next(index for index, p in enumerate(paragraphs) if p.style.name == "Heading 2")
+    expected = ["These pages carry no Bates stamp and are cited by page id: probe/001, probe/003."] if has_text else []
+    assert [p.text for p in paragraphs[:first_heading]] == expected, "L3: unstamped warning differs"
+
+
+@pytest.mark.parametrize("part", ["built", "headings"])
+def test_l4_sentence_and_heading_capitals(tmp_path, monkeypatch, part):
+    class FixedDatetime:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 28, tzinfo=timezone.utc)
+
+    monkeypatch.setattr(memo, "datetime", FixedDatetime)
+    stored = case_file()
+    pages = (*PAGES, matter.Page("defense-report", 2, "Invented text.", ("DEF0002",)))
+    document = rendered(tmp_path, stored, pages)
+    if part == "built":
+        assert document.paragraphs[1].text == (
+            f"Built 2026-10-28 from case file entry {stored.last_seq}; playbook invented-playbook; model invented-model"
+        ), "L4: build line differs"
+    else:
+        assert [p.text for p in section(document, "Verified facts by record") if p.style.name == "Heading 2"] == [
+            "Medical page MED0001 (medical/001)", "Medical page MED0002 (medical/002)",
+            "Probe page probe/001", "Defense-report page DEF0002 (defense-report/002)"
+        ], "L4: page headings differ"
+
+
 def test_memo(tmp_path):
     book_rules = rules.load(Path(__file__).resolve().parents[1] / "playbook" / "rules.toml")
     path = tmp_path / "outputs" / "memo.docx"
@@ -92,10 +203,9 @@ def test_memo(tmp_path):
         elif paragraph.text.startswith('"'):
             seen[paragraph.text] = current
             page_quotes.setdefault(current, []).append(paragraph.text)
-    warning = next(rule.rule for rule in book_rules.rules if rule.id == "bates-cites")
     checks = [
         paragraphs[0].style.name == "Title" and paragraphs[0].text == "Medical memo: matter 9009.001",
-        paragraphs[1].text.startswith("built ") and
+        paragraphs[1].text.startswith("Built ") and
         f'from case file entry {case_file().last_seq}; playbook invented-playbook; model invented-model' in paragraphs[1].text,
         [p.text for p in section(document, "What changed since the last memo")] == ["First memo for this matter"],
         [p.text for p in section(document, "Outputs out of date")] == ["none"],
@@ -109,11 +219,11 @@ def test_memo(tmp_path):
         verified[fact_index + 1].text == "Also cited: [cite MED0002]",
         [p.text for p in verified[fact_index + 2:fact_index + 4]] == [
             f"Model's reading: {READINGS[0]}", f"Model's reading of [cite MED0002]: {READINGS[1]}"],
-        heading_texts[0] == "medical page MED0001 (medical/001)",
-        verified[0].text == f'{warning} Unstamped pages: probe/001.' and
+        heading_texts[0] == "Medical page MED0001 (medical/001)",
+        verified[0].text == 'These pages carry no Bates stamp and are cited by page id: probe/001.' and
         '"Therapy continued." [page probe/001]' in [p.text for p in verified],
-        heading_texts == ["medical page MED0001 (medical/001)", "medical page MED0002 (medical/002)",
-                          "probe page probe/001"] and seen == expected_quotes and page_quotes.get("medical/002") == [],
+        heading_texts == ["Medical page MED0001 (medical/001)", "Medical page MED0002 (medical/002)",
+                          "Probe page probe/001"] and seen == expected_quotes and page_quotes.get("medical/002") == [],
         conflicts[0].text == "Pages read in 2 runs; conflicts and gaps are checked only between pages sent to the model together.",
     ]
     assert len(checks) == 14
@@ -145,8 +255,8 @@ def test_memo(tmp_path):
     memo.render(build(stored), changed_path, rules=book_rules)
     changed_doc = Document(changed_path)
     changed = int([p.text for p in section(changed_doc, "What changed since the last memo")] ==
-                  ["1 fact added, 0 cites added, 0 readings added, 0 flags added"] and
-                  [p.text for p in section(changed_doc, "Outputs out of date")] == ["memo"])
+                  ["1 fact added, 0 cites added, 1 reading added, 0 flags added"] and
+                  [p.text for p in section(changed_doc, "Outputs out of date")] == ["none"])
     assert changed == 1, f'memo_changed={changed}'
 
     reason = next(rule.rule for rule in book_rules.rules if rule.id == "no-dme-ime")

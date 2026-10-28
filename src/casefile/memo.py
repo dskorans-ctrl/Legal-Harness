@@ -60,6 +60,10 @@ def _paragraph(text):
     return Paragraph([Run(text)])
 
 
+def _added(count, noun):
+    return f'{count} {noun}{"" if count == 1 else "s"} added'
+
+
 def _fact_paragraphs(fact, primary, heading_page):
     paragraphs = [Paragraph([
         Run(f'"{fact.quote}"', exempt="quote"),
@@ -80,22 +84,24 @@ def _fact_paragraphs(fact, primary, heading_page):
 
 def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Memo:
     pages = tuple(pages)
+    open_items = tuple(open_items)
     previous = next((event for event in reversed(casefile.events)
                      if event.kind == "output" and event.payload["name"] == "memo"), None)
     if previous is None:
         changed = "First memo for this matter"
     else:
         counts = casefile.changed_since(previous.seq)
-        changed = (f'{counts["fact"]} fact added, {counts["cite"]} cites added, '
-                   f'{counts["reading"]} readings added, {counts["flag"]} flags added')
+        changed = ", ".join(_added(count, noun) for count, noun in (
+            (counts["fact"], "fact"), (counts["cite"], "cite"),
+            (counts["fact"] + counts["reading"], "reading"), (counts["flag"], "flag")))
         if counts["about"]:
-            changed += f', {counts["about"]} flag readings added'
+            changed += ", " + _added(counts["about"], "flag reading")
     changes = Section("What changed since the last memo", [_paragraph(changed)])
     stale = Section("Outputs out of date", [_paragraph(
-        ", ".join(casefile.stale_outputs()) or "none")])
+        ", ".join(name for name in casefile.stale_outputs() if name != "memo") or "none")])
     opened = Section("Open items", [Paragraph([
         Run(f'{item.label}: {item.status}: '), Run(item.reason, exempt="reason")])
-        for item in open_items])
+        for item in open_items] or [_paragraph("none")])
     runs = {run["run_id"] for run in casefile.runs if run["job"] == "memo" and run["read"]}
     conflicts = Section("Conflicts", [_paragraph(
         f'Pages read in {len(runs)} {"run" if len(runs) == 1 else "runs"}; '
@@ -108,21 +114,33 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Me
         section.paragraphs.append(_paragraph(prefix + " and ".join(citations) + "."))
         for about in flag.abouts:
             section.paragraphs.append(_paragraph(f"Model's reading: {about}"))
+    if not any(flag.kind == "conflict" for flag in casefile.flags):
+        conflicts.paragraphs.append(_paragraph("none"))
+    if not gaps.paragraphs:
+        gaps.paragraphs.append(_paragraph("none"))
     verified = Section("Verified facts by record")
-    unstamped = tuple(page.page_id for page in pages if not page.stamps)
+    unstamped = tuple(page.page_id for page in pages if not page.stamps and page.text.strip())
     if unstamped:
         verified.paragraphs.append(Paragraph([], warning_pages=unstamped))
     records = casefile.facts
     present = {page.page_id for page in pages}
     placement = {fact.id: next((index for index, page_id in enumerate(fact.page_ids)
                                if page_id in present), None) for fact in records}
+    open_status = {item.page_id: item.status for item in open_items}
     for page in pages:
-        verified.paragraphs.append(Paragraph([Run(f'{page.binder} page {label(page)}')], level=2))
+        verified.paragraphs.append(Paragraph([Run(f'{page.binder.capitalize()} page {label(page)}')], level=2))
+        quoted = False
         for fact in records:
             primary = placement[fact.id]
             if primary is None or fact.page_ids[primary] != page.page_id:
                 continue
             verified.paragraphs.extend(_fact_paragraphs(fact, primary, page.page_id))
+            quoted = True
+        if not quoted:
+            state = open_status.get(page.page_id)
+            verified.paragraphs.append(_paragraph(
+                f'Open item: {state} (see Open items).' if state is not None
+                else 'No fact was quoted from this page.'))
     sections = [changes, stale, opened, conflicts, gaps, verified]
     absent = [fact for fact in records if placement[fact.id] is None]
     if absent:
@@ -130,7 +148,7 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Me
         for fact in absent:
             missing.paragraphs.extend(_fact_paragraphs(fact, 0, None))
         sections.append(missing)
-    built = (f'built {datetime.now(timezone.utc).date().isoformat()} from case file entry '
+    built = (f'Built {datetime.now(timezone.utc).date().isoformat()} from case file entry '
              f'{casefile.last_seq}; playbook {playbook_version}; model {model}')
     return Memo(f'Medical memo: matter {matter}', built,
                 sections, pages)
@@ -138,8 +156,8 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Me
 
 def _runs(paragraph, rules):
     if paragraph.warning_pages:
-        rule = next(rule for rule in rules.rules if rule.id == "bates-cites")
-        return [Run(f'{rule.rule} Unstamped pages: {", ".join(paragraph.warning_pages)}.')]
+        return [Run('These pages carry no Bates stamp and are cited by page id: '
+                    f'{", ".join(paragraph.warning_pages)}.')]
     return paragraph.runs
 
 

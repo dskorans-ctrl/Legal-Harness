@@ -67,7 +67,11 @@ def _read_memo(number, path, stored, pages, coverage, book, errors):
     expected_page_texts = []
     for page in pages:
         label = f'{" ".join(page.stamps)} ({page.page_id})' if page.stamps else page.page_id
-        expected_page_texts.append(("Heading 2", f"{page.binder} page {label}"))
+        expected_page_texts.append(("Heading 2", f"{page.binder.capitalize()} page {label}"))
+        if not any(fact.page_ids[0] == page.page_id for fact in stored.facts):
+            state = coverage[(page.page_id, extract.card().name)][0]
+            expected_page_texts.append(("Normal", "No fact was quoted from this page." if state == "read"
+                                        else f"Open item: {state} (see Open items)."))
         for fact in stored.facts:
             if fact.page_ids[0] != page.page_id:
                 continue
@@ -97,7 +101,7 @@ def _read_memo(number, path, stored, pages, coverage, book, errors):
     if paragraphs[0].text != f"Medical memo: matter {NUMBER}" or paragraphs[0].style.name != "Title":
         errors.append(f"memo={number}: title differs")
     output = stored.outputs[-1]
-    if not re.fullmatch(r"built \d{4}-\d{2}-\d{2} from case file entry " + str(output["built_from_seq"]) +
+    if not re.fullmatch(r"Built \d{4}-\d{2}-\d{2} from case file entry " + str(output["built_from_seq"]) +
                         re.escape(f"; playbook {book.version}; model qwen3.8:27b"), paragraphs[1].text):
         errors.append(f"memo={number}: build line differs: {paragraphs[1].text}")
     expected_open = []
@@ -108,10 +112,11 @@ def _read_memo(number, path, stored, pages, coverage, book, errors):
             label = f'{" ".join(page.stamps)} ({page.page_id})' if page.stamps else page.page_id
             expected_open.append(f"{label}: {state}: {reason}")
             reasons.append(reason)
-    if [p.text for p in opened] != expected_open:
+    if [p.text for p in opened] != (expected_open or ["none"]):
         errors.append(f"memo={number}: open items differ: {[p.text for p in opened]}")
+    open_entries = [] if [p.text for p in opened] == ["none"] else opened
     exempt_reasons = set()
-    for paragraph, reason in zip(opened, reasons):
+    for paragraph, reason in zip(open_entries, reasons):
         if len(paragraph.runs) == 2 and paragraph.runs[1].text == reason:
             exempt_reasons.add(paragraph._p)
         else:
@@ -130,22 +135,23 @@ def _read_memo(number, path, stored, pages, coverage, book, errors):
         errors.append(f"memo={number}: runs_seen={runs_seen} coverage_read_runs={len(read_runs)}")
     changed_text = [p.text for p in _section(document, SECTIONS[0])]
     expected_change = ("First memo for this matter" if number == 1 else
-                       f"{int(number == 3)} fact added, 0 cites added, 0 readings added, 0 flags added")
+                       "1 fact added, 0 cites added, 1 reading added, 0 flags added" if number == 3 else
+                       "0 facts added, 0 cites added, 0 readings added, 0 flags added")
     if changed_text != [expected_change]:
         errors.append(f"memo={number}: changes differ: {changed_text}")
     changed = "first" if changed_text == ["First memo for this matter"] else (
         changed_text[0].split(" ", 1)[0] if changed_text else "missing")
-    if [p.text for p in _section(document, SECTIONS[1])] != ["memo" if number == 3 else "none"]:
+    if [p.text for p in _section(document, SECTIONS[1])] != ["none"]:
         errors.append(f"memo={number}: outputs out of date differ")
     cites = sum(p.text.count("[cite ") for p in paragraphs)
     expected_cites = sum(len(f.cites) for f in stored.facts) + sum(len(f.cites) for f in stored.flags)
     if cites != expected_cites:
         errors.append(f"memo={number}: cites={cites} casefile_cites={expected_cites}")
-    open_status = opened[0].text.split(": ")[1] if opened else "none"
+    open_status = open_entries[0].text.split(": ")[1] if open_entries else "none"
     return (f"stage5 memo={number} quotes={quotes} of {len(stored.facts)} by_page={by_page} cites={cites} "
             f"readings={readings} conflicts={sum(p.text.startswith('Conflict between ') for p in conflicts)} "
             f"gaps={sum(p.text.startswith('Gap at ') for p in gaps)} runs_seen={runs_seen} "
-            f"open={len(opened)} open_status={open_status} rule_hits={rule_hits} changed={changed}")
+            f"open={len(open_entries)} open_status={open_status} rule_hits={rule_hits} changed={changed}")
 
 
 @pytest.mark.socket
@@ -212,27 +218,27 @@ def test_stage5_exit(tmp_path, capsys):
                 expected_line_count = (42, 44, 47, 48)[number - 1]
                 if len(stored.events) != expected_line_count:
                     errors.append(f"run={number}: casefile_lines={len(stored.events)} expected={expected_line_count}")
+                memo_line = _read_memo(number, folder / "outputs/memo.docx", stored,
+                                       loaded.pages, coverage, book, errors)
                 if number <= 3:
-                    memo_lines.append(_read_memo(number, folder / "outputs/memo.docx", stored,
-                                                 loaded.pages, coverage, book, errors))
-                if number in (1, 3):
-                    status = subprocess.run(["scripts/run.sh", "casefile", "status", "--matter", NUMBER],
-                                            cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
-                    fields = dict(re.findall(r"(\w+)=([^ ]+)", status.stdout.splitlines()[0]))
-                    statuses.append(fields)
-                    expected_status = (f"status {NUMBER} pages=14 read={counts['read']} failed=0 "
-                                       f"uncited={opened} empty=0 open={opened} facts={len(stored.facts)} "
-                                       "conflicts=5 gaps=4 outputs=memo:current")
-                    if status.returncode != 0 or status.stderr or status.stdout.splitlines() != [expected_status, *expected_open]:
-                        errors.append(f"run={number}: status differs: {status.stdout!r} {status.stderr!r}")
+                    memo_lines.append(memo_line)
+                status = subprocess.run(["scripts/run.sh", "casefile", "status", "--matter", NUMBER],
+                                        cwd=ROOT, env=env, capture_output=True, text=True, timeout=60)
+                fields = dict(re.findall(r"(\w+)=([^ ]+)", status.stdout.splitlines()[0]))
+                statuses.append(fields)
+                expected_status = (f"status {NUMBER} pages=14 read={counts['read']} failed={counts['failed']} "
+                                   f"uncited={counts['uncited']} empty=0 open={opened} facts={len(stored.facts)} "
+                                   "conflicts=5 gaps=4 outputs=memo:current")
+                if status.returncode != 0 or status.stderr or status.stdout.splitlines() != [expected_status, *expected_open]:
+                    errors.append(f"run={number}: status differs: {status.stdout!r} {status.stderr!r}")
                 previous_seq, previous_runs, previous_answers = stored.last_seq, runs, answers
     finally:
         server.shutdown()
         thread.join(timeout=5)
         stopped = not thread.is_alive()
         server.server_close()
-    status_line = (f"stage5 status read={statuses[0]['read']} then {statuses[1]['read']} "
-                   f"open={statuses[0]['open']} then {statuses[1]['open']} outputs={statuses[1]['outputs']}")
+    status_line = (f"stage5 status read={statuses[0]['read']} then {statuses[2]['read']} "
+                   f"open={statuses[0]['open']} then {statuses[2]['open']} outputs={statuses[2]['outputs']}")
     chain_ok = int(facts.load(folder / "casefile.jsonl").torn == 0)
     complete_lines = len((folder / "casefile.jsonl").read_bytes().splitlines())
     lines = [*run_lines, *memo_lines, status_line]
