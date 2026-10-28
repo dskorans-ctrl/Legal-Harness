@@ -303,3 +303,84 @@ exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged,
     "DME" and "IME" and says to write "the report"; it does not catch "defense report". Should our own words avoid
     "defense report" too (headings would then show the binder differently, and the rule would gain that phrase), or is
     "defense report" acceptable? Interim: unchanged; the phrase is shown; no rule added.
+
+ANSWERED 2026-10-28 (round 6 check-in, ledger Q49): 56 a cross-chunk and cross-run pass in stage 6 (reconcile card
+against the case file, no re-send); 50 spec §2 sections once facts carry a date and a category; 54 quotes from both
+pages beneath each conflict, defense against our records first; 57 binder names shown as typed, the rule does not
+govern folder labels. 47, 48, 49, 51, 52, 53, 55 and 58: every interim kept.
+
+## Held 2026-10-28 (round 6 brief)
+
+59. The deposition skill's suggested bills question ("Doctor, ... as to the bills themselves, the charges from
+    [providers], ...") fails two firm rules as built: "Doctor" within 60 characters of "charges" trips the
+    hired-paid-retained rule, and a provider named "... Physical Therapy" trips treatment-and-bills-apart, so any bills
+    question that walks a provider list with a therapy provider is refused. Which governs: (a) the rules, with the
+    question phrased "bills" not "charges" and therapy providers left out of the list, (b) exempt provider names from
+    the treatment group, (c) exempt the words "charges" and "bills" from the doctor pairing in a bills question?
+    Interim: (a); a refused question fails its section and the document says so.
+60. Where do the header entries (caption, IAB hearing number, date of accident, hearing date and time, deposition
+    date and time) and the binder roles (which binder is the defense examination, which holds our doctor's records)
+    come from: a file `attorney.toml` you type in the matter folder (interim), the web page at stage 8, or the
+    petition through a procedural card?
+61. For a deposition or doctor prep, "the doctor's own records" are the binder or pages you name on the command line
+    (`--binder`, `--pages MED0007,MED0008`). Should the system find them by the provider name the memo card extracts
+    instead? Interim: named by you.
+62. The hearing outline's issues, legal standard and relief are typed per run (`--issue`, `--standard`, `--relief`),
+    else the document prints STANDARD NEEDED and RELIEF NEEDED. Keep them per run, or store them per matter in
+    `attorney.toml`? Interim: per run.
+63. The outputs show the model's suggestions (danger-zone reasons, points for our expert, "not in the record" lists,
+    notes on questions) as "Model's note" with a cite. Keep them, or omit model suggestions and show verified material
+    only? Interim: shown, labelled, cited.
+64. The rules miss "What percentage of your practice is examinations for employers?" and "the split between employer
+    and claimant requests"; blocking percentage, share and split words would also block the allowed clinical practice
+    questions ("What share of your practice is treating patients?"). Should those forms be blocked whatever they ask
+    about, or should the checker learn the deponent type so doctor questions get wider patterns? Interim: not blocked;
+    the defense-doctor card forbids them in words; the fee-for-deposition and how-often-retained forms are blocked
+    (D50).
+65. The memo card's 24 fact categories (mechanism of injury, chief complaint, pain score, prior history, family
+    history, comorbidity or social, exam finding, imaging result, diagnostic test, diagnosis, treatment rendered,
+    medication, procedure, order or referral, work status, MMI statement, causation statement, impairment rating,
+    future treatment, patient statement, compliance, records referenced, employment, other): any to add, merge or
+    drop? Interim: the list (T-23).
+66. The reconcile pass compares each new chunk's facts with every earlier fact in batches; on a large matter that is
+    many model calls per upload (counted on the memo line). Acceptable, or limit it to defense binders against our
+    records (your Q41 priority) or to facts of the same category? Interim: every pair, counted.
+67. Case files written before this round are refused and must be rebuilt (delete `casefile.jsonl`; pages are re-read;
+    the run log keeps every past run). Acceptable, given no real matter exists yet? Interim: refused with that message.
+68. The seed cards' lists are kept as practice: the our-doctor topic order (qualifications, mechanism, history, exam
+    and tests, diagnosis, causation, treatment, bills, work status, MMI and rating, future treatment), the client
+    topics, the 14 elements of our doctor's report, the nine concession types, the client instruction block, and no
+    page cap on the two-page outline. Confirm or edit? Interim: as in the seed cards.
+69. When the defense takes the deposition, the question document's "primary" section is the defense's likely
+    examination, "anticipated cross" is ours and "redirect" theirs; taken by us, the reverse. Is that the reading you
+    want? Interim: that reading.
+
+## Held 2026-10-28 (cloud round-trip proposal, `docs/loop/design/cloud-roundtrip-proposal.md` §12, renumbered from its 59 to 69 to 70 to 80)
+
+70. Account and retention: which Claude Console organization holds the key, is it under commercial terms,
+    has zero data retention been granted for it by Anthropic's sales team, and do you want the HIPAA
+    arrangement (a BAA accepted in the Console)? Interim: `[cloud].enabled = false`; nothing is sent until
+    `terms_confirmed` carries a date you wrote.
+71. Approval mode: A (once per task, with the two halts), B (per packet) or C (standing)? Interim: B for
+    every task.
+72. Codex: what should Codex do (the second-review critic proposed, or something else), on which plan and
+    terms (API key or ChatGPT login, Business or Enterprise, retention, training opt-out)? Interim: off.
+73. Model: Opus 5.5 (ZDR possible) or Fable 5.1 (30 day retention required, no ZDR)? Interim: Opus 5.5.
+74. The name list: beyond casefile-anon/1, are the IAB hearing number, the claim number, the carrier and the
+    adjuster identifiers to replace, and is a treating facility's name one? Interim: all replaced.
+75. Briefs: should the argument with legal research go out automatically (it needs the web search tool, a
+    pillar 4 change), or stay interactive through the bridge with the API drafting facts and outline only?
+    Interim: facts and outline only.
+76. Cost caps: $10 a run and $50 a day as defaults? Interim: those numbers; the job stops at the cap.
+77. Stage order: 7b after 7 and before the web page (approval by CLI over SSH meanwhile), or after stage 8?
+    Interim: after 7, before 8.
+78. Hearing prep: is the billing memo you supply ever sent out (it names providers and amounts)? Interim:
+    never; its totals are inserted locally after restore.
+79. Retention on the Studio: keep every sent packet, reply and restored answer in the matter folder for the
+    life of the matter, or purge after a period? Interim: kept, append-only.
+80. Network: will you add a Firewalla egress rule allowing the Studio to reach `api.anthropic.com` (and
+    OpenAI's endpoint only if 72 says yes) and nothing else? Interim: assumed blocked; the doctor's `cloud`
+    row reports it.
+
+
+ANSWERED 2026-10-28 (owner, ledger Q53): 70 standard commercial API terms with 30 day retention are acceptable (the BAA part stays open); 71 mode A (approve once per task at Run, with the two halts; brief packets per packet); 72 Codex as the read-only second-review critic, off by default; 73 either model allowed under those terms (Opus 5.5 stays the default until the benchmark says otherwise). 74 to 80 held with their interims.

@@ -146,3 +146,13 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 19 | 8c blind verifier | opus | 15.4 min | 143 k | PASS; R5-1 to R5-3 and V. ticked; 5 fresh seeds, 5 red, no test gap; memo matches the key (29 of 29, 9 of 9) |
 | 20 | Librarian close | codex gpt-6.1-sol (medium) | about 4 min | 138 k | done; 16 entries, 16 pre-flight bullets; 4 open limits added; round 4 carried items closed |
 | | **Round 5 total** | | **~3 h 10 min wall-clock (00:55 to 04:15), owner offline (Q48)** | **Fable about 1.03 M (brief 377 k, revision 177 k, plan review 240 k, code review 232 k); Codex gpt-6.1-sol about 2.3 M (16 runs); Opus 262 k (critic 119 k, verifier 143 k); chair not counted** | PASS after two fix cycles; merged to local main |
+
+## Round 6 (stage 6 outputs, cards and schemas, opened 2026-10-28 on `loop/round-06`; owner check-in Q49 to Q51 at the open)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 1 | Build brief | fable | 36.2 min | 477 k | done; 954 lines, D44 to D50, owner questions 59 to 69 |
+| 2 | Cloud round-trip design proposal (owner request Q52) | fable | 12.1 min | 249 k | done; 502 lines, P1 to P11, 11 owner questions; chair confirmed codex 0.159.2 has no mcp-server, gates.py:109, runlog.py:111 |
+| 3 | Plan review of the round 6 brief (with the Q53 engine-neutral check) | fable | 11.5 min | 217 k | done; 6 high, 8 med, 6 low; chair traced H1 (benchcandidate.py:46) |
+| 4 | Brief revision after the plan review (plus Q53 engine-neutral constraints) | fable (architect resumed) | 9.8 min | 567 k (cumulative) | done; 20 accepted, 0 rejected, 0 owner; 1141 lines |
+| 5 | Owner amendment of the brief (Q54 to Q56: no reconcile, petition header, bills exemptions, upgrade in place) | fable (architect resumed) | running (13:21) | | |

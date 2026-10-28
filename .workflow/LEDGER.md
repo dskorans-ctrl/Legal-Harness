@@ -203,6 +203,21 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   "do not start round 5" for tonight only. Round 4 closes in full (merge to local `main`, records, handoff draft);
   round 5 opens on `loop/round-05` with Q46 tiers; the owner check-in is replaced by held questions in
   `docs/loop/questions-for-owner.md` with interim rulings by the pillars, pending veto (skill autonomy rule). No push.
+- Q49: round 6 check-in (owner, 2026-10-28), questions file 47 to 58 -> 56: build a cross-chunk, cross-run pass in
+  stage 6 (the reconcile card compares each new verified fact with the case file's facts, no re-send of old pages);
+  the memo keeps stating the limit until it ships. 47: interim kept (an uncited page stays open; nothing closes it).
+  48: interim kept (the quote is the verified text; the summary is shown labelled as the model's reading). 49: interim
+  kept (rule id next to the rule's message). 50: the memo takes spec §2's sections (chronology, providers, diagnoses,
+  restrictions, history, our opinions, defense opinions) once the memo card gives each fact a date and a category;
+  facts without them stay in a by-page section. 51: interim kept (python-docx default styles, no template). 52:
+  interim kept (`[cite MED0001]`). 53: interim kept (page-id cites for unstamped binders plus the warning). 54: show
+  the verified quotes from both pages beneath each conflict; conflicts between a defense examination binder and our
+  records first (Q41), the rest in found order. 55: interim kept (re-sent every run, reason verbatim). 57: show the
+  binder name as typed; a folder label is not our words and the DME/IME rule does not govern it (the memo's refusal
+  of round 5 is withdrawn: round 6 work). 58: interim kept ("defense report" acceptable, no rule added).
+- Q50: design calls (owner, 2026-10-28) -> spec §9 D31 to D43 (D41 as amended) and the chair's build rulings in the
+  round 4 and round 5 sections: all ratified.
+- Q51: additional instructions for round 6 or the loop? -> none; proceed.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 
@@ -788,3 +803,70 @@ are invented fixtures served by the stand-in model server (`tests/fakemodel/`).
   baselines; stage 1 to 4 lines equal; `doctor runlog_schema PASS schema=2 triggers=21 (counted)` (temp config, closed port);
   intake line equal. Five seeds red, all restored (`cmp` clean). Report `docs/loop/round-05/round05-verify.md`.
 - Close (2026-10-28): verifier PASS (`docs/loop/round-05/round05-verify.md`). Carried to the round 6 brief: verifier L1 (no-reply reason says the page stays open even in the doctor; memo repeats the no-reply words), code review M4 (an edited last case-file line loads clean: recorded limit) and L3 (two stamp definitions), owner questions 47 to 58 held, D31 to D43 pending veto. Not started: round 6 (owner Q48 covered round 5 only). Leftover for the owner: untracked `tests/fixtures/matters/9001.001/.claude/` (a Claude Code `.cc-writes` marker, 2026-10-27 02:06), copied into exit-test matters.
+
+## Round 6: stage 6 outputs, cards and schemas (opened 2026-10-28 on `loop/round-06` at 53a6f82)
+Tiers: Q46 (Fable brief and revision; fresh Fable agents for the plan review and the code review, read-only; Opus
+orchestrator, output critic and blind verifier; Codex `gpt-6.1-sol` code and fixes through `codex exec`). Owner
+check-in held at the open (Q49 to Q51). Exit test (spec §7 stage 6): Word documents built from the test matter pass
+the output critic. All records and model answers are invented fixtures served by the stand-in (`tests/fakemodel/`).
+What a deposition or hearing output contains is practice: from `playbook/` and the firm's `deposition-prep` and
+`workers-comp-hearing-prep` skills, and from the owner where they do not settle it.
+- [ ] R6-1. Outputs: the deposition, hearing and report-analysis Word documents built from the case file of the test
+  matter, each passing the firm rules gate and the output critic.
+- [ ] R6-2. Cards and schemas: `cards/` and `schemas/` rewritten for the single model (drop the brief outline,
+  argument and authority-check cards; add the medical memo card; anonymization card per the brief, stage 7 uses it),
+  card text built from the playbook, every schema inside the D34 subset.
+- [ ] R6-3. Owner answers Q49: the cross-chunk and cross-run reconcile pass (56); memo in spec §2 sections from the
+  memo card's date and category (50); conflict quotes beneath each conflict, defense against our records first (54);
+  binder names shown as typed, the memo's DME/IME refusal on binder names withdrawn (57).
+- [ ] R6-4. Carried: round 5 verifier L1 (no-reply reason wording in the doctor; memo repeats the no-reply words);
+  code review L3 (two stamp definitions); M4 stays a recorded limit unless the brief rules otherwise.
+- [ ] V. Fresh blind verification: every non-deferred R6 item `[x]` with the verifier's own evidence.
+- Q52: owner request (2026-10-28, mid-round): a seamless pipeline where the attorney loads documents, picks a task
+  (deposition prep, hearing prep, brief, etc.), the local model anonymizes, casefile sends the package to Claude by
+  API key (and to Codex via MCP where useful), the answer comes back automatically, the local model re-identifies
+  and casefile gives the final output. Collides with pillar 3 (approval of each package), pillar 4 (no agent, no
+  tools) and §8b (fixed-menu bridge). Routed to a Fable design proposal, `docs/loop/design/cloud-roundtrip-proposal.md`;
+  its spec changes and owner questions come to the owner before any of it is built. The round 6 brief runs in
+  parallel on the current canon; the chair reconciles the two before the plan review.
+- Q53: cloud round-trip proposal (Fable, `docs/loop/design/cloud-roundtrip-proposal.md`, 502 lines, P1 to P11; its
+  questions filed as 70 to 80) -> approval mode A: clicking Run on a deposition, hearing or report task is the
+  approval, with halts on the first packet of a matter and on any entity not on the name list; brief packets
+  approved per packet. Account: standard commercial API terms with 30 day retention are acceptable (no ZDR needed;
+  BAA still open), so either Opus 5.5 or Fable 5.1 may run (Opus 5.5 default until the benchmark says otherwise).
+  Codex: a read-only, tool-less second-review critic over the same anonymized packet, off by default (the CLI has
+  no MCP server mode: `codex --help` lists only `mcp  Manage external MCP servers`). Round 6: build engine-neutral
+  output cards (fact-packet input, cite and quote schemas, renderers take the gated JSON answer); the cloud round
+  trip itself is stage 7b, after the anonymizer. P1 to P11 go to the spec at the round 6 close as D rows, with
+  questions 74 to 80 held.
+- Q54: round 6 brief questions 59 to 69 (owner, 2026-10-28, before build) -> 59: (b) and (c): provider names do not
+  count toward the treatment group of `treatment-and-bills-apart`, and "charges" and "bills" are exempt from the
+  doctor pairing of `no-hired-paid-retained` inside a bills question, so the skill's bills question passes as
+  written. 60: header entries come from the petition through a procedural card, verified on the page (binder roles:
+  see the chair's note under Q56). 61: the doctor's own records are found by the provider the memo card extracts;
+  `--binder` or `--pages` overrides. 62: issues, standard and relief are stored per matter; a run may override.
+  63: interim kept (model notes shown, labelled, cited). 64: interim kept (not blocked; the defense-doctor card
+  forbids them in words). 65: interim kept (the 24 categories). 66: see Q55. 67: upgrade old case files in place
+  (no refusal). 68 and 69: interims confirmed.
+- Q55: direction (owner, 2026-10-28, answering 66) -> "I don't need to continually update. The local model will just
+  anonymize everything and send out to cloud for a pass. If I want an update, I'll manually run it again with new
+  documents being anonymized and sent. The only exception to this is when I load a new document into the input
+  folder the local model scans it and files it with other documents from that matter. No need to do anything
+  further at that point unless I hit one of the skills." Follow-ups: the local model's job is filing (intake, OCR,
+  filing into the matter) and anonymizing only; Claude does fact finding and synthesis from the anonymized pages;
+  code still checks every quote and cite returned against the real pages before re-identifying (pillars 1, 2). A
+  re-run of a task sends the whole matter, so new records are read beside old ones (this closes Q56's cross-run
+  gap for cloud runs). Round 6: build the engine-neutral outputs (renderers, cards, schemas, playbook port) tested
+  on the stand-in; drop the reconcile pass (Q49 item 56 superseded) and the continually updated memo; the cloud
+  round trip is stage 7b after the anonymizer.
+- Q56 (chair note, pending veto): a petition names the parties, the accident date and the hearing number but not
+  which binder is the defense examination or our doctor's records; until the owner says otherwise binder roles
+  fall back to a typed `matter.toml` entry, and with no role the defense-first conflict order and the role-based
+  sections print ROLE NEEDED rather than guess.
+- Plan review and rulings (2026-10-28): fresh Fable plan review, 20 findings (6 high, 8 med, 6 low;
+  `docs/loop/round-06/round06-brief-review.md`); chair traced H1 (`benchcandidate.py:46` accepts only `cite, quote,
+  text`). Fable revision accepted 20, rejected 0, owner 0 (brief §8). Owner then answered 59 to 69 and set the
+  direction (Q54 to Q56); Fable amended the brief (§9; 1271 lines, tracked copy `docs/loop/round-06/round06-build-brief.md`).
+  Chair ruled D44 to D51 as written in brief §6 (D47 withdrawn by Q55), logged in spec §9 pending owner veto. Baseline
+  move to record at close: the fixture gains an invented petition page (14 -> 15 pages; key 29 -> 31 facts), so the
+  bench, stage 2, 4 and 5 pins are re-derived in W1 by design, not drift.
