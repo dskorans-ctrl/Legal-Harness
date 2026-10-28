@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from casefile.benchcandidate import Candidate
 from casefile.benchkey import Key
 from casefile.matter import Matter
-from casefile.quotes import found_in, normalize
+from casefile import quotes
 from casefile.stamps import normalize as normalize_stamp
 
 
@@ -27,6 +27,7 @@ class Score:
     invented_facts: tuple[tuple[str, str], ...] = ()
     flags_extra_items: tuple[tuple[str, tuple[str, ...]], ...] = ()
     rule_hits: tuple[tuple[str, str], ...] = ()
+    rungs: tuple[tuple[str, int], ...] = ()
 
     @property
     def missed(self) -> int:
@@ -60,6 +61,8 @@ class Score:
             out.append(f"  flags_extra: {kind} {','.join(cites)}")
         for rule_id, where in self.rule_hits:
             out.append(f"  rules: {rule_id} {where}")
+        if any(count for rung, count in self.rungs if rung != "exact"):
+            out.append("  rungs: " + " ".join(f"{rung}={count}" for rung, count in self.rungs))
         return out
 
 
@@ -69,18 +72,21 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
     invented_facts = []
     extra = 0
     flags_extra_items = []
+    rungs = dict.fromkeys(("exact", "whitespace", "curly", "ocr"), 0)
 
     for fact in candidate.facts:
         cite = normalize_stamp(fact.cite)
         page = matter.page(cite)
-        if page is None or not found_in(fact.quote, page.text):
+        matched_quote = None if page is None else quotes.match(fact.quote, page.text)
+        if matched_quote is None:
             invented_facts.append((cite, fact.quote[:60]))
             invented.append(fact.quote[:60])
             continue
+        rungs[matched_quote.rung] += 1
 
         hit = None
         for k in key.facts:
-            if k.cite == cite and normalize(k.quote) == normalize(fact.quote):
+            if k.cite == cite and quotes.same(k.quote, fact.quote):
                 hit = k
                 break
 
@@ -135,5 +141,6 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
         flags_missed_ids=flags_missed_ids,
         invented_facts=tuple(invented_facts),
         flags_extra_items=tuple(flags_extra_items_list),
-        rule_hits=tuple(rule_hits)
+        rule_hits=tuple(rule_hits),
+        rungs=tuple(rungs.items())
     )

@@ -21,8 +21,6 @@ from casefile import intake, matter, pdfsmoke
 from casefile.config import load
 from conftest import ROOT, write_config
 
-SCANNED = ROOT / "tests" / "fixtures" / "scanned"
-
 TESSERACT_STUB = '#!/bin/bash\n[ "$1" = "--version" ] && { echo "tesseract 5.5.3"; exit 0; }\nexit 9\n'
 OCRMYPDF_STUB = r'''#!/bin/bash
 D="$(dirname "$0")"
@@ -170,6 +168,7 @@ def refusal_cases(base):
     cases.append(("tool not found", {}, no_tool, "tool not found: no-such-ocrmypdf-tool"))
     cases.append(("ocrmypdf exit 7", {"mode": "fail"}, plain(), "ocrmypdf exit=7: boom from the stub"))
     cases.append(("sidecar 5 of 6", {"sidecar": "\f".join(["a"] * 5)}, plain(), "sidecar segments=5 pages=6"))
+    cases.append(("sidecar 7 of 6", {"sidecar": "\f".join(["a"] * 7)}, plain(), "sidecar segments=7 pages=6"))
     cases.append(("skipped range placeholder",
                   {"sidecar": "a\f[OCR skipped on page(s) 2-3]\fb\fc\fd\fe"}, plain(), "skipped placeholder"))
 
@@ -192,7 +191,7 @@ def refusal_cases(base):
 
 def test_intake_refusals(tmp_path, capsys):
     cases = refusal_cases(tmp_path)
-    assert len(cases) == 15
+    assert len(cases) == 16
     passed, group_killed = 0, 0
     for index, (name, env_kw, case, message) in enumerate(cases):
         env = Env(tmp_path / f"case{index}", **env_kw)
@@ -206,7 +205,7 @@ def test_intake_refusals(tmp_path, capsys):
         group_killed += name == "timeout"
         passed += 1
     with capsys.disabled():
-        print(f"intake_refusals={passed} of 15 group_killed={group_killed}")
+        print(f"intake_refusals={passed} of 16 group_killed={group_killed}")
 
 
 def test_skipped_page_is_failed_and_listed(tmp_path, capsys):
@@ -419,28 +418,23 @@ def test_page_id_matches_matter_page_id():
 
 
 @pytest.mark.ocr
-def test_intake_fixture_with_real_tools(tmp_path, capsys):
-    base = tmp_path.resolve()
-    path = write_config(base)
-    config = load(path)
-    (config.paths.matters / "9002.001").mkdir()
-    out, err = io.StringIO(), io.StringIO()
-    code = intake.intake(config, "9002.001", "scan", SCANNED / "scanned.pdf", out=out, err=err)
-    root = config.paths.matters / "9002.001"
+def test_intake_fixture_with_real_tools(capsys, scanned_intake):
+    result, _, root = scanned_intake
+    code, out, err = result.returncode, result.stdout, result.stderr
     records = [json.loads(p.read_text(encoding="utf-8")) for p in sorted((root / "pages" / "scan").glob("0*.json"))]
     binder = json.loads((root / "pages" / "scan" / "binder.json").read_text(encoding="utf-8"))
     work_removed = not (root / "records" / "scan" / "work").exists()
     tmp_left = len([p for kind in ("records", "pages") for p in (root / kind).iterdir() if p.name.endswith(".tmp")])
-    summary = out.getvalue().splitlines()[0]
+    summary = out.splitlines()[0]
     stamps = sum(len(r["stamps"]) for r in records)
     with capsys.disabled():
         print(f"intake_fixture exit={code} pages={len(records)} ok={binder['ok']} empty={binder['empty']} "
               f"failed={binder['failed']} stamps={stamps} had_text={sum(r['had_text_layer'] for r in records)} "
               f"ocr_added={sum(r['ocr_added'] for r in records)} work_removed={int(work_removed)} tmp_left={tmp_left}")
         print(summary)
-    assert code == 1, err.getvalue()
+    assert code == 1, err
     assert summary == ("intake 9002.001 scan pages=6 ok=5 empty=1 failed=0 stamps=6 had_text=2 ocr_added=4")
-    assert out.getvalue().splitlines()[1:] == ["  empty: scan/004 no text after OCR"]
+    assert out.splitlines()[1:] == ["  empty: scan/004 no text after OCR"]
     assert [r["id"] for r in records] == [f"scan/{n:03d}" for n in range(1, 7)]
     assert work_removed and tmp_left == 0
     assert hashlib.sha256((root / "records" / "scan" / "source.pdf").read_bytes()).hexdigest() == binder["sha256"]

@@ -1,4 +1,4 @@
-"""The stage 2 answer key loader and its twelve refusals."""
+"""The stage 2 answer key loader and its thirteen refusals."""
 
 import copy
 import json
@@ -142,9 +142,22 @@ def test_key_refusals(tmp_path, capsys):
                 ok += 1
         # Any other exception fails the test
 
+    collision_matter = matters.load(make(tmp_path / "collision", {
+        "medical": [("The exam-\nination and examination were normal.", "MED0001")],
+    }))
+    collision = {"facts": [
+        {"id": "F1", "cite": "MED0001", "quote": "exam-\nination", "text": "The report."},
+        {"id": "F2", "cite": "MED0001", "quote": "examination", "text": "The report."},
+    ], "flags": []}
+    try:
+        load(write(tmp_path / "collision", collision), collision_matter)
+    except BenchKeyError as exc:
+        if "fact F2: same cite and quote as fact F1" in str(exc):
+            ok += 1
+
     with capsys.disabled():
-        print(f"key_refusals={ok} of 12")
-    assert ok == 12
+        print(f"key_refusals={ok} of 13")
+    assert ok == 13
 
 
 def test_key_spellings_load_as_the_normalised_stamp(tmp_path):

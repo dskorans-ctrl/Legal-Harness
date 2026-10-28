@@ -11,6 +11,7 @@ import tomllib
 from urllib.parse import urlsplit
 
 from casefile.pathguard import classify
+from casefile import stamps
 
 
 class ConfigError(ValueError):
@@ -121,7 +122,7 @@ def load(path: str | Path | None = None) -> Config:
     if ocr["timeout_s"] <= 0:
         raise ConfigError("[ocr].timeout_s must be positive")
     try:
-        re.compile(r"(?<![A-Z0-9])(?:" + ocr["stamp_pattern"] + ")")
+        stamps.compile(ocr["stamp_pattern"])
     except re.error as exc:
         raise ConfigError(f"[ocr].stamp_pattern is not a valid pattern: {exc}") from exc
     try:

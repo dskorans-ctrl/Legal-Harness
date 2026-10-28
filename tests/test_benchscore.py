@@ -17,9 +17,9 @@ FLAWED = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 ext
           "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 PAGES = {"medical": [("Pain 7/10 in the low back.\nOther real line.", "MED0001"),
-                     ("Diagnosis: acute lumbar strain.", "MED0002")]}
+                     ("Diagnosis: acute lumbar strain.\nThe exam-\nination was normal.", "MED0002")]}
 KEY = {"facts": [{"id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
-                 {"id": "F2", "cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.", "text": "A lumbar strain."}],
+                 {"id": "F2", "cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.\nThe exam-\nination was normal.", "text": "A lumbar strain."}],
        "flags": [{"id": "G1", "kind": "conflict", "cites": ["MED0001", "MED0002"], "about": "The pages differ."}]}
 GOOD = {"facts": [{"cite": f["cite"], "quote": f["quote"], "text": f["text"]} for f in KEY["facts"]],
         "flags": [{"kind": "conflict", "cites": ["MED0002", "MED0001"], "about": "The pages differ."}]}
@@ -71,6 +71,18 @@ def add_extra_flag(data):
     data["flags"].append({"kind": "gap", "cites": ["MED0002"], "about": "A report is missing."})
 
 
+def whitespace_quote(data):
+    data["facts"][0]["quote"] = data["facts"][0]["quote"].replace("Pain ", "Pain   ")
+
+
+def curly_quote(data):
+    data["facts"][0]["quote"] = data["facts"][0]["quote"].upper()
+
+
+def hyphen_quote(data):
+    data["facts"][1]["quote"] = data["facts"][1]["quote"].replace("exam-\nination", "examination")
+
+
 # --- Test Cases Definition ---
 
 # (change_function, pages_failed, check_function)
@@ -96,7 +108,13 @@ CASES = [
     # pages failed
     (None, 2, lambda s: s.pages_failed == 2 and not s.perfect),
     # an added flag not in the key
-    (add_extra_flag, 0, lambda s: s.flags_extra == 1 and s.flags_found == 1 and not s.perfect)
+    (add_extra_flag, 0, lambda s: s.flags_extra == 1 and s.flags_found == 1 and not s.perfect),
+    (whitespace_quote, 0, lambda s: s.found == 2 and s.invented == 0 and s.perfect
+     and s.rungs == (("exact", 1), ("whitespace", 1), ("curly", 0), ("ocr", 0))),
+    (curly_quote, 0, lambda s: s.found == 2 and s.invented == 0 and s.perfect
+     and s.rungs == (("exact", 1), ("whitespace", 0), ("curly", 1), ("ocr", 0))),
+    (hyphen_quote, 0, lambda s: s.found == 2 and s.invented == 0 and s.perfect
+     and s.rungs == (("exact", 1), ("whitespace", 0), ("curly", 0), ("ocr", 1)))
 ]
 
 
@@ -109,8 +127,9 @@ def test_score_cases(tmp_path, capsys):
 
     ok = sum(1 for i, (change, failed, check) in enumerate(CASES) if check(results[i]))
     with capsys.disabled():
-        print(f"score_cases={ok} of 11")
-    assert ok == 11
+        print(f"score_cases={ok} of 14")
+    assert len(CASES) == 14
+    assert ok == 14, results
 
 
 def test_shipped_fixtures(capsys):
@@ -126,3 +145,13 @@ def test_shipped_fixtures(capsys):
     assert ideal.perfect
     assert flawed.line("9001.001", "candidate") == FLAWED
     assert not flawed.perfect
+
+
+def test_changed_digit_is_invented(tmp_path):
+    def change(data):
+        data["facts"][0]["quote"] = data["facts"][0]["quote"].replace("7/10", "8/10")
+
+    result = run(tmp_path, change)
+    assert result.invented == 1
+    assert result.found == 1
+    assert result.missed_ids == ("F1",)

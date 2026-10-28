@@ -4,6 +4,7 @@ import io
 import json
 
 from casefile import bench
+from test_matter import make
 from conftest import ROOT, write_config
 
 MATTERS = ROOT / "tests" / "fixtures" / "matters"
@@ -67,3 +68,25 @@ def test_long_quote_and_flag_rule(tmp_path, capsys):
         print(f"bench_detail_probe exit={code} detail_lines={len(lines) - 2}")
     assert code == 1, err
     assert lines == [PROBE_LINE, *PROBE_DETAIL, "bench matters=1 imperfect=1"]
+
+
+def test_hyphen_rung_detail(tmp_path):
+    root = make(tmp_path / "matters", {
+        "medical": [("The exam-\nination was normal.", "MED0001")],
+    })
+    key = {"facts": [{"id": "F1", "cite": "MED0001", "quote": "The exam-\nination was normal.",
+                      "text": "The report was normal."}], "flags": []}
+    (root / "key.json").write_text(json.dumps(key), encoding="utf-8")
+    candidate = tmp_path / "candidate.json"
+    candidate.write_text(json.dumps({"facts": [{"cite": "MED0001", "quote": "The examination was normal.",
+                                               "text": "The report was normal."}], "flags": []}), encoding="utf-8")
+    config = write_config(tmp_path / "cfg", playbook=ROOT / "playbook")
+    out, err = io.StringIO(), io.StringIO()
+    code = bench.main(root.parent, config, candidate, out=out, err=err)
+    assert code == 0, err.getvalue()
+    assert out.getvalue().splitlines() == [
+        "bench 9001.001 model=candidate found=1 of 1 missed=0 invented=0 extra=0 flags=0 of 0 "
+        "flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 1",
+        "  rungs: exact=0 whitespace=0 curly=0 ocr=1",
+        "bench matters=1 imperfect=0",
+    ]

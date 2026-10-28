@@ -64,9 +64,22 @@ def test_generator_check_passes_and_names_a_changed_page(capsys, monkeypatch):
     generator = load_generator()
     assert generator.check() == 0
     assert "check bytes_equal=1 content_equal=1" in capsys.readouterr().out
-    changed = [dict(page) for page in generator.PAGES]
+    original = generator.PAGES
+    changed = [dict(page) for page in original]
     changed[1] = dict(changed[1], lines=[l.replace("Strength", "Power") for l in changed[1]["lines"]])
     monkeypatch.setattr(generator, "PAGES", changed)
     assert generator.check() == 1
     out = capsys.readouterr().out
     assert "content_equal=0" in out and "check page 2 differs" in out
+    changed = [dict(page) for page in original]
+    changed[4] = dict(changed[4], lines=[
+        line.replace("Frequency: two visits per week for four weeks.",
+                     "Frequency: two visits per week for five weeks.")
+        for line in changed[4]["lines"]])
+    monkeypatch.setattr(generator, "PAGES", changed)
+    assert generator.check() == 1
+    out = capsys.readouterr().out
+    assert "content_equal=0" in out and "check page 5 differs" in out
+    assert "check page 2 differs" not in out
+    with capsys.disabled():
+        print(out.strip())
