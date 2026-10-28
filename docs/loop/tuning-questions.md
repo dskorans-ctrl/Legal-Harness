@@ -52,3 +52,12 @@ benchmark says, and what to watch for.
   against a quote holding `03/02/2026`). Fails closed; count such `gate.quotes` failures on the stage 9 benchmark
   before deciding whether to compare numbers by value. Also (verifier L2): the check reads digits inside a bracketed
   cite in the summary (`[cite MED0001]` gives `0001`), so it must skip cites before any stage writes cited prose (R1-20).
+- T-20 (round 5 brief, §1.4): `pipeline.RETRY_MARGIN = 8192` bytes reserved for the retry's error line
+  (`src/casefile/pipeline.py:11`). The round 5 code review computed about 121 bytes per quote fault (3776 for 31),
+  so over about 67 faults the retry is refused as "prompt too long". Measure the largest retry line on the stage 9
+  benchmark before changing it.
+- T-21 (round 5 brief, owner question 55): open pages are re-sent on every `casefile memo` run (an uncited cover
+  sheet costs two calls per run and turns `failed`). Count such calls per matter on the stage 9 benchmark.
+- T-22 (round 5 chair, owner question 56): chunk size bounds which conflicts the model can see (`bench_chunks=3 ...
+  flags=5 of 9` on the invented matter split in three). Measure flags found against chunk count on the stage 9
+  benchmark before choosing a chunk policy or a cross-chunk pass.

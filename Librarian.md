@@ -73,6 +73,22 @@ Cross-project failure classes live in the app-loop skill's catalog
 - Does a mutation control execute the changed source with isolated or cleared bytecode caches?, #R04-OC-1
 - Does a numeric evidence check distinguish citation identifiers from the numbers asserted in prose?, #R04-V-2
 - Does a quote test reject text present elsewhere in the chunk but absent from the cited page?, #R04-CH-1
+- Does an incremental or chunked reader measure relationships across chunks and runs, and state which pairs it never compares?, #R05-PC-1
+- Does an append-only file recover an incomplete final write without accepting corruption in a completed or interior record?, #R05-PC-7
+- Do tests default to a closed endpoint so losing an injected transport cannot reach the owner's live service?, #R05-PC-8
+- Does a renderer emit every accumulated version or reading of a merged record, with a multiple-version control?, #R05-PC-12
+- Does a test copy a shared fixture before a job writes into it, leaving the session fixture unchanged?, #R05-PC-17
+- Does a read verdict require both coverage and durable case-file facts, and does a failed append cause those pages to be re-sent?, #R05-CX-2
+- Does a view retain every stored fact when its original page disappears, with an explicit place for facts whose pages are all absent?, #R05-CX-3
+- Does a matter lock cover load, identity allocation, merge and append, with duplicate stored IDs refused on load?, #R05-CX-4
+- Does each merged reading retain its source page, including identical wording on two pages, and name that page when displayed elsewhere?, #R05-CX-5
+- Does a hash-chain integrity claim test an edited final payload and a deleted complete tail against an independently anchored head?, #R05-CX-6
+- Does a relationship require the right number of distinct resolved pages, with cites deduplicated in the same order as page IDs?, #R05-CX-7
+- Do intake and output validation share one stamp definition, or refuse incompatible configured definitions before processing?, #R05-CX-9
+- Does a newly rebuilt output describe its own published state while still reporting other outputs that remain stale?, #R05-OC-1
+- Do change counts measure the semantic content added inside every event kind, including a new fact's initial reading?, #R05-OC-3
+- Does a shared error describe only its own layer, with caller-specific consequences and prefixes added once by each command?, #R05-V-1
+- Are all accepted build and fix rulings reconciled with the canonical decisions table before the round closes?, #R05-V-2
 
 ## Round 1 (2026-10-25 to 2026-10-26)
 
@@ -632,24 +648,210 @@ Round 4 repeats and dispositions (no duplicate entries or pre-flight bullets):
   `stamped=all(...)` seeded to `any(...)` left `537 passed`, including with isolated bytecode; the mixed-chunk
   severity test remains open. The brief rules mixed chunks but the spec/as-built wording needs reconciliation.
 
+## Round 5 (2026-10-28; stage 5 case file, merge and medical memo)
+
+Plan and code IDs use the findings' order in each report (High, Medium, Low); gaps are repeats or dispositions
+listed below. Records checked: every round 5 report, brief §8, W0 to W8 including W3b and W5b, both fix reports,
+and the ledger's Round 5 section. Fixed statuses below report that evidence, not new code work at this close.
+
+### R05-PC-1: incremental chunks cannot see relationships outside their input
+**What broke:** `src/casefile/gates.py:96-99` and brief §1.4: lookup sees only the current chunk and only unread
+pages are sent; a later defense report cannot conflict with an earlier medical page, and three chunks find only
+5 of 9 fixture flags even within one run.
+**Why:** independent extraction batches were treated as sufficient context for relationships spanning batches.
+**Caught by:** plan review H1; chair's W3 measurement; output critic's later DEF0001 weight disagreement.
+**Countermeasure:** memo states that conflicts and gaps are checked only between pages sent together and counts
+runs that read pages; Q56 holds re-sending context, T-22 measures losses before a reconciliation pass is designed.
+**Status:** open limit, disclosed and verified; no cross-chunk or cross-run reconciliation built.
+
+### R05-PC-7: a torn append could make a matter permanently unreadable
+**What broke:** `docs/loop/round-05/round05-build-brief.md:252-258` specifies the revised recovery contract;
+the original append-mode-only design had no recovery from a crash midway through the last JSON object.
+**Why:** append-only storage was specified without distinguishing a completed record from an interrupted write.
+**Caught by:** plan review M5, accepted in brief §8.
+**Countermeasure:** load reports and ignores an incomplete final object, append truncates only that torn tail
+before writing and fsyncs; complete records without a final newline survive; interior corruption refuses.
+**Status:** built by W4; torn-tail load, recovery and cut-middle controls all red under their separate seeds.
+
+### R05-PC-8: an injected test transport hid an unsafe live-service default
+**What broke:** `tests/conftest.py:41` defaulted to the owner's Ollama on port 11434; dropping one forwarded
+`opener` parameter could send fixture pages to that service before the test failed.
+**Why:** test isolation depended on perfect dependency injection while the fallback addressed a live service.
+**Caught by:** plan review M6; brief §8 confirms the default and its callers, with no observed suite request.
+**Countermeasure:** default test host is port 9; live tests name a stand-in port they opened; grep checks remaining
+11434 references and W7's omitted-opener seed fails without reaching the owner's server.
+**Status:** preventive fix built by W0/W7; verifier checked references; round report records request delta 0.
+
+### R05-PC-12: a singular renderer would discard accumulated flag readings
+**What broke:** `docs/loop/round-05/round05-brief-review.md:119-121` identifies W5's single reading paragraph
+for a flag whose identity allows multiple `about` versions, including two gaps on the same page.
+**Why:** a display contract assumed one value where the merge contract accumulates several versions.
+**Caught by:** plan review L2, accepted in brief §8.
+**Countermeasure:** one labelled paragraph per `about`, in case-file order; W5 includes a two-about gap and a seed
+that renders only the first reading.
+**Status:** built by W5b; check 7 red under the first-about-only seed, rechecked in fix cycle 2.
+
+### R05-PC-17: a job test would mutate the shared session fixture
+**What broke:** `tests/conftest.py:131-144` provides session-scoped `scanned_intake`; W7 originally planned to write
+`casefile.jsonl` and `outputs/` into that same matter, which other intake tests read.
+**Why:** mutable test output shared the lifetime and location of an input fixture used by other tests.
+**Caught by:** plan review L7, accepted in brief §8.
+**Countermeasure:** copy the invented matter under the test's own configured matters root before running the job;
+assert that the shared fixture still contains only `records` and `pages`.
+**Status:** built and checked by W7; no cross-test writes to the session fixture.
+
+### R05-CX-2: coverage committed before facts could suppress every recovery read
+**What broke:** `src/casefile/gates.py:312-317` committed `read` before `memo_job.py:49-51` appended facts;
+an append failure left pages permanently skipped while a later empty memo could exit 0.
+**Why:** success in one persistent store was treated as proof that the dependent write to another had committed.
+**Caught by:** code review H2; chair reproduced by tracing the write order.
+**Countermeasure:** count a page read only when its latest memo coverage row joins a case-file `run` event;
+probe append access before the model call, inject a post-coverage append failure, and assert the next run re-sends.
+**Status:** fixed in cycle 1, including status; both missing-join and late-probe seeds red. Deleting complete
+tail events also reopens affected pages through this join; an edited last payload remains #R05-CX-6.
+
+### R05-CX-3: facts vanished when their original page left the current page set
+**What broke:** `src/casefile/memo.py:98-102` placed a fact only under `page_ids[0]`; after a binder rename or
+removal, the case file and status counted the fact while the memo silently omitted it.
+**Why:** rendering was driven only by current source headings with no total placement rule for retained records.
+**Caught by:** code review M1; chair reproduced a fact with an absent first page and a present later cite.
+**Countermeasure:** use the first present cited page, place facts with no present page under `Facts on pages not
+in this matter`, and assert that rendered fact counts agree with the case file.
+**Status:** fixed in cycle 1; original-first-page placement seed red; D41 amended at close.
+
+### R05-CX-4: concurrent writers allocated the same fact identity from a stale base
+**What broke:** `src/casefile/facts.py:237-239,202` allocated IDs before append re-read the chain; two writers
+kept valid sequence links but both appended F1, and `CaseFile.facts` retained only the second fact.
+**Why:** serialization of individual appends did not serialize the read, identity allocation and merge transaction.
+**Caught by:** code review M2; chair reproduced duplicate IDs and loss from the view, with the concurrent trigger plausible.
+**Countermeasure:** exclusive matter `flock` around load, merge and append; load refuses repeated fact and flag IDs
+(also #R02-CX-5's collision guard); tests remove or share the lock and separately disable each duplicate-ID guard.
+**Status:** fixed in cycle 1; lock and duplicate-ID seeds red; low-level append documents caller serialization.
+
+### R05-CX-5: merged readings lost the page that supplied their meaning
+**What broke:** `src/casefile/facts.py:56,258-259` stored readings as fact, text and run only;
+`memo.py:109-110` showed a MED0007 reflex reading under MED0001's gait heading because both quoted `Normal.`.
+**Why:** deduplication of shared evidence erased the source association of distinct interpretations.
+**Caught by:** code review M3; chair reproduced; verifier independently attacked render and merge provenance.
+**Countermeasure:** every reading carries `page_id`, dedupe by text plus page, and name another page in its label;
+test identical reading wording on two pages as well as different readings (source-association tests: #R04-CH-1).
+**Status:** fixed in cycle 1; old readings without a page refuse; verifier seeds 1 and 2 both red.
+
+### R05-CX-6: a predecessor hash cannot authenticate the chain's final payload
+**What broke:** `src/casefile/facts.py:171` in the reviewed revision checked only each line's predecessor;
+editing the last payload or deleting complete trailing lines still loaded clean despite the original refusal claim.
+**Why:** a chain with no independently anchored head cannot prove the integrity or completeness of its own tail.
+**Caught by:** code review M4; chair reproduced both an edited last payload and a shortened complete chain.
+**Countermeasure:** narrow the integrity claim; #R05-CX-2's committed-run join recovers missing tail runs;
+an independent stored head hash and sequence plus explicit final-payload tests are needed to detect tail edits.
+**Status:** open recorded limit: an edited last line still loads clean; no head anchor added this round.
+
+### R05-CX-7: citation aliases satisfied a relationship that required distinct pages
+**What broke:** `src/casefile/facts.py:263,267` deduped page IDs separately from cites, while gate 4 accepted
+`MED0001` and `MED 0001` as the two sides of a one-page conflict.
+**Why:** relationship cardinality was counted before resolving aliases to distinct entities.
+**Caught by:** code review L1; chair reproduced a single-page conflict with duplicate stamp labels.
+**Countermeasure:** gate 4 requires two distinct resolved pages for a conflict; dedupe flag cites and page IDs
+together, preserving their pairing and order.
+**Status:** fixed in cycle 1; missing distinct-page guard and unpaired cite-dedup seeds each red.
+
+### R05-CX-9: intake and output validation define stamps independently
+**What broke:** `playbook/rules.toml:57` requires at least four digits while `src/casefile/config.py:28` allows
+an owner-configured `stamp_pattern`; a three-digit stamp can be intaken but its memo cite would fail the playbook.
+**Why:** two configurable authorities describe the same identifier without a compatibility contract.
+**Caught by:** code review L3; chair classified it plausible only because the current defaults agree.
+**Countermeasure:** share a canonical stamp definition or refuse incompatible intake and playbook definitions
+before processing; test a configured three-digit stamp through intake and memo validation.
+**Status:** open for stage 6; no code change and no end-to-end reproduction with divergent config this round.
+
+### R05-OC-1: a replacement memo reported the previous memo's staleness as its own
+**What broke:** `src/casefile/memo.py:95` read stale outputs before `memo_job.py:70` appended the replacement's
+output event; run 3's fresh memo said `memo` was stale while status immediately said `memo:current`.
+**Why:** an output's self-description was computed from its predecessor's state before publication.
+**Caught by:** output critic M1; chair traced the order; the original exit test had pinned the wrong answer.
+**Countermeasure:** omit the memo being rebuilt from its own stale list, preserve other stale outputs, and reopen
+the produced memo to compare its stale section with status after publication.
+**Status:** fixed in cycle 2; include-self seed red; stage 5 pin changed to `none`; verifier read the corrected memo.
+
+### R05-OC-3: event-kind counts understated the semantic content added
+**What broke:** `src/casefile/memo.py:89` in the critic's revision counted only `reading` events, so a new
+fact brought a visible model-reading paragraph while What changed said `0 readings added`.
+**Why:** a semantic change count was equated with one event kind even though another event embeds the same content.
+**Caught by:** output critic L1; chair reproduced the change line.
+**Countermeasure:** count initial readings in new fact events plus later reading events, count new flag readings,
+and test the exact reopened change paragraph; plural handling shares #R03-OC-L1.
+**Status:** fixed in cycle 2; omit-initial-reading seed red; verifier confirmed the revised output.
+
+### R05-V-1: a transport error carried memo-specific consequences into every caller
+**What broke:** `src/casefile/model.py:57-58` says the page stays open even in `doctor`, where no page is
+involved; `memo_job.py:99` adds a second no-reply prefix around that same reason.
+**Why:** shared transport errors included workflow context that only the calling command could truthfully supply.
+**Caught by:** blind verifier L1; W3b's doctor assertion had been re-pinned to the misleading page clause.
+**Countermeasure:** keep the shared no-reply reason transport-only, add the page consequence in gates, and add
+each command's context once; re-pin doctor and memo assertions against their own command semantics.
+**Status:** open, carried to round 6; plain wording alone (#R03-OC-L1) did not prevent this caller-context leak.
+
+### R05-V-2: accepted output rulings were missing from the canonical decision row
+**What broke:** `docs/spec.md:258` (D41 before the close amendment) omitted page placeholders, the unstamped
+warning and the absent-page facts section introduced by the code-review rulings and fixes.
+**Why:** implementation decisions accumulated during fixes without reconciliation into the canonical specification.
+**Caught by:** blind verifier L2; round 5 report records the close amendment.
+**Countermeasure:** reconcile every accepted review and fix ruling against spec §9 at close, including visible
+wording and sections, with each omission either recorded as a decision or explicitly deferred.
+**Status:** closed by the chair's D41 amendment, present in the current spec; pending owner veto.
+
+Round 5 repeats and dispositions (no duplicate entries or pre-flight bullets):
+
+- Plan H2: #R02-V-F1 and #R02-V-F1b; W3 migrated all nine runner-level reply-storage probes before deleting
+  the old runner tests. Plan M2: #R03-PC-3, every consumer of the changed capture contract must migrate;
+  `cite_body` now handles alternation in both rules and gates. M3 repeats #R01-CX-7/#R01-OC-H3's two-way prose tests.
+- Plan M1, L4, L5, L8 and L10, plus W0/W1/W2/W3/W8 count and pin discrepancies: #R03-PC-3 (measured premises,
+  callers and contracts), with #R02-CH-1 for the chunk boundary. W0's changed-card recording seed repeats
+  #R01-CX-10: symmetric request and recording changes masked that oracle; the independent version pin did fail.
+- Plan M4: #R04-CH-1, evidence must sit under its own source heading. L1 is the stated folded-quote identity
+  consequence, not a new defect; L2 is #R05-PC-12. L3 repeats #R01-OC-M2 (job is now required).
+- Plan M7 / Q55 / T-21 is a documented consequence of #R04-PC-6: a re-sent cover sheet with an empty answer
+  costs two calls and turns failed; it stays open. M8 repeats #R03-V-L1: binder-rule refusal before any side effect,
+  with the practice boundary held as Q57. L9 is Q54's ordering choice. L6 was rejected: ModelClient already sends num_ctx.
+- Build W3's missing lane B dependency and W5's contradictory run count and missing inputs repeat #R03-PC-3;
+  the chair merged the dependency first and ruled the run-count and interface contracts before rebuilding.
+- W2's status and identity seeds initially survived masked probes; W5b's reason seed initially also checked quotes:
+  #R01-CX-10, isolated and rerun red. W7's late binder check needed a database-file assertion, not just run rows:
+  #R03-V-L1. Its overlapping development controls were rerun serially; no new class.
+- Code H1: #R04-PC-11, extraction accepted a page-id cite that the stamped memo refused; cycle 1 canonicalises
+  it to the page's first stamp at merge and tests rendering. Code L2: #R04-PC-6, an empty pages folder cannot
+  justify success; cycle 1 refuses it. L5 repeats #R03-OC-L1; cycle 1 fixes the newline, duplicate excerpt and section.
+- Code L4 is T-20 tuning: 8192 retry bytes are a guessed margin, not a bound; around 67 quote faults can exhaust
+  it. #R04-PC-1 still requires checking the actual retry budget; measure the maximum reason before changing the margin.
+- Critic M2, L2, L3 and L4 repeat #R03-OC-L1: explain unquoted pages and empty sections, use a reader-facing
+  warning naming text pages, and capitalize headings; cycle 2 fixed them. L1's grammar shares that entry, while
+  its missing initial-reading count is #R05-OC-3. L5 repeats the label-scope issue of #R01-OC-H2, held as Q58;
+  `defense report` still appears under the interim, with no new rule. Owner questions 50 to 58 remain held.
+- Chair seed R05-CH-1 repeats #R01-V-B2/#R03-V-S1: the last line's wrong seq had no isolated test, so dropping
+  the guard stayed green. Cycle 1 added a final-line sequence case; the exact seed now fails
+  `CH-1: wrong seq on last line accepted`. No new failure class or pre-flight bullet.
+- Verifier seeds 1 to 5 all went red; no new test gap. L3's copied `.claude/.cc-writes` marker is harmless harness
+  debris, recorded for the owner; no behavior failure or new class was demonstrated.
+
 ## Open items a future pass must not re-discover
 
-- **R1-20**: `bates-cites` sees only bracketed cites; "See page 12" passes: the stage that writes cited prose.
+- **Closed in round 5**: verifier L1 mixed-chunk test (#R01-V-B2, #R03-V-S1); verifier L2 citation digits
+  (#R04-V-2) and R1-20 cite forms; critic M2 open items by stamp and L3 bench invented kinds and rule excerpts
+  (#R03-OC-L1). R5-2/R5-3 independently verified with `gate_cases=31 of 31`, `cite_forms=11 of 11`,
+  `invented_kinds=2 of 2 rule_excerpt_ok=1` and status's stamped open line.
+- **Edited last case-file line loads clean** (#R05-CX-6, code M4): recorded integrity limit; no independent head
+  anchor. Missing complete tail runs recover through #R05-CX-2; editing the last payload remains undetected.
+- **Two stamp definitions** (#R05-CX-9, code L3): `rules.toml` bates_pattern versus config stamp_pattern;
+  defaults agree, divergent owner configuration is not checked for compatibility. Stage 6, plausible risk.
+- **No-reply wording in doctor and memo** (#R05-V-1, verifier L1): every reason says the page stays open even
+  when no page is involved; memo repeats the no-reply words. Carry to round 6 and re-pin both command assertions.
+- **Cross-chunk and cross-run conflicts not seen** (#R05-PC-1, Q56, T-22): only pages sent together can yield
+  conflicts or gaps; three-chunk fixture finds 5 of 9 flags. Limit disclosed, reconciliation still unbuilt.
 - **Owner questions 7 to 14** (`docs/loop/questions-for-owner.md`): interim rulings in force.
 - **run.sh needs python3 on PATH** before `uv sync` on a fresh checkout (#R01-CX-4; owner question 16).
 - **Closed in round 4**: R2-CX-2 / OR-4 (D31, R4-2; #R04-PC-1); verifier gaps S1, S2, S5
   (#R03-V-S1, R4-3); verifier lows (duplicate refusal before work, stamp normalisation and step comments,
   #R03-V-L1, R4-4); suite time T-11, now three-run PASS `max=57.46` against 90 s.
-- **Verifier mixed-chunk test gap** (#R01-V-B2; #R03-V-S1): `gates.py:241` `stamped=all(...)` to
-  `any(...)` stays green. Add one stamped and one unstamped page with digit-free `[page second]` in fact text;
-  assert gate 5 passes with the cite finding as a warning. Non-blocking, next gate-5 work; reconcile the brief's
-  mixed-chunk ruling with the spec/as-built wording.
-- **D38 citation digits** (#R04-V-2): `[cite MED0001]` in a summary fails the digit-run check when the
-  quote lacks `0001`; rule with R1-20 before the stage that writes cited prose. Non-blocking at stage 4.
-- **Critic deferred M2** (#R03-OC-L1): open items display page IDs without their Bates stamps; stage 5's
-  status view must show the stamp where present while keeping page IDs as keys.
-- **Critic deferred L3** (#R03-OC-L1): bench `invented:` lines do not distinguish no-such-page from
-  quote-not-on-page, and `rules:` omits offending fact text; round 5 must revise the pinned detail lines.
 - **Owner questions 47, 48, 49**: uncited-page closure (#R04-PC-6), summary wording (#R04-PC-7), and rule
   IDs in output (#R03-OC-L1); interims stand, D31 to D38 pending veto.
 - **Leftover capture folders** from killed test runs before 9f86d07 sit in the shared TMPDIR (invented text).

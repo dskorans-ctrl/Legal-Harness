@@ -22,8 +22,8 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Standing freezes: none.
 - OCR tools (Q39): ocrmypdf and tesseract under `/opt/homebrew/bin`; `scripts/run.sh` appends it to PATH.
 - Privacy: no real client record, name or fact in any loop session; fixtures are invented.
-- Regression baselines (set at the round 4 merge, 2026-10-28, tip of `loop/round-04`):
-  `scripts/run.sh pytest -q` -> `537 passed` (under 90 s: `scripts/run.sh scripts/suite_time.sh 3` -> `suite_time runs=3 max=57.46
+- Regression baselines (set at the round 5 merge, 2026-10-28, tip of `loop/round-05`):
+  `scripts/run.sh pytest -q` -> `652 passed` (under 90 s: `scripts/run.sh scripts/suite_time.sh 3` -> `suite_time runs=3 max=51.57
   verdict=PASS`, exit 0); `scripts/run.sh python -m casefile.gate` -> `0`;
   `scripts/run.sh python scripts/unused_imports.py src tests scripts` -> `unused_imports=0`;
   `casefile bench --config config.example.toml --matters tests/fixtures/matters --candidate
@@ -34,7 +34,8 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   stage 1 exit test `exit=0 verdicts=8 fails=set() test_jobs=1`; stage 2 exit test `stage2 exit=0 runs=+1
   answers_ok=+1 server_stopped=1`; stage 3 exit test `stage3 exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6
   text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 4 exit test `stage4 exit=0 gates=6 of 6
-  cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1` (seven `stage4` lines); doctor
+  cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1` (seven `stage4` lines); stage 5 exit test `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4
+  casefile_lines=48 chain_ok=1 server_stopped=1` (nine `stage5` lines); doctor
   `runlog_schema PASS schema=2 triggers=21 (counted)`; intake of the fixture `intake 9002.001 scan pages=6 ok=5
   empty=1 failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
 - Records: Librarian.md · docs/loop/round-NN/ · docs/loop/agent-log.md · docs/loop/questions-for-owner.md ·
@@ -744,18 +745,46 @@ orchestrator, output critic and blind verifier; Codex `gpt-6.1-sol` code and fix
 check-in; questions held in `docs/loop/questions-for-owner.md` with interim rulings by the pillars, pending veto.
 Exit test (spec §7 stage 5): the test matter produces a memo with cites, conflicts and open items. All model answers
 are invented fixtures served by the stand-in model server (`tests/fakemodel/`).
-- [ ] R5-1. Stage 5 work items (defined by the round 5 brief, ruled by the chair before any code): the case file,
+- [x] R5-1. Stage 5 work items (defined by the round 5 brief, ruled by the chair before any code): the case file,
   merge into it, and the medical memo, built on the round 4 gate pipeline (`gates.ask`), with cites, conflicts and open
   items, under owner interims for questions 47 (uncited pages stay open) and 48 (no summary used as verified).
-- [ ] R5-2. Carried: R1-20 (`bates-cites` sees only bracketed cites) and round 4 verifier L2 (the D38 digit check reads
+  Verifier (blind, 2026-10-28, tip ff79699, own runs): `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=48
+  chain_ok=1 server_stopped=1` (nine lines); `casefile_ok=14 of 14`; `memo_docx_ok=14 of 14 memo_refused=2 of 2 memo_changed=1
+  memo_reason_exempt=1`; `pages_ok=10 of 10`, `chunks_ok=8 of 8 pipeline_ok=5 of 5`; `status_ok=6 of 6 binder_refused=1`;
+  `memo_intake 9002.001 chunks=1 read=5 open=1 facts=5 gaps=1 label_ok=1 exit=1`; `bench_modes=12 of 12`, `reply_rows=9 of 9`;
+  `card_version=4ab2bdb30535`; own memo.docx read with python-docx: `key_facts=29 of 29 key_flags=9 of 9`,
+  `quotes_on_cited_page=32 bad=0`, every model sentence `Model's reading`. Seeds 1 to 5 red (`docs/loop/round-05/round05-verify.md`).
+- [x] R5-2. Carried: R1-20 (`bates-cites` sees only bracketed cites) and round 4 verifier L2 (the D38 digit check reads
   digits inside a bracketed cite), both due now that a stage writes cited prose; round 4 verifier L1 (a mixed stamped
   and unstamped chunk test).
-- [ ] R5-3. Carried: round 4 critic M2 (open items shown by stamp, not page id) and L3 (bench `invented:` lines separate
+  Verifier (own run, `tests/test_gates.py tests/test_rules.py`): `gate_cases=31 of 31`, `cite_forms=11 of 11`, `109 passed`;
+  case `mixed_chunk` present (`tests/test_gates.py:126`). Seed 5 (`memo.py` check `stamped=any`) red, 10 tests.
+- [x] R5-3. Carried: round 4 critic M2 (open items shown by stamp, not page id) and L3 (bench `invented:` lines separate
   no-such-page from quote-not-on-page).
+  Verifier (own runs): `invented_kinds=2 of 2 rule_excerpt_ok=1`; own CLI `casefile status` after one replay memo run on a temp
+  copy of 9001.001: `  open: DEF0001 (defense-report/001): uncited: no fact or flag cites defense-report/001`; own bench CLI:
+  `invented: MED0003 "Patient was lifting 80 pounds." (quote not on the page)` and `invented: MED0099 "Date of service:
+  03/11/2025" (no such page)`. Seed 4 (`status.py` open items drop empty and unread) red, 4 tests.
 - Plan review and rulings (2026-10-28): fresh Fable plan review, 20 findings (`docs/loop/round-05/round05-brief-review.md`); Fable revision accepted 18, rejected 1 (L6, `model.py:127-128` always sends num_ctx), owner 2 (questions 56, 57); brief 984 lines. Chair ruled D39 to D43 as written in brief §6, logged in spec §9 pending owner veto. Chair's flag for the check-in: question 56's interim (no re-send across runs; the memo states the limit) leaves a defense report read in a later run unchecked against earlier pages, the conflict class Q41 ranks first; acceptable only because the memo says so.
 - Chair ruling (build, W5 blocked, 2026-10-28 02:05): brief W5 check 14 (`Pages read in 2 runs`) and seed (i) ("the second run read nothing") contradict. Ruled: the sentence counts runs with at least one `read` coverage row; the fixture has two runs that read pages plus a third run that read nothing, so check 14 expects `Pages read in 2 runs` and seed (i) (counting every run) gives 3, red. Missing inputs: `memo.build(casefile, pages, open_items, *, matter, playbook_version, model)` and `memo.render(memo, path, *, rules)`; W7 passes the matter number and the loaded playbook rules.
 - R05-CH-1 (chair seed, build): `facts.py:170` dropping `or obj["seq"] != index` from `load` stays green on `tests/test_facts.py` (`casefile_ok=14 of 14`): no case gives the last line a wrong `seq` (no later `prev` covers it). Code right, test gap; routed to fix cycle 1.
 - Chair rulings (build, lane A, 2026-10-28 02:20): the brief ran W3 before the lane B merge although `pipeline.merge` needs `facts.py`; lane B merged first (d3dd5a9), lane A's W1 to W3 on top. Measured counts accepted over the brief's: W2 (two plus one records, 12 read with DEF0001 and DEF0002 uncited in the chunked fixture, two run rows and one answer on a chunk-two no reply), W3 (`uncited=2`, `extra=3`), W1 seed (e) `cite_forms=7 of 11`. Finding: the forced three-chunk bench prints `bench_chunks=3 found=29 of 29 flags=5 of 9`: conflicts and gaps whose pages fall in different chunks are lost within one run, not only across runs (Q56). Ruled: the memo's conflicts sentence reads `Pages read in N run(s); conflicts and gaps are checked only between pages sent to the model together.`; owner question 56 amended to name chunks. W3b (Codex) also re-pins `tests/test_bench_cli.py` to the `gate.*` labels and makes the no-reply failure plain words (it printed `<urlopen error [Errno 61] Connection refused>`, the round 4 H1 class).
 - 8a code review (fresh Fable, Q46, 2026-10-28): 11 findings (2 high, 4 med, 5 low; 9 confirmed). Chair ran the reviewer's probe and traced H2: 9 reproduced, L3 plausible only, L4 tuning. Rulings in `docs/loop/round-05/round05-code-review.md`; fix cycle 1 (Codex) carries H1, H2, M1, M2, M3, L1, L2, L5 and R05-CH-1; M4 (an edited last line of the case file loads clean) becomes a recorded limit.
 - 8b output critic (fresh Opus, 2026-10-28 03:40): `OUTPUT CRITIC 7/10 · high 0 · med 2 · low 5` (`docs/loop/round-05/round05-critic.md`); answer key complete (29 of 29 facts, 9 of 9 flags, cites right), Q48 met. Chair reproduced M1 (`memo.py:95` reads `stale_outputs()` before `memo_job.py:70` appends the output event: the new memo lists itself stale) and L1 (`memo.py:89`); M2, L2 seen in produced memos. Fix cycle 2 (Codex): M1, M2, L1, L2, L3, L4. L5 ("defense report" in our words) is owner question 58. The critic stopped its own stand-in on port 18434 with the sandbox off; the chair confirmed the port closed.
-- [ ] V. Fresh blind verification: every non-deferred R5 item `[x]` with the verifier's own evidence.
+- CHECKs for R5-1 to R5-3 (the brief's contract, `docs/loop/round-05/round05-build-brief.md` §2, as amended by the chair rulings above;
+  every run through `scripts/run.sh`): R5-1: `pytest -q -s tests/test_stage5_exit.py` prints nine `stage5` lines ending `stage5 exit=0 runs=4
+  of 4 memos=3 of 3 answers=+4 casefile_lines=48 chain_ok=1 server_stopped=1`; `tests/test_facts.py` -> `casefile_ok=14 of 14`;
+  `tests/test_memo.py` -> `memo_docx_ok=14 of 14 memo_refused=2 of 2 memo_changed=1 memo_reason_exempt=1`; `tests/test_pages.py
+  tests/test_pipeline.py` -> `pages_ok=10 of 10 chunks_ok=8 of 8 pipeline_ok=5 of 5`; `tests/test_status.py tests/test_memo_intake.py` ->
+  `status_ok=6 of 6 binder_refused=1` and `memo_intake 9002.001 chunks=1 read=5 open=1 facts=5 gaps=1 label_ok=1 exit=1`;
+  `tests/test_bench_pipeline.py` -> `bench_modes=12 of 12`, `reply_rows=9 of 9`; `tests/test_extract.py` -> `card_version=4ab2bdb30535`.
+  R5-2: `tests/test_gates.py tests/test_rules.py` -> `gate_cases=31 of 31`, `cite_forms=11 of 11` (mixed chunk case included). R5-3:
+  `tests/test_bench_detail.py tests/test_benchscore.py` -> `invented_kinds=2 of 2 rule_excerpt_ok=1`; `casefile status` labels open
+  items by stamp. Regression: `## Project` baselines (bench lines, stage 1 to 4 lines, gate `0`, `unused_imports=0`), `scripts/suite_time.sh 3`
+  -> `verdict=PASS`; no test reaches 127.0.0.1:11434.
+- [x] V. Fresh blind verification: every non-deferred R5 item `[x]` with the verifier's own evidence.
+  Verifier (2026-10-28, tip ff79699): PASS. Regression own runs: `652 passed in 51.90s`; gate `0`; `unused_imports=0`;
+  `suite_time runs=3 max=51.57 verdict=PASS`; bench flawed exit 1 and ideal exit 0, both lines equal to the `## Project`
+  baselines; stage 1 to 4 lines equal; `doctor runlog_schema PASS schema=2 triggers=21 (counted)` (temp config, closed port);
+  intake line equal. Five seeds red, all restored (`cmp` clean). Report `docs/loop/round-05/round05-verify.md`.
+- Close (2026-10-28): verifier PASS (`docs/loop/round-05/round05-verify.md`). Carried to the round 6 brief: verifier L1 (no-reply reason says the page stays open even in the doctor; memo repeats the no-reply words), code review M4 (an edited last case-file line loads clean: recorded limit) and L3 (two stamp definitions), owner questions 47 to 58 held, D31 to D43 pending veto. Not started: round 6 (owner Q48 covered round 5 only). Leftover for the owner: untracked `tests/fixtures/matters/9001.001/.claude/` (a Claude Code `.cc-writes` marker, 2026-10-27 02:06), copied into exit-test matters.
