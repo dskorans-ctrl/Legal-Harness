@@ -81,7 +81,7 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Me
     runs = {run["run_id"] for run in casefile.runs if run["job"] == "memo" and run["read"]}
     conflicts = Section("Conflicts", [_paragraph(
         f'Pages read in {len(runs)} {"run" if len(runs) == 1 else "runs"}; '
-        'conflicts between runs are checked only for pages sent together.')])
+        'conflicts and gaps are checked only between pages sent to the model together.')])
     gaps = Section("Gaps and missing records")
     for flag in casefile.flags:
         citations = [_cite(cite, page_id) for cite, page_id in zip(flag.cites, flag.page_ids)]

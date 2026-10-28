@@ -39,6 +39,7 @@ CASES = (
     'repairable', 'unrepairable', 'bad_schema', 'bad_quote', 'fact_cite', 'text_number',
     'flag_cite', 'forbidden_json', 'quoted_ime', 'unstamped', 'empty_answer', 'retry_ok',
     'retry_budget', 'no_reply', 'open_items', 'request_body',
+    'text_cite_ok', 'text_cite_bad', 'text_see_page', 'mixed_chunk',
 )
 
 
@@ -76,7 +77,7 @@ def content_edit(change):
 def gate_totals():
     passed = []
     yield passed
-    print(f'gate_cases={len(passed)} of 27', flush=True)
+    print(f'gate_cases={len(passed)} of 31', flush=True)
 
 
 @pytest.mark.parametrize('case', CASES)
@@ -86,7 +87,7 @@ def test_gate_cases(case, tmp_path, gate_totals):
     card = extraction_card()
     firm = rules.load(ROOT / 'playbook/rules.toml')
     settings = config.load(write_config(tmp_path)).model
-    assert len(CASES) == 27
+    assert len(CASES) == 31
     with open_db(tmp_path / f'{case}.sqlite') as log:
         _case(case, log, loaded, ideal, card, firm, settings)
     gate_totals.append(case)
@@ -117,6 +118,19 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         edit = content_edit(lambda obj: obj['facts'][0].update(text='Pain was 99999/10.'))
     elif case == 'flag_cite':
         edit = content_edit(lambda obj: obj['flags'][0]['cites'].append('MED0098'))
+    elif case in {'text_cite_ok', 'text_cite_bad', 'text_see_page'}:
+        suffix = {'text_cite_ok': ' [cite MED0001]', 'text_cite_bad': ' [cite MED0099]',
+                  'text_see_page': ' see page 12'}[case]
+        ideal['facts'][0]['text'] += suffix
+        edit = content_edit(lambda obj: obj['facts'][0].update(text=ideal['facts'][0]['text']))
+    elif case == 'mixed_chunk':
+        pages = (matter.Page('mixed', 1, 'The report records a normal gait.', ('MIX0001',)),
+                 matter.Page('mixed', 2, 'The clinic recommends follow-up.', ()))
+        obj = {'facts': [{'cite': 'MIX0001', 'quote': pages[0].text, 'text': pages[0].text},
+                         {'cite': 'mixed/002', 'quote': pages[1].text,
+                          'text': pages[1].text + ' [page mixed/002]'}], 'flags': []}
+        number = '9003.001'
+        recordings = [recording(card, pages, number, obj)]
     elif case in {'quoted_ime', 'unstamped'}:
         pages, obj = probe()
         if case == 'quoted_ime':
@@ -147,7 +161,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
             assert log.connection.execute(f'SELECT COUNT(*) FROM {table}').fetchone()[0] == 0, table
         return
     outcome = gates.ask(card, pages, client=client, rules=firm, log=log, matter=number, nonce=NONCE,
-                        job='invented-extraction', playbook_version='pb-invented')
+                        job='gates', playbook_version='pb-invented')
     received = rows(log, 'answers', outcome.run_id)
     checked = rows(log, 'gates', outcome.run_id)
     failures = rows(log, 'failures', outcome.run_id)
@@ -160,7 +174,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
     run = dict(log.connection.execute(
         'SELECT * FROM runs WHERE id=?', (outcome.run_id,)).fetchone())
     assert (run['card'], run['card_version'], run['matter'], run['job'], run['playbook_version'],
-            run['pages_in']) == (card.name, card.version, number, 'invented-extraction', 'pb-invented', len(pages))
+            run['pages_in']) == (card.name, card.version, number, 'gates', 'pb-invented', len(pages))
     assert run['prompt_sha256'] == extract.prompt_sha256(gates.messages(card, pages, NONCE, matter=number))
     for request in requests:
         assert request['truncate'] is False and request['think'] is False
@@ -168,7 +182,8 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         assert len(request['messages']) == 2
         nonce = request['messages'][0]['content'].splitlines()[0].split(': ')[1]
         assert sum(m['content'].count(nonce) for m in request['messages']) == 1
-    successful = {'good', 'repairable', 'quoted_ime', 'unstamped', 'retry_ok', 'request_body'}
+    successful = {'good', 'repairable', 'quoted_ime', 'unstamped', 'retry_ok', 'request_body',
+                  'text_cite_ok', 'mixed_chunk'}
     if case in successful:
         assert outcome.ok, f'{case}: unexpectedly failed: {outcome.failed}'
         assert outcome.failed == ()
@@ -176,6 +191,14 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         assert [r['status'] for r in received] == (['failed', 'ok'] if case == 'retry_ok' else ['ok'])
         if case in {'quoted_ime', 'unstamped'}:
             assert len(outcome.read) == 3 and outcome.uncited == ()
+        elif case == 'mixed_chunk':
+            assert outcome.read == ('mixed/001', 'mixed/002') and outcome.uncited == ()
+            assert outcome.answer == obj
+            assert [(r['gate'], r['verdict']) for r in checked] == [
+                (f'gate.{g}', 'pass') for g in gates.GATES]
+            assert next(r['message'] for r in checked if r['gate'] == 'gate.rules') == (
+                'warning: no Bates stamp on mixed/002; cites are page ids; '
+                'facts[1].text: bates-cites: [page mixed/002]')
         else:
             assert len(outcome.read) == 13 and outcome.uncited == ('defense-report/001',), (
                 f'good read={len(outcome.read)} uncited={outcome.uncited}')
@@ -185,7 +208,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
                 (f'gate.{g}', 'pass') for g in gates.GATES]
             assert len(checked) == 6
             assert [r['status'] for r in coverage].count('read') == 13
-            assert len(gates.open_items(log, number)) == 1
+            assert len(gates.open_items(log, number, job="gates")) == 1
         if case == 'repairable':
             assert [r['message'] for r in checked if r['verdict'] == 'repaired'] == [
                 'fence', 'control', 'trailing-comma', 'closers']
@@ -197,6 +220,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
             'unrepairable': 'repair', 'bad_schema': 'schema', 'bad_quote': 'quotes', 'fact_cite': 'quotes',
             'text_number': 'quotes', 'flag_cite': 'quotes', 'forbidden_json': 'rules',
             'empty_answer': 'coverage', 'open_items': 'repair',
+            'text_cite_bad': 'quotes', 'text_see_page': 'quotes',
         }.get(case, 'truncation')
         assert not outcome.ok, f'{case}: unexpectedly passed'
         assert outcome.answer is None, f'{case}: answer must be None, got {outcome.answer!r}'
@@ -240,6 +264,8 @@ def _case(case, log, loaded, ideal, card, firm, settings):
             'open_items': "the answer is not valid JSON: Expecting ',' delimiter",
             'fact_cite': '1 fault (faults=1): facts[0].cite: cite MED0099 is not a page of this chunk; chunk pages: ' + SEARCHED,
             'flag_cite': '1 fault (faults=1): flags[0].cites[2]: cite MED0098 is not a page of this chunk; chunk pages: ' + SEARCHED,
+            'text_cite_bad': '1 fault (faults=1): facts[0].text: cite MED0099 is not a page of this chunk; chunk pages: ' + SEARCHED,
+            'text_see_page': '1 fault (faults=1): facts[0].text: cite 12 is not a page of this chunk; chunk pages: ' + SEARCHED,
         }
         steps = STEPS
         if case in {'budget', 'retry_budget', 'prompt_too_long', 'cut_prompt'}:
@@ -261,11 +287,11 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         assert len(second) == 2
         assert second[1]['content'].split('\n', 2)[2] == requests[0]['messages'][1]['content'].split('\n', 1)[1]
     if case == 'open_items':
-        assert len(gates.open_items(log, number)) == 14
+        assert len(gates.open_items(log, number, job="gates")) == 14
         fake.mode = 'retry_ok'
         later = gates.ask(card, pages, client=client, rules=firm, log=log, matter=number)
         assert later.ok and later.attempts == 2
-        opened = gates.open_items(log, number)
+        opened = gates.open_items(log, number, job="gates")
         assert set(opened) == {('defense-report/001', 'bench_extract')}, f'open_items={len(opened)} expected=1'
         assert opened[('defense-report/001', 'bench_extract')] == (
             'uncited', 'no fact or flag cites defense-report/001', later.run_id)
@@ -301,6 +327,39 @@ def fix_pages():
 
 def fix_answer(cite='MED0001', quote='Take 15 mg daily.', text='Take 15 mg daily.'):
     return {'facts': [{'cite': cite, 'quote': quote, 'text': text}], 'flags': []}
+
+
+@pytest.mark.parametrize('field', ['text', 'about'])
+@pytest.mark.parametrize('reference', ['known', 'missing', 'ambiguous'])
+def test_prose_cites_use_chunk_lookup(fix_probe, field, reference):
+    pages = fix_pages()
+    if reference == 'ambiguous':
+        pages = (replace(pages[0], stamps=('MED0002',)), pages[1])
+    cite = 'MED0099' if reference == 'missing' else 'MED0002'
+    obj = fix_answer(cite='probe/001')
+    if field == 'text':
+        obj['facts'][0]['text'] += f' see page {cite}'
+        path = 'facts[0].text'
+    else:
+        obj['flags'] = [{'kind': 'gap', 'cites': ['probe/001'],
+                         'about': f'Missing report. see page {cite}'}]
+        path = 'flags[0].about'
+    outcome, log, transport = fix_probe(pages, obj)
+    if reference == 'known':
+        assert outcome.ok, f'{path}: valid prose cite rejected: {outcome.failed}'
+        assert outcome.read == ('probe/001', 'probe/002') and outcome.uncited == ()
+        assert rows(log, 'failures', outcome.run_id) == []
+        assert len(transport.requests) == 1
+    else:
+        assert not outcome.ok, f'{path}: {reference} prose cite accepted'
+        assert outcome.answer is None and outcome.read == ()
+        fault = ('is not a page of this chunk' if reference == 'missing' else
+                 'matches more than one page (ambiguous cite)')
+        labels = 'MED0001, MED0002' if reference == 'missing' else 'MED0002, MED0002'
+        detail = f'1 fault (faults=1): {path}: cite {cite} {fault}; chunk pages: {labels}'
+        assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == failure_messages('quotes', detail)
+        assert len(transport.requests) == 2
+        assert {r['status'] for r in rows(log, 'coverage', outcome.run_id)} == {'failed'}
 
 
 @pytest.mark.parametrize('reference', ['fact', 'flag'])

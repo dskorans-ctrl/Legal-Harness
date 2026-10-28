@@ -18,6 +18,11 @@ class RulesError(ValueError):
     """Rules are incomplete or cannot be checked reliably."""
 
 
+def cite_body(match):
+    """Read the body of whichever citation alternative matched."""
+    return next(body for body in match.groups() if body is not None).strip()
+
+
 @dataclass(frozen=True)
 class Finding:
     rule_id: str
@@ -73,7 +78,7 @@ class Rules:
                     spans.add((min(m.start() for m in matches), max(m.end() for m in matches)))
             else:
                 for match in re.finditer(rule.cite_pattern, text, flags):
-                    if re.fullmatch(rule.bates_pattern, match.group(1).strip()) is None:
+                    if re.fullmatch(rule.bates_pattern, cite_body(match)) is None:
                         spans.add(match.span())
                 severity = "error" if stamped else "warning"
             findings.extend(Finding(rule.id, severity, start, end, text[start:end])

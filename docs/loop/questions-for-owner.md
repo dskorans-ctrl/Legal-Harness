@@ -295,3 +295,5 @@ exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged,
     words" that the rule should govern, or should intake refuse such a name up front, or should the memo show it
     as typed? Interim: the memo refuses to run and names the binder, the rule and the remedy (remove the binder
     by hand and intake it under another name, question 34); intake does not check names this round.
+
+56 (amended by the chair, 2026-10-28 02:20, after a measurement): the limit is not only across runs. Pages are sent to the model in chunks that fit its context; a conflict or gap whose two pages land in different chunks is not seen even in one run. On the invented matter split into three chunks, 4 of its 9 known conflicts and gaps were lost (`flags=5 of 9`); in one chunk all 9 are found. A real binder of hundreds of pages will run as many chunks. Interim unchanged: the memo states the limit plainly. A later stage could add a second pass that compares facts across chunks.

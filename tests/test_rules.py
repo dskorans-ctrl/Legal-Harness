@@ -10,6 +10,34 @@ from casefile.rules import RulesError, load
 RULES_PATH = Path(__file__).resolve().parents[1] / "playbook" / "rules.toml"
 
 
+CITE_FORMS = (
+    ("See page 12.", True),
+    ("see p. 12", True),
+    ("at page 12 of the report", True),
+    ("(Ex. 3 at 12)", True),
+    ("a 12 page report", False),
+    ("Page 2 of 3", False),
+    ("the next page", False),
+    ("page count 14", False),
+    ("see page MED0012", False),
+    ("see page MED 0012", False),
+    ("He looked at page after page.", False),
+)
+
+
+def test_cite_forms():
+    rules = load(RULES_PATH)
+    assert len(CITE_FORMS) == 11
+    results = []
+    for text, fails in CITE_FORMS:
+        findings = rules.check(text, unit="text", stamped=True)
+        excerpt = "at page 12" if text == "at page 12 of the report" else text.rstrip(".")
+        expected = [("bates-cites", "error", excerpt)] if fails else []
+        results.append([(f.rule_id, f.severity, f.excerpt) for f in findings] == expected)
+    print(f"cite_forms={sum(results)} of 11", flush=True)
+    assert all(results), [text for (text, _), ok in zip(CITE_FORMS, results) if not ok]
+
+
 def test_each_rule_goes_red(capsys):
     rules = load(RULES_PATH)
     cases = [

@@ -150,8 +150,8 @@ def test_pipeline_canonical_lookup_and_retry():
                 'bad_schema', 'bad_quote', 'forbidden_json', 'empty_answer', 'retry_ok')
     assert MODES == expected and len(MODES) == 17
     recordings = recordings_for(ROOT / 'tests/fixtures/matters/9001.001')
-    assert [r['name'] for r in recordings] == ['bench-9001.001', 'gates-9001.001']
-    row = recordings[1]
+    assert [r['name'] for r in recordings] == ['gates-9001.001']
+    row = recordings[0]
     first, last = list(json.loads(row['answer']))[::len(json.loads(row['answer'])) - 1]
     assert (first, last) == ('prompt_id', 'end_id')
     fake = FakeModel(mode='retry_ok', recordings=recordings)

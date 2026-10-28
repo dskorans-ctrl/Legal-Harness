@@ -128,3 +128,11 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 1 | Build brief | fable | 22.0 min | 377 k | done; 779 lines, 16 decisions, D39 to D43 pending, owner questions 50 to 55 held with interims |
 | 2 | Adversarial plan review (fresh agent, Q46) | fable | 13.6 min | 240 k | done; 20 findings (2 high, 8 med, 10 low; 9 confirmed); chair checked M6 in the Ollama request log: no suite run reached the local server |
 | 3 | Brief revision | fable | 13.2 min | 177 k | done; 18 accepted, 1 rejected, 2 owner (56, 57); 984 lines; D40 to D42 amended |
+| 4 | W0 builder (extract.py, recording_for, test host port 9) | codex gpt-6.1-sol | about 9 min | 126 k | done; card_version=4ab2bdb30535, 4 seeds red; 539 passed; chair Ollama audit delta=0; 0d83578 |
+| 5 | W4 builder, lane B (facts.py case file) | codex gpt-6.1-sol | about 6 min | 116 k | done; casefile_ok=14 of 14, 8 seeds red; chair seed R05-CH-1 green (test gap) |
+| 6 | W5 builder, lane B (memo.py), first launch | codex gpt-6.1-sol | 4.9 min | 120 k | blocked on a brief contradiction (runs sentence) and two missing inputs; chair ruled |
+| 7 | W6 builder, lane B (bench detail reasons) | codex gpt-6.1-sol | 4.3 min | 128 k | done; invented_kinds=2 of 2 rule_excerpt_ok=1, 2 seeds red |
+| 8 | W5 builder rerun (memo.py) | codex gpt-6.1-sol | 4.5 min | 115 k | done; memo_docx_ok=14 of 14 memo_refused=2 of 2, 10 seeds red; chair read a produced memo; b2d183e |
+| 9 | W1 builder (cites in text, mixed chunk, cite forms) | codex gpt-6.1-sol | about 7 min | 146 k | done; gate_cases=31 of 31 cite_forms=11 of 11, 8 seeds red |
+| 10 | W2 builder (pages.py, pipeline.py, coverage job) | codex gpt-6.1-sol | 9.2 min | 151 k | done; pages_ok=10 of 10 chunks_ok=8 of 8 pipeline_ok=5 of 5, 8 seeds red; 3 brief counts corrected by measurement |
+| 11 | W3 builder (bench on the pipeline, benchrun removed) | codex gpt-6.1-sol | 8.5 min | 157 k | blocked on sequencing (needs facts.py); 8 seeds; measured flags=5 of 9 across chunks |

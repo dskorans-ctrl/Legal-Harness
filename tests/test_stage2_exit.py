@@ -35,13 +35,13 @@ def counts(config):
 
 
 INPROCESS_CHILD = '''
-from casefile import benchrun, cli
+from casefile import pipeline, cli
 from fakemodel.bench import recordings_for
 from fakemodel.core import FakeModel, FakeTransport
 from conftest import ROOT
-native_client = benchrun.ModelClient
+native_client = pipeline.ModelClient
 fake = FakeModel(recordings=recordings_for(ROOT / "tests" / "fixtures" / "matters" / "9001.001"))
-benchrun.ModelClient = lambda config, opener=None: native_client(config, FakeTransport(fake))
+pipeline.ModelClient = lambda config, opener=None: native_client(config, FakeTransport(fake))
 raise SystemExit(cli.main())
 '''
 

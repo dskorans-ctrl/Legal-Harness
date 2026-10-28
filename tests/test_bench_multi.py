@@ -5,7 +5,7 @@ import shutil
 
 from casefile import bench
 from casefile.benchcandidate import parse_text
-from casefile.benchrun import RunResult
+from casefile.pipeline import RunResult
 from conftest import ROOT, write_config
 
 MATTER = ROOT / "tests" / "fixtures" / "matters" / "9001.001"

@@ -1,8 +1,10 @@
 """Small Ollama native client with no proxies or redirects."""
 
 from dataclasses import dataclass
+import errno
 import http.client
 import json
+import socket
 from urllib import error, request
 
 from casefile import jsonrepair
@@ -33,6 +35,27 @@ def reply_error(status, payload):
         detail = detail[:157].rsplit(" ", 1)[0] if " " in detail[:157] else ""
         detail = detail.rstrip() + " ..."
     return f"status={status}: {detail}"
+
+
+def no_reply_reason(exc):
+    """Describe transport failures without exposing exception representations."""
+    cause = exc.reason if isinstance(exc, error.URLError) else exc
+    if isinstance(cause, ConnectionRefusedError):
+        detail = "connection refused"
+    elif isinstance(cause, TimeoutError):
+        detail = "connection timed out"
+    elif isinstance(cause, socket.gaierror):
+        detail = "server address could not be found"
+    elif isinstance(cause, OSError) and cause.errno in (errno.ENETUNREACH, errno.EHOSTUNREACH):
+        detail = "network unreachable"
+    elif isinstance(cause, (ConnectionError, http.client.RemoteDisconnected)):
+        detail = "connection closed before a reply"
+    elif isinstance(cause, http.client.HTTPException):
+        detail = "no complete reply"
+    else:
+        detail = "server could not be reached"
+    return (f"no reply from the model server ({detail}); "
+            "the page stays open until a later run reads it")
 
 
 class ModelError(RuntimeError):
@@ -105,10 +128,11 @@ class ModelClient:
                              received=True) from exc
         except http.client.IncompleteRead as exc:
             partial = exc.partial.decode("utf-8", errors="replace")
-            message = reply_error(status, exc.partial) if received else "the server sent no complete reply"
+            message = reply_error(status, exc.partial) if received else no_reply_reason(exc)
             raise ModelError(message, partial, received=received) from exc
         except (OSError, error.URLError, http.client.HTTPException) as exc:
-            raise ModelError(str(exc) or type(exc).__name__, received=received) from exc
+            message = (str(exc) or type(exc).__name__) if received else no_reply_reason(exc)
+            raise ModelError(message, received=received) from exc
         if status != 200:
             raise ModelError(reply_error(status, payload), payload.decode("utf-8", errors="replace"),
                              received=True)

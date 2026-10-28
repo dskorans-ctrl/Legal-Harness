@@ -251,22 +251,45 @@ def test_coverage_latest_and_open_items(tmp_path, monkeypatch, capsys):
         expected = {('probe/001', 'invented'): ('failed', 'gate.quotes: invented failure', second),
                     ('probe/002', 'invented'): ('uncited', 'no fact or flag cites probe/002', second),
                     ('probe/003', 'invented'): ('read', 'first read', first)}
-        latest = log.coverage('9003.001') == expected
+        latest = log.coverage('9003.001', job="doctor") == expected
         with capsys.disabled():
             print(f'coverage_latest={int(latest)}')
         assert latest, 'coverage_latest=0'
-        opened = log.open_items('9003.001')
+        opened = log.open_items('9003.001', job="doctor")
         with capsys.disabled():
             print(f'open_items={len(opened)} of 3')
         assert opened == {key: value for key, value in expected.items() if value[0] != 'read'}
-        assert log.coverage('9003.002') == {}
-        assert log.open_items('9003.002') == {}
+        assert log.coverage('9003.002', job="doctor") == {}
+        assert log.open_items('9003.002', job="doctor") == {}
         log.record_coverage(second, matter='9003.002', page_id='probe/001', card='invented',
                             status='read', reason='another matter')
         log.record_coverage(second, matter='9003.001', page_id='probe/001', card='other-card',
                             status='read', reason='another card')
-        assert log.coverage('9003.001') == {**expected, ('probe/001', 'other-card'): ('read', 'another card', second)}
-        assert log.open_items('9003.001') == opened
+        assert log.coverage('9003.001', job="doctor") == {**expected, ('probe/001', 'other-card'): ('read', 'another card', second)}
+        assert log.open_items('9003.001', job="doctor") == opened
+
+
+def test_coverage_job_is_required_and_isolated(tmp_path):
+    from casefile import gates
+
+    with open_db(tmp_path / 'jobs.sqlite') as log:
+        bench = _start(log, job='bench', matter='9003.001')
+        log.record_coverage(bench, matter='9003.001', page_id='probe/001', card='invented',
+                            status='read', reason='')
+        assert log.coverage('9003.001', job='memo') == {}, 'memo coverage leaked bench rows'
+        assert log.open_items('9003.001', job='memo') == {}
+        memo = _start(log, job='memo', matter='9003.001')
+        log.record_coverage(memo, matter='9003.001', page_id='probe/001', card='invented',
+                            status='failed', reason='invented failure')
+        assert log.coverage('9003.001', job='bench') == {
+            ('probe/001', 'invented'): ('read', '', bench)}
+        assert log.open_items('9003.001', job='bench') == {}
+        assert gates.open_items(log, '9003.001', job='memo') == log.coverage('9003.001', job='memo')
+        for call in (log.coverage, log.open_items):
+            with pytest.raises(TypeError, match='job'):
+                call('9003.001')
+        with pytest.raises(TypeError, match='job'):
+            gates.open_items(log, '9003.001')
 
 
 def test_coverage_statuses_and_gate_fields(tmp_path, capsys):

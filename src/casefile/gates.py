@@ -9,6 +9,7 @@ import secrets
 
 from casefile import extract, jsonrepair, model, quotes, schema, stamps
 from casefile.matter import Page
+from casefile.rules import cite_body
 
 
 GATES = ("truncation", "repair", "schema", "quotes", "rules", "coverage")
@@ -89,9 +90,11 @@ def _page_label(page):
     return page.stamps[0] if page.stamps else page.page_id
 
 
-def _references(obj, pages):
+def _references(obj, pages, rules):
     faults, rungs, cited = [], [], set()
     cite_fault = False
+    cite_rule = next(rule for rule in rules.rules if rule.id == "bates-cites")
+    prose = {}
 
     def lookup(cite, path):
         nonlocal cite_fault
@@ -122,11 +125,21 @@ def _references(obj, pages):
                     rungs.append(hit.rung)
         for index, cite in enumerate(item.get("cites", [])):
             lookup(cite, f"{path}.cites[{index}]")
+        for key in ("text", "about"):
+            if isinstance(item.get(key), str):
+                location = f"{path}.{key}"
+
+                def remove_cite(match):
+                    lookup(cite_body(match), location)
+                    return ""
+
+                prose[location] = re.sub(cite_rule.cite_pattern, remove_cite, item[key],
+                                         flags=re.IGNORECASE)
     for index, fact in enumerate(obj.get("facts", [])):
         if not fact["quote"].strip():
             continue
         numbers = set(re.findall(r"\d+", fact["quote"]))
-        for number in dict.fromkeys(re.findall(r"\d+", fact["text"])):
+        for number in dict.fromkeys(re.findall(r"\d+", prose[f"facts[{index}].text"])):
             if number not in numbers:
                 faults.append(f"facts[{index}].text: number {number} is not in its quote")
     if faults:
@@ -146,8 +159,8 @@ def _end_id(text, nonce):
     return re.fullmatch(r'"end_id"\s*:\s*' + re.escape(json.dumps(nonce)) + r"\s*,?[\s\]}]*", tail)
 
 
-def open_items(log, matter):
-    return log.open_items(matter)
+def open_items(log, matter, *, job):
+    return log.open_items(matter, job=job)
 
 
 def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
@@ -232,7 +245,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                     if faults:
                         message = "the answer does not match the schema: " + "; ".join(faults)
                 elif gate == "quotes":
-                    detail, cited = _references(obj, pages)
+                    detail, cited = _references(obj, pages, rules)
                     if re.match(r"\d+ faults? \(faults=", detail):
                         message = detail
                 elif gate == "rules":
@@ -257,7 +270,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                     break
                 detail = ""
                 if gate == "quotes":
-                    detail, _ = _references(obj, pages)
+                    detail, _ = _references(obj, pages, rules)
                 elif gate == "rules":
                     unstamped = [p.page_id for p in pages if not p.stamps]
                     warnings = [f"{path}: {f.rule_id}: {f.excerpt}" for path, f in findings

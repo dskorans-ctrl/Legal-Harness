@@ -124,7 +124,7 @@ def test_m6_every_failure_has_action(tmp_path, monkeypatch):
             if " FAIL " in line:
                 assert " | do: " in line, line
                 assert line.split(" | do: ")[1].strip(), line
-    assert "<urlopen error invented connection refused> | do: start the Ollama app" in offline_output
+    assert "no reply from the model server (server could not be reached); the page stays open until a later run reads it | do: start the Ollama app" in offline_output
     assert "context_length=8192 want 65536 | do: set num_ctx in Ollama to 65536 or reload the model" in runs[2]
     for output in runs[3:5]:
         assert " | do: rerun doctor; if it repeats, reload the model" in output

@@ -4,6 +4,7 @@ import copy
 from pathlib import Path
 
 from docx import Document
+import pytest
 
 from casefile import facts, matter, memo, rules
 
@@ -112,7 +113,7 @@ def test_memo(tmp_path):
         '"Therapy continued." [page probe/001]' in [p.text for p in verified],
         heading_texts == ["medical page MED0001 (medical/001)", "medical page MED0002 (medical/002)",
                           "probe page probe/001"] and seen == expected_quotes and page_quotes.get("medical/002") == [],
-        conflicts[0].text == "Pages read in 2 runs; conflicts between runs are checked only for pages sent together.",
+        conflicts[0].text == "Pages read in 2 runs; conflicts and gaps are checked only between pages sent to the model together.",
     ]
     assert len(checks) == 14
     for number, ok in enumerate(checks, 1):
@@ -160,3 +161,19 @@ def test_memo(tmp_path):
         pass
     assert reason_ok == 1, f'memo_reason_exempt={reason_ok}'
     print("memo_docx_ok=14 of 14 memo_refused=2 of 2 memo_changed=1 memo_reason_exempt=1")
+
+
+@pytest.mark.parametrize("count, noun", [(0, "runs"), (1, "run"), (2, "runs")])
+def test_conflicts_sentence_counts_read_runs(tmp_path, count, noun):
+    stored = facts.CaseFile()
+    stored.extend([event for event in case_file().events
+                   if event.kind != "run" or event.payload["run_id"] <= count])
+    # Repeated coverage from one run and reads by another job do not add memo runs.
+    if count:
+        stored.extend([facts.Event("run", {"run_id": 1, "job": "memo", "read": ["medical/001"]})])
+    stored.extend([facts.Event("run", {"run_id": 99, "job": "bench", "read": ["medical/001"]}),
+                   facts.Event("run", {"run_id": 100, "job": "memo", "read": []})])
+    path = tmp_path / "memo.docx"
+    memo.render(build(stored), path, rules=rules.load(Path(__file__).resolve().parents[1] / "playbook/rules.toml"))
+    assert section(Document(path), "Conflicts")[0].text == (
+        f"Pages read in {count} {noun}; conflicts and gaps are checked only between pages sent to the model together.")

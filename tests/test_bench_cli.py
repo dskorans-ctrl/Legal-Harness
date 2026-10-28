@@ -1,7 +1,13 @@
+import errno
+import http.client
 import json
 import os
 import shutil
+import socket
 import subprocess
+from urllib.error import URLError
+
+import pytest
 
 from conftest import ROOT, write_config
 
@@ -113,10 +119,11 @@ def test_bench_no_reply_exit2(tmp_path, capsys):
     with capsys.disabled():
         print(f"no_reply_exit={code}")
     assert code == 2
-    assert lines and lines[0].startswith("bench 9001.001 failure bench.model: ")
+    reason = ("no reply from the model server (connection refused); "
+              "the page stays open until a later run reads it")
+    assert lines == [f"bench 9001.001 failure gate.model: {reason}"], "no-reply reason is not plain text"
     assert "bench matters=" not in "\n".join(lines)
-    assert err.startswith("bench: cannot run: no reply from the model server at http://127.0.0.1:9: ")
-    assert err.count("\n") == 1
+    assert err == f"bench: cannot run: no reply from the model server at http://127.0.0.1:9: gate.model: {reason}\n"
 
 
 def test_bench_received_404_stays_exit1(tmp_path, capsys):
@@ -129,9 +136,10 @@ def test_bench_received_404_stays_exit1(tmp_path, capsys):
         print(f"received_404_exit={code}")
     assert code == 1
     assert err == ""
-    assert lines[0].startswith("bench 9001.001 failure bench.model: status=404")
-    assert lines[1].startswith("bench 9001.001 model=qwen3.8:27b found=0 of 29 ")
-    assert lines[1].endswith("pages_failed=14 of 14")
+    assert lines[0] == ("bench 9001.001 failure gate.model: status=404: fakemodel: unknown model; "
+                        "not retried: the one retry was used")
+    assert lines[1] == ("bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 "
+                        "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14")
     assert lines[-1] == "bench matters=1 imperfect=1"
 
 
@@ -150,8 +158,10 @@ def test_bench_received_bad_answer_stays_exit1(tmp_path, capsys):
     with capsys.disabled():
         print(f"received_truncated_exit={code}")
     assert (code, err) == (1, "")
-    assert lines[0].startswith("bench 9001.001 failure bench.truncation")
-    assert lines[1].endswith("pages_failed=14 of 14")
+    assert lines[0] == ("bench 9001.001 failure gate.truncation: the answer stopped before it finished "
+                        "(done_reason=length); not retried: the one retry was used")
+    assert lines[1] == ("bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 "
+                        "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14")
 
 
 def test_bench_prompt_too_long_stays_exit1(tmp_path, capsys):
@@ -164,12 +174,40 @@ def test_bench_prompt_too_long_stays_exit1(tmp_path, capsys):
         print("\n".join(lines))
     assert (code, err) == (1, "")
     assert lines == [
-        'bench 9001.001 failure bench.truncation: status=400: '
+        'bench 9001.001 failure gate.truncation: status=400: '
         'the prompt is longer than the context length currently available to the model; '
-        'shorten the prompt, adjust the context length in settings, or use a model ...',
+        'shorten the prompt, adjust the context length in settings, or use a model ...; '
+        'not retried: the prompt was too long; the chunk must be made smaller',
         "bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 "
         "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14",
         "  missed: " + " ".join(f"F{i:02}" for i in range(1, 30)),
         "  flags_missed: G1 G2 G3 G4 G5 G6 G7 G8 G9",
         "bench matters=1 imperfect=1",
     ]
+
+
+@pytest.mark.parametrize("failure, detail", [
+    (URLError(ConnectionRefusedError(errno.ECONNREFUSED, "invented private detail")), "connection refused"),
+    (ConnectionRefusedError("invented refusal"), "connection refused"),
+    (URLError(TimeoutError("invented private detail")), "connection timed out"),
+    (TimeoutError("invented timeout"), "connection timed out"),
+    (URLError(socket.gaierror("invented private detail")), "server address could not be found"),
+    (OSError(errno.ENETUNREACH, "invented private detail"), "network unreachable"),
+    (OSError(errno.EHOSTUNREACH, "invented private detail"), "network unreachable"),
+    (ConnectionResetError("invented reset"), "connection closed before a reply"),
+    (http.client.RemoteDisconnected("invented disconnect"), "connection closed before a reply"),
+    (http.client.IncompleteRead(b"", 1), "no complete reply"),
+    (URLError("invented private detail"), "server could not be reached"),
+    (OSError(), "server could not be reached"),
+])
+def test_bench_no_reply_plain_words(tmp_path, failure, detail):
+    class NoReply:
+        def open(self, request, timeout=None):
+            raise failure
+
+    code, lines, err = run_runner_mode(tmp_path, NoReply())
+    reason = (f"gate.model: no reply from the model server ({detail}); "
+              "the page stays open until a later run reads it")
+    assert code == 2
+    assert lines == [f"bench 9001.001 failure {reason}"], "no-reply reason is not plain text"
+    assert err == f"bench: cannot run: no reply from the model server at http://127.0.0.1:9: {reason}\n"

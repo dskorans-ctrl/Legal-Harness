@@ -4,7 +4,7 @@ from pathlib import Path
 import sqlite3
 import sys
 
-from casefile import benchkey, benchrun, benchscore, matter as matters, playbook, runlog
+from casefile import benchkey, benchscore, matter as matters, pipeline, playbook, runlog
 from casefile.benchcandidate import CandidateError, parse_text
 from casefile.config import ConfigError, load
 
@@ -14,7 +14,7 @@ def one_line(exc) -> str:
 
 
 def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=None,
-         opener=None, runner=benchrun.run) -> int:
+         opener=None, runner=pipeline.bench_run) -> int:
     out = sys.stdout if out is None else out
     err = sys.stderr if err is None else err
 
@@ -76,6 +76,7 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
         for root, matter, key in loaded:
             candidate = None
             pages_failed = 0
+            uncited = ()
             model_tag = "candidate" if candidate_path is not None else config.model.name
 
             if candidate_path is not None:
@@ -93,6 +94,7 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
 
                 candidate = result.candidate
                 pages_failed = result.pages_failed
+                uncited = result.uncited
 
                 if result.failure:
                     print(f"bench {matter.number} failure {result.failure}", file=out)
@@ -105,6 +107,8 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
             print(s.line(matter.number, model_tag), file=out)
             for detail in s.details():
                 print(detail, file=out)
+            if candidate_path is None and uncited:
+                print("  uncited: " + " ".join(uncited), file=out)
             imperfect += not s.perfect
 
     finally:

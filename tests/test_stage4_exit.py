@@ -196,7 +196,7 @@ def test_stage4_exit(tmp_path, capsys):
                 outcome = gates.ask(active_card, pages, client=client, rules=firm, log=log, matter=number)
                 result = {table: _rows(log, table, outcome.run_id)
                           for table in ("answers", "gates", "failures", "coverage")}
-                result.update(outcome=outcome, open=set(gates.open_items(log, number)),
+                result.update(outcome=outcome, open=set(gates.open_items(log, number, job="gates")),
                               page_ids={p.page_id for p in loaded.pages})
                 results[name] = result
                 try:

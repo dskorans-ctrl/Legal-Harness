@@ -4,7 +4,7 @@ data only)."""
 import json
 from pathlib import Path
 
-from casefile import benchrun, extract, gates, matter as matters
+from casefile import extract, gates, matter as matters
 
 
 def extraction_card():
@@ -23,6 +23,4 @@ def recordings_for(matter_root) -> list[dict]:
     loaded = matters.load(root)
     ideal = json.loads((root / "ideal.json").read_text(encoding="utf-8"))
     card = extraction_card()
-    return [{"name": f"bench-{loaded.number}", "messages": benchrun.messages(loaded),
-             "answer": json.dumps(ideal, ensure_ascii=False)},
-            recording_for(card, loaded.pages, loaded.number, ideal)]
+    return [recording_for(card, loaded.pages, loaded.number, ideal)]

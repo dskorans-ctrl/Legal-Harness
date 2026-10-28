@@ -1,7 +1,6 @@
 import json
 
-from casefile import matter as matters
-from casefile.extract import CARD_TEXT
+from casefile import extract, gates, matter as matters
 from conftest import ROOT
 from fakemodel.bench import recordings_for
 from fakemodel.core import FakeModel
@@ -12,18 +11,22 @@ MATTER = ROOT / "tests/fixtures/matters/9001.001"
 def test_bench_recording(capsys):
     m = matters.load(MATTER)
     body = "Matter 9001.001\n" + "".join(f"=== PAGE {p.page_id} BATES {" ".join(p.stamps)} ===\n{p.text}\n" for p in m.pages)
-    expected = [{"role": "system", "content": CARD_TEXT}, {"role": "user", "content": body}]
+    card = extract.card()
+    nonce = "abc123456789abcd"
+    expected = gates.messages(card, m.pages, nonce, matter=m.number)
+    assert expected[1]["content"] == body
     assert body.count("=== PAGE ") == 14
     assert all(p.text in body for p in m.pages)
     fake = FakeModel(recordings=recordings_for(MATTER))
     request = {"model": "qwen3.8:27b", "messages": expected, "stream": False,
-               "options": {"num_ctx": 65536, "temperature": 0.1}}
+               "options": {"num_ctx": 65536, "temperature": 0.1,
+                           "num_predict": card.max_answer_tokens}, "truncate": False, "think": False}
 
     status, payload = fake.handle("POST", "/api/chat", json.dumps(request).encode())
     ideal = json.loads((MATTER / "ideal.json").read_text(encoding="utf-8"))
     replay = payload["message"]["content"]
     assert status == 200
-    assert json.loads(replay) == ideal
+    assert json.loads(replay) == {"prompt_id": nonce, **ideal, "end_id": nonce}
 
     n = 0
     modes = ("truncated", "malformed", "forbidden", "incomplete")

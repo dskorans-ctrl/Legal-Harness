@@ -132,17 +132,18 @@ class RunLog:
                 (run_id, matter, page_id, card, status, reason, _now()),
             )
 
-    def coverage(self, matter: str) -> dict[tuple[str, str], tuple[str, str, int]]:
-        """Return the latest inserted disposition for each page and card."""
+    def coverage(self, matter: str, *, job: str) -> dict[tuple[str, str], tuple[str, str, int]]:
+        """Return the latest disposition for each page and card within one job."""
         rows = self.connection.execute(
-            "SELECT page_id, card, status, reason, run_id FROM coverage WHERE matter=? ORDER BY id",
-            (matter,),
+            "SELECT c.page_id, c.card, c.status, c.reason, c.run_id FROM coverage c "
+            "JOIN runs r ON r.id=c.run_id WHERE c.matter=? AND r.job=? ORDER BY c.id",
+            (matter, job),
         )
         return {(row["page_id"], row["card"]): (row["status"], row["reason"], row["run_id"])
                 for row in rows}
 
-    def open_items(self, matter: str) -> dict[tuple[str, str], tuple[str, str, int]]:
-        return {pair: value for pair, value in self.coverage(matter).items() if value[0] != "read"}
+    def open_items(self, matter: str, *, job: str) -> dict[tuple[str, str], tuple[str, str, int]]:
+        return {pair: value for pair, value in self.coverage(matter, job=job).items() if value[0] != "read"}
 
     def count_test_jobs(self) -> int:
         return self.connection.execute(

@@ -7,7 +7,7 @@ import pytest
 
 from casefile import bench, benchkey, matter as matters
 from casefile.benchcandidate import EMPTY, CandidateError, parse
-from casefile.benchrun import RunResult
+from casefile.pipeline import RunResult
 from conftest import ROOT, write_config
 from test_benchkey import KEY, PAGES, write
 from test_matter import GOOD, make
