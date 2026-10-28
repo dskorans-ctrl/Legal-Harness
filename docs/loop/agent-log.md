@@ -156,3 +156,4 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 3 | Plan review of the round 6 brief (with the Q53 engine-neutral check) | fable | 11.5 min | 217 k | done; 6 high, 8 med, 6 low; chair traced H1 (benchcandidate.py:46) |
 | 4 | Brief revision after the plan review (plus Q53 engine-neutral constraints) | fable (architect resumed) | 9.8 min | 567 k (cumulative) | done; 20 accepted, 0 rejected, 0 owner; 1141 lines |
 | 5 | Owner amendment of the brief (Q54 to Q56: no reconcile, petition header, bills exemptions, upgrade in place) | fable (architect resumed) | running (13:21) | | |
+| 6 | Owner amendment 2 of the brief (Q57: roles by name, header asked, petition dropped) | fable (architect resumed) | 3.7 min | 688 k (cumulative, architect) | done; 1227 lines; counts restored (14 pages, 29 facts) |

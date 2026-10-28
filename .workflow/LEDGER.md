@@ -870,3 +870,17 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   Chair ruled D44 to D51 as written in brief §6 (D47 withdrawn by Q55), logged in spec §9 pending owner veto. Baseline
   move to record at close: the fixture gains an invented petition page (14 -> 15 pages; key 29 -> 31 facts), so the
   bench, stage 2, 4 and 5 pins are re-derived in W1 by design, not drift.
+- Q57: binder roles and header (owner, 2026-10-28, on Q56) -> "any file named DME, or that says defense medical is
+  obviously a defense record. All medical records will be for the client (unless it's a multi-plaintiff case). If
+  it's easier, the local model can ask me for date of accident, name of client and if necessary, name of treating
+  physician, as well as the issues, in Worker's comp that's permanency, termination hearing, DCD, DACD, etc. In MVA
+  or slip and falls, that's liability or treatment." Chair ruling (pending veto): roles by binder name (a name
+  holding `dme` or `defense medical`, any case or separator, is `defense`; every other medical binder is `ours`);
+  a multi-plaintiff matter needs typed roles and prints ROLE NEEDED until they are typed. The header comes from
+  the attorney, not the petition (supersedes Q54 item 60): at the first task run of a matter, code (not the model;
+  pillar 4) asks for matter type (workers' comp, MVA, slip and fall), client name, date of accident, treating
+  physician (optional) and issues from the type's list (workers' comp: permanency, termination, DCD, DACD, other;
+  MVA and slip and fall: liability, treatment, other), stores them in `matter.toml`, and never asks again; a run flag
+  overrides; a blank prints NEEDED; a non-interactive run with no `matter.toml` prints NEEDED and does not block.
+  Dropped: the petition fixture page, `00-HEADER` card and its model call per job (the fixture stays 14 pages, key 29
+  facts; the baseline move recorded above is withdrawn). The issues list replaces Q62's free-typed issues.

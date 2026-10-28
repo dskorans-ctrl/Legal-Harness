@@ -13,8 +13,7 @@ lists every change): the local model files and anonymizes; Claude does fact find
 anonymized whole matter when the attorney runs a task; nothing runs continually. Round 6 keeps the engine-neutral
 outputs exactly as revised, drops the reconcile pass (D47 withdrawn, superseded by stage 7b's whole-matter
 re-send), adds no continually-updated-memo behaviour, lets the bills question pass as the skill writes it (Q59 b
-and c), reads the header from an invented petition page through the procedural card (Q60), stores binder roles,
-issues, standard and relief in `matter.toml` (Q56, Q62), finds the doctor's records by provider (Q61), and upgrades
+and c), takes the header and the issues from the attorney at the first task run and stores them in `matter.toml` (Q57, superseding Q54 item 60), reads binder roles from binder names with a typed override for multi-plaintiff matters (Q57), stores standard and relief in `matter.toml` (Q62), finds the doctor's records by provider (Q61), and upgrades
 old case files on load (Q67).
 
 Branch `loop/round-06` at `53a6f82` (working tree: modified `.workflow/LEDGER.md`, `docs/loop/agent-log.md`,
@@ -151,8 +150,7 @@ used (D0.9, D0.10).
   date. `intake.py:30` `BINDER_PATTERN = r"[a-z][a-z0-9-]{0,39}"`. The seed card `00-PROCEDURAL`
   (`cards/00-intake/procedural.md`, `schemas/procedural.schema.json`) extracts a filing's type, date, filer and
   deadlines with a quote and cite, but no caption, hearing number or accident date, and its schema carries a
-  model-written `coverage` string. The fixture matter has no petition page; its invented parties are `Morgan
-  Ashby-Vale` and `Quarry Ridge Logistics LLC` (`records/employer/001.txt`), its invented accident date `03/11/2025`.
+  model-written `coverage` string. The fixture matter's invented parties are `Morgan Ashby-Vale` and `Quarry Ridge Logistics LLC` (`records/employer/001.txt`), its invented accident date `03/11/2025`; it stays 14 pages this round (Q57).
 - D0.13 **Numbering.** Spec §9 ends at D43; owner questions end at 80 (59 to 69 are this brief's, 70 to 80 the
   cloud proposal's, §12 of that file; W9 renumbers nothing; this revision adds no question); tuning at T-22; ledger round 6 has R6-1 to R6-4;
   worktrees `r3-lane-b`, `r4-lane-b`, `r5-lane-b` and their toolchains under `~/.casefile-dev/` still exist (HANDOFF
@@ -209,15 +207,13 @@ used (D0.9, D0.10).
   is deleted (its text is generated; the `Dr. [Name]'s report` line of D0.3 goes with it). `Card.version` stays the
   sha256 of the text, so a playbook edit changes every card version (spec §6: the affected cards run on the
   benchmark). Manifest after the round (15 cards, 11 schemas): run this round `01-MEMO` (`cards/01-records/memo.md`,
-  `schemas/medical_memo.schema.json`, job memo), `00-HEADER` (`cards/00-intake/procedural.md` rewritten,
-  `schemas/procedural.schema.json` rewritten, job header, §1.5; the reconcile card of the earlier drafts is
-  withdrawn, §1.4), `02-A` (`cards/02-depo/a-factsheet.md`, `schemas/factsheet.schema.json`, jobs depo and hearing),
+  `schemas/medical_memo.schema.json`, job memo; the reconcile and header cards of the earlier drafts are withdrawn, §1.4 and §1.5), `02-A` (`cards/02-depo/a-factsheet.md`, `schemas/factsheet.schema.json`, jobs depo and hearing),
   `02-C-CLIENT`, `02-C-DEFDOC`, `02-C-OURDOC`, `02-C-WITNESS` (`schemas/questions.schema.json`, job depo),
   `03-CLIENT` (`cards/03-hearing/client-prep.md`, questions schema, job hearing), `04-G` (`cards/04-defense-report/g-concessions.md`,
   `schemas/concessions.schema.json`, job report), `05-A` (`cards/05-our-doctor/a-elements.md`, `schemas/elements.schema.json`,
   jobs report and hearing); stage 7 `07-ANON` (`cards/07-anonymize/entities.md`, `schemas/anonymize.schema.json`,
   new); stage 8, text untouched but loaded and versioned, `00-BILLS`, `00-CLASSIFY`, `00-TESTIMONY`,
-  `01-P0` (their four schemas unchanged; `procedural` is rewritten for `00-HEADER`). Retired (deleted; their text
+  `01-P0` (their five schemas unchanged). Retired (deleted; their text
   stays at `53a6f82`): the 17 markdown cards
   other than `03-CLIENT` (`00-ATTORNEY`, `00-CHANGE`, `00-SNAPSHOT`, `01-P4`, `01-P5`, `02-B`, `03-CHECKLIST`,
   `03-CLOSING`, `03-DOCTOR`, `03-OUTLINE`, `04-H`, `05-D`, `06-A`, `06-B`, `06-C`, `06-D`, `06-F`, with
@@ -290,7 +286,7 @@ used (D0.9, D0.10).
   in §6.
 - **1.5 The memo takes spec §2's sections (Q50), shows the quotes beneath each conflict with defense-examination
   conflicts first (Q54), shows binder names as typed (Q57), reads binder roles, issues, standard and relief from
-  `matter.toml` (Q56, Q62), and the header from the petition through the procedural card (Q60).**
+  `matter.toml`, with roles read from binder names and the header entries asked of the attorney once by code (Q57, Q62).**
   Sections in order: `What changed since the last memo`, `Outputs out of date`, `Open items` (as today); `Treatment
   chronology` (every fact with a date, by parsed date then case-file order, one paragraph `<date as written>,
   <provider or binder name>, <category>: "quote" [cite X]` then `Also cited` and `Model's reading` paragraphs as
@@ -314,32 +310,41 @@ used (D0.9, D0.10).
   (Q57); page headings read `Page <label>, binder <name>` with the name in a run `exempt="binder"`, and every
   code-built cite run (`[cite X]`, `[page x/001]`) is `exempt="cite"` (a cite is stamps and page ids, never prose;
   D0.7's `[page ime/001]` case); the rules still check every title, heading word, label, model sentence and the
-  attorney's typed entries. Matter entries (Q56, Q62): `matter.toml` gains two optional tables, `[roles]` mapping a
-  binder name to `defense`, `ours`, `petition` or `other`, and `[hearing]` with `issues` (array of strings),
-  `standard` and `relief` (strings); `matter.py:60-61` admits them beside `number` and `binders`; in the intake
-  layout a `matter.toml` holding `number` and the two tables but no `binders` is allowed, and `pages.py:88-89`
-  refuses only a `matter.toml` with `binders` beside `pages/` (new `src/casefile/matterinfo.py` `load(folder) ->
-  MatterInfo(roles, issues, standard, relief)` reads both layouts; unknown keys, non-string values, an unknown role or
-  a binder the matter does not have are refused, exit 2, naming the key; a missing file or table gives no roles and
-  empty entries). The header (Q60): new card `00-HEADER` (the seed `00-PROCEDURAL` rewritten, `cards/00-intake/procedural.md`,
-  `schemas/procedural.schema.json` rewritten in the D34 subset: `{"caption": {"value", "quote", "cite"}, ...}` for
-  `caption`, `iab_hearing_number`, `date_of_accident`, `hearing_date`, each object optional, `required_any` all four,
-  `optional_blank []`, `coverage false`, `numbers_in "quote"`, `deponent null`, job `header`) runs over the pages of
-  the binders with role `petition` as a packet of pages only (no facts); gate 4 verifies each `quote` on its cited
-  page and each `value` as a span of its quote (`value in quote` after `quotes.normalize`), so a value never says
-  more than the page; `outputs.header` prints `Caption: <value> [cite X]` for a returned field and `Caption: NEEDED
-  (not found in the petition)` for an absent one; with no `petition` binder every field prints `NEEDED (no binder is
-  marked petition in matter.toml)`; the hearing date prints from the petition's `hearing_date`; a deposition's own
-  date and time are typed on the command line (`--when`) and print `NEEDED` when absent; a header call that fails
-  both attempts prints every field `NEEDED (the model's answer failed the <gate> check)` and counts as a failed
-  step. The fixture matter gains a fourth binder `petition` with one invented page `PET0001`
-  (`records/petition/001.txt`: a petition naming `Morgan Ashby-Vale` against `Quarry Ridge Logistics LLC`, `IAB
-  Hearing No. 1234567`, `Date of accident: 03/11/2025`, `Hearing date: 01/15/2026 at 9:00 AM`, invented, matching the
-  existing invented people), `matter.toml` lists it with `[roles]` `petition = "petition"`, `defense-report =
-  "defense"`, `medical = "ours"`, `employer = "other"` and `[hearing]` `issues = ["Causation of the L4-L5 disc
-  protrusion", "Work restrictions after 05/09/2025"]`, `standard = ""`, `relief = ""`; `key.json` and `ideal.json`
-  gain the page's facts (the chair reads them); `attorney.toml` and `attorney.py` of the earlier drafts are not
-  built. Stamp compatibility (code review L3, #R05-CX-9): before the run log opens, every job calls
+  attorney's typed entries. Binder roles (owner Q57): new `src/casefile/roles.py` `role(binder, info) -> str`: a
+  binder whose name, lowercased with every `-`, `_` and space folded to one space, holds the token `dme` or the
+  phrase `defense medical` is `defense`; every other binder is `ours`; a typed role in `matter.toml` `[roles]`
+  overrides, and is required for a multi-plaintiff matter (`plaintiffs` > 1 with no typed role for a binder prints
+  `ROLE NEEDED` for that binder in the conflict order and the opinion sections rather than guessing). Matter entries
+  (Q57, Q62): `matter.toml` gains optional tables `[header]` (`matter_type` one of `workers-comp`, `mva`,
+  `slip-and-fall`; `client_name`; `date_of_accident`; `treating_physician`; `iab_hearing_number`; `hearing_date`;
+  `plaintiffs` integer, default 1; strings may be empty and print `NEEDED`), `[hearing]` (`issues` an array from
+  the type's list: workers' comp `permanency`, `termination`, `DCD`, `DACD`, `other`; MVA and slip and fall
+  `liability`, `treatment`, `other`; `standard`, `relief` strings) and `[roles]` (binder to `defense`, `ours`,
+  `other`); `matter.py:60-61` admits them beside `number` and `binders`; in the intake layout a `matter.toml`
+  holding `number` and the tables but no `binders` is allowed, and `pages.py:88-89` refuses only a `matter.toml`
+  with `binders` beside `pages/` (new `src/casefile/matterinfo.py` `load(folder) -> MatterInfo(matter_type,
+  client_name, date_of_accident, treating_physician, iab_hearing_number, hearing_date, plaintiffs, issues,
+  standard, relief, roles)` reads both layouts; unknown keys, a wrong type, an issue outside the type's list, an
+  unknown role or a binder the matter does not have are refused, exit 2, naming the key; a missing file or table
+  gives empty entries). The header is asked once by code, never by the model (pillar 4): at a task run (`report`,
+  `depo`, `hearing`) with no `[header]` table, `matterinfo.ask(info, stdin, stdout) -> MatterInfo` prompts on the
+  terminal for the matter type, the client name, the date of accident, the treating physician (optional), the IAB
+  hearing number (optional), the hearing date and time (optional) and the issues from the type's list (numbers,
+  comma-separated), writes `[header]` and `[hearing].issues` into `matter.toml` once (a `.tmp` and `os.replace`;
+  existing tables kept) and never asks again; a blank answer stays empty and prints `NEEDED`; when `stdin` is not a
+  tty (every test, every job started by the stage 8 page) the prompt does not run, nothing is written, every field
+  prints `NEEDED` and the job neither blocks nor fails on that account; run flags (`--issue`, `--standard`,
+  `--relief`, `--when`) override for the run and never write the file; `casefile memo` reads the file and never
+  prompts. `outputs.header(info, matter, kind, *, when="", deponent="")` prints `Attorney Work Product | Privileged
+  & Confidential`, `Matter type: ...`, `Client: ...`, `Date of accident: ...`, `Treating physician: ...`, `IAB hearing
+  number: ...`, `Hearing date: ...`, each `NEEDED` when empty, the deposition line from `--when` or `NEEDED`,
+  `Matter <number>` and the build line; the typed values are our words and are rules-checked. The fixture
+  `matter.toml` gains invented entries (`[header]` `matter_type = "workers-comp"`, `client_name = "Morgan
+  Ashby-Vale"`, `date_of_accident = "03/11/2025"`, `treating_physician = "Dr. Priya Okonkwo-Lind"`,
+  `iab_hearing_number = "1234567"`, `hearing_date = "01/15/2026 9:00 AM"`, `plaintiffs = 1`; `[hearing]` `issues =
+  ["permanency", "termination"]`, `standard = ""`, `relief = ""`; no `[roles]`: `defense-report` is `ours` by name
+  and the fixture therefore carries `[roles]` `defense-report = "defense"` as the typed override the test also
+  exercises) and the pages stay 14; no petition page, no `00-HEADER` card, no `attorney.toml`. Stamp compatibility (code review L3, #R05-CX-9): before the run log opens, every job calls
   `rules.check_stamps(pages)` which refuses, exit 2, the first page stamp that fails `re.fullmatch(bates_pattern)`:
   `stamp ABC123 on page scan/001 does not match the playbook's bates-cites pattern; align [ocr].stamp_pattern with
   rules.toml bates_pattern before running`. No-reply wording (verifier L1, #R05-V-1): `model.no_reply_reason(exc,
@@ -348,8 +353,7 @@ used (D0.9, D0.10).
   run: <reason>`; the doctor prints `<reason> | do: start the Ollama app`; the gate's own page clause at `gates.py:315`
   is unchanged. Rejected: a role flag on the command line each run (roles are facts about the matter the attorney
   types once); reading roles from binder names (`defense-report` is a label, Q57); an intake-time name check (Q57:
-  a folder label is not our words); typed header values (the owner wants them from the petition, verified);
-  guessing a role from a binder's content (ROLE NEEDED instead, Q56).
+  a folder label is not our words); header values read off a petition by the model (the owner asks to be asked, Q57; a model call per job is gone); guessing a role on a multi-plaintiff matter (ROLE NEEDED instead, Q57).
 - **1.6 Outputs are code-rendered Word documents from a fact packet and gated JSON answers; the model labels and
   writes questions in engine-neutral steps; nothing in a document is unverified without a label (owner Q53; review
   H6, M1, M2, M6).** Three fixed interfaces, one per step, so a restored cloud answer (stage 7b) renders through the
@@ -379,11 +383,7 @@ used (D0.9, D0.10).
   `Doc(title, header, sections)`; the memo's `Paragraph`, `Run`, `Section` dataclasses move here (`memo.py` imports
   them; `OpenItem`, `label`, `Memo`, `build`, `check`, `render` stay in `memo.py`, which `status.py:31,37` uses,
   review L4); `Run.exempt` in `quote`, `cite`, `binder`, `reason`; `Paragraph.unit` (`text` or `question`);
-  `header(answer, matter, kind, *, when="", deponent="")` builds the block from the `00-HEADER` answer (§1.5):
-  `Attorney Work Product | Privileged & Confidential`, `Caption: <value> [cite X]` or `NEEDED (...)`, `IAB hearing
-  number: ...`, `Date of accident: ...`, `Hearing date: ...`, for a deposition `Deposition of <name as typed or the
-  deponent type>, <--when as typed or NEEDED>`, `Matter <number>`, `Built <date> from case file entry <seq>; playbook
-  <version>; model <tag>`; `check(doc, rules, stamped)`
+  `header(info, matter, kind, *, when="", deponent="")` builds the block of §1.5 from the `MatterInfo` (`NEEDED` for every empty entry), for a deposition `Deposition of <name as typed or the deponent type>, <--when as typed or NEEDED>`, `Matter <number>`, `Built <date> from case file entry <seq>; playbook <version>; model <tag>`; `check(doc, rules, stamped)`
   runs every non-exempt run with its paragraph's unit (findings at `error` refuse the document, exit 2, as
   `memo.render` today); `publish(folder, name, doc, rules, casefile, counts, *, failed_steps) -> CaseFile` renders
   to `outputs/<name>.docx.tmp` and `os.replace`s; with no failed step the final name is `outputs/<name>.docx` and the
@@ -391,9 +391,7 @@ used (D0.9, D0.10).
   memo's `Outputs out of date` cover every output (spec §2); with any failed step the file is `outputs/<name>.partial.docx`,
   no `output` event is appended, `status` never calls it current, and the next run rebuilds it (review M6, pillar 2,
   #R05-OC-1). Common job order (`outputs.start(config, number, job)`): config, playbook, pages (none: exit 2), case
-  file (no facts: exit 2 `run casefile memo first`), `matterinfo.load`, `check_stamps`, then the run log and the
-  model, whose first step in every output job and in `casefile memo` is the `00-HEADER` call over the petition
-  pages (one call; its packet is identical across jobs, so one recording serves every job in the tests).
+  file (no facts: exit 2 `run casefile memo first`), `matterinfo.load` then `matterinfo.ask` when `[header]` is absent and stdin is a tty (§1.5), `check_stamps`, then the run log and the model.
   A step whose answer fails both attempts is disclosed in the document: the section's first paragraph reads
   `<section>: the model's answer failed the <gate> check after one retry: <reason>` and the job exits 1; a packet
   that must be batched (factsheet) merges the batches' labels; a step that cannot be batched (questions) sends the
@@ -482,8 +480,7 @@ used (D0.9, D0.10).
   on file; the billing memo is supplied by the attorney (question 28).` (Q37: the system reads no bills), `Exhibits to
   mark: <binder>: <first stamp> to <last stamp> (<n> pages)` per binder, `Deposition transcripts to submit: none on
   file (transcripts are stage 8).`, `Witness availability: not on file.`, `Stipulations: none on file.`; `Hearing
-  outline`: one block per issue (none stored or typed: `Issues: NEEDED; add [hearing] issues to matter.toml or pass
-  --issue "..." for each issue in the petition.`), each `Issue: <as stored or typed>`, `Standard: <as stored or typed,
+  outline`: one block per issue (none stored or typed: `Issues: NEEDED; answer the prompt at the next interactive run, add [hearing] issues to matter.toml, or pass --issue "..." from the type's list.`), each `Issue: <as stored or typed>`, `Standard: <as stored or typed,
   else STANDARD NEEDED>`, `Our key facts` (card `02-A` called with the
   request line `Issue: <text>` instead of a deponent, facts labelled `our_case`/`both`), `Deposition designations:
   none on file.`, `Defense position` (`defense_case`/`both`), `Conflicts` (flags whose pages include a `defense`
@@ -501,22 +498,18 @@ used (D0.9, D0.10).
   records` (quotes beneath); `Closing outline`: per issue, `Standard`, `Our strongest facts` (`our_case`/`both` by
   date), `Defense says` (`defense_case`), `Our answer` (for each conflict with a `defense` page, the our-side quote
   beneath the defense quote), `Relief requested: <as stored or typed, else RELIEF NEEDED>`, with the fixed sentence
-  `No law is cited; the attorney supplies the standard and the relief.`; `Open items`. Rejected: issues read from
-  the petition by the header card (the owner stores them per matter, Q62; the petition's issues wording is a later
-  card); a closing written by the model (03-CLOSING was STRONG tier: argument is the attorney's, D3's spirit); the
+  `No law is cited; the attorney supplies the standard and the relief.`; `Open items`. Rejected: issues read from a petition by a card (the owner answers the type's list once, Q57, Q62); a closing written by the model (03-CLOSING was STRONG tier: argument is the attorney's, D3's spirit); the
   billing memo itemized from bills (Q37); a job that writes `matter.toml` (the attorney's file).
 - **1.10 The stage 6 exit test builds six documents from the test matter and prints the counts the output critic
   checks against the answer key and the recorded answers.** `tests/test_stage6_exit.py` (socket, one stand-in): copy
-  the fixture matter (its `matter.toml` roles and hearing entries and the petition binder, W1), run `casefile memo`
-  (one chunk of 15 pages), then `depo --deponent defense-doctor --taken-by us --provider "Marchetti" --name "Dr.
+  the fixture matter (its invented `matter.toml` header, issues and role override, W1), run `casefile memo` (one chunk of 14 pages), then `depo --deponent defense-doctor --taken-by us --provider "Marchetti" --name "Dr.
   Marchetti"`, `depo --deponent our-doctor --taken-by us --provider "Okonkwo-Lind" --name "Dr. Okonkwo-Lind"`,
   `hearing --provider "Okonkwo-Lind"` (issues from `matter.toml`), `report --binder defense-report --defense`,
   `report --provider "Okonkwo-Lind" --ours`, each as a `scripts/run.sh` subprocess; the recorded answers are
-  invented fixture files under `tests/fixtures/outputs/9001.001/` (one per distinct packet: `header-petition.json`
-  (one recording, the same packet in all six jobs), `factsheet-defense-doctor.json`, `questions-defense-doctor-primary.json`,
+  invented fixture files under `tests/fixtures/outputs/9001.001/` (one per distinct packet: `factsheet-defense-doctor.json`, `questions-defense-doctor-primary.json`,
   `-cross`, `-redirect`, the same four for `our-doctor`, `factsheet-issue-1.json`, `factsheet-issue-2.json`,
   `client-primary.json`, `client-cross.json`, `elements-okonkwo-lind.json` (shared by the hearing's doctor part and
-  the ours report, whose packets are byte-identical by construction), `concessions-defense-report.json`: 16 files)
+  the ours report, whose packets are byte-identical by construction), `concessions-defense-report.json`: 15 files)
   registered on the in-process `FakeModel` through `FakeModel.record(row)` (W1) before each command, built by
   `packet.build` and `recording_for(card, packet.pages, number, answer, body=packet.body())` (W1). The critic is
   told: the our-doctor bills question in `questions-our-doctor-primary.json` names every provider the case file
@@ -524,8 +517,7 @@ used (D0.9, D0.10).
   Imaging`, `Lakeshore Orthopedic Associates`) and says `bills` and `charges`, as the skill writes it, and passes
   the rules under the owner's Q59 (b) and (c) (§1.12); the stage 6 line prints `providers_named=5 of 5`. The test
   opens every `.docx` with python-docx and prints one `stage6` line per document (§2 W8) and the final `stage6
-  exit=0 docs=6 of 6 answers=+22 rule_hits=0 server_stopped=1` (one extraction call, six header calls, 15 synthesis
-  calls). The critic's answer key: `key.json` (facts and flags), the 16 recorded answers (every question's quote and
+  exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1` (one extraction call, 15 synthesis calls; every job runs with stdin not a tty, so no prompt runs and the header comes from the fixture file). The critic's answer key: `key.json` (facts and flags), the 15 recorded answers (every question's quote and
   cite), the practice entries (D0.11) and the probes of D0.9 and §1.12. Rejected: a critic reading documents the chair built by hand (not
   reproducible); one document per kind only (the our-doctor rule and the defense-doctor rule differ, both must be
   seen).
@@ -601,20 +593,16 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   and `samples=` counts); `src/casefile/cards.py` (new, §1.2: `Spec`, `load`, `text`, `card`, `CardsError`);
   `cards/manifest.json` (version 2, the 15 entries of §1.2 and §1.4 with every field: `01-MEMO` `required_any
   ["facts", "flags"]`, `optional_blank []`, `echo null`, `coverage true`, `numbers_in "quote"`, `question_keys []`,
-  `deponent null`; `00-HEADER` (§1.5) `required_any ["caption", "iab_hearing_number", "date_of_accident",
-  "hearing_date"]`, `optional_blank []`, `coverage false`, `numbers_in "quote"`, job `header`; `02-A` `required_any
+  `deponent null`; `02-A` `required_any
   ["facts"]`, `optional_blank ["note"]`, `coverage false`, `numbers_in "page"`; `02-C-OURDOC` `deponent
   "our-doctor"`, `02-C-DEFDOC` `"defense-doctor"`, `02-C-CLIENT` and `03-CLIENT` `"client"`, `02-C-WITNESS`
   `"witness"`, each `required_any ["questions"]`, `optional_blank ["note"]`, `question_keys ["text"]`, `numbers_in
   "page"`; `04-G` `required_any ["concessions", "undefined_labels", "danger_zone"]`, `optional_blank []`; `05-A`
   `required_any ["elements"]`, `optional_blank ["absent_note"]`; `07-ANON` `required_any []`, `echo "pages_seen"`,
-  `coverage false`; stage 8 cards `00-BILLS`, `00-CLASSIFY`, `00-TESTIMONY`, `01-P0` `job null`, `stage 8`,
-  `required_any` naming their top array), the 31 retired card files (the 30 of §1.2 plus `00-RECONCILE`) and 10
+  `coverage false`; stage 8 cards `00-BILLS`, `00-CLASSIFY`, `00-PROCEDURAL`, `00-TESTIMONY`, `01-P0` `job null`, `stage 8`, `required_any` naming their top array), the 31 retired card files (the 30 of §1.2 plus `00-RECONCILE`) and 10
   schemas (the 9 of §1.2 plus `reconcile`) deleted, `cards/_core.md` deleted, `schemas/bench_extract.schema.json`
   renamed `schemas/medical_memo.schema.json` with `title` `medical_memo` and the six fields and 24-value enum of §1.3,
-  `schemas/procedural.schema.json` rewritten to the §1.5 header shape and `cards/00-intake/procedural.md` to the
-  `00-HEADER` body (caption, IAB hearing number, date of accident, hearing date and time, each copied exactly with
-  the sentence it sits in as the quote; a field the petition does not state is left out), `cards/07-anonymize/entities.md`
+  `cards/07-anonymize/entities.md`
   and `schemas/anonymize.schema.json` (new, §1.2: `pages_seen [string]`, `people [{name, kind enum
   claimant|doctor|attorney|person, quote, cite}]`, `organizations [{name, kind enum employer|insurer|provider|other,
   quote, cite}]`, `places [{name, quote, cite}]`, `anchor_dates [{date, quote, cite}]`, every array may be empty but
@@ -628,22 +616,11 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   `dates`, `category`, `providers`; `:91-105` views; `:238-270` `merge` copies the fields and `cite` events carry the
   item's date and provider; `:172-178` accepts a `fact` or `cite` payload with exactly its `FIELDS_V1` key set,
   fills the defaults of §1.3 and counts `CaseFile.upgraded`; every other key set stays `_broken`);
-  `src/casefile/matter.py:60-61` and `src/casefile/pages.py:88-89` (the `[roles]` and `[hearing]` tables of §1.5,
-  the intake-layout `matter.toml` without `binders`), `src/casefile/matterinfo.py` (new, §1.5: `MatterInfo(roles,
-  issues, standard, relief)`, `load(folder)`, refusals naming the key), `tests/fixtures/matters/9001.001/matter.toml`
-  (binders plus `petition`, `[roles]`, `[hearing]` as §1.5), `tests/fixtures/matters/9001.001/records/petition/001.txt`
-  (the invented petition page of §1.5, stamp `PET0001` alone on the last line, a filing date line `Filed:
-  09/02/2025`; every name and number invented and consistent with the existing fixture people), `key.json` (the
-  petition's two facts `Date of accident: 03/11/2025` and `IAB Hearing No. 1234567`: 31 facts, dated `09/02/2025`),
-  `ideal.json` (33 facts: date, category, provider on every fact), `tests/fixtures/bench/flawed.json` (the three
+  `src/casefile/matter.py:60-61` and `src/casefile/pages.py:88-89` (the `[header]`, `[hearing]` and `[roles]` tables of §1.5, the intake-layout `matter.toml` without `binders`), `src/casefile/matterinfo.py` (new, §1.5: `MatterInfo`, `load(folder)`, `ask(info, stdin, stdout)`, `write(folder, info)`, refusals naming the key, the two issue lists as constants), `src/casefile/roles.py` (new, §1.5: `role(binder, info)`), `tests/fixtures/matters/9001.001/matter.toml` (the invented `[header]`, `[hearing]` and `[roles]` of §1.5; the 14 pages and three binders unchanged), `key.json` (date on all 29 facts), `ideal.json` (31 facts: date, category, provider on every fact), `tests/fixtures/bench/flawed.json` (the three
   fields; its one wrong date is W2's), `src/casefile/benchkey.py:60-66` (`date` required, a non-empty one found on
   the page by `found_in` and parsed by `dates.parse`, an empty one allowed for a page that shows no date; review L5);
   `src/casefile/benchcandidate.py:44-47` (`CandidateFact(cite, quote, text, date="", category="", provider="")`, the
-  three keys optional, any other key refused); the seven files pinning the bench line (D0.8) re-pinned for the
-  15-page matter (`found=28 of 31 missed=3 ... pages_failed=0 of 15` flawed, `found=31 of 31 ... pages_failed=0 of
-  15` ideal; `extra` measured), `tests/test_stage2_exit.py`, `tests/test_stage4_exit.py` and `tests/test_stage5_exit.py`
-  re-pinned for 15 pages (`read=14 open=1`, `facts=33`, `casefile_lines` 44, 46, 49, 50; the builder re-derives and
-  prints, the chair reads); `src/casefile/rules.py` (`check(text, *, unit, stamped=True, providers=())` with the
+  three keys optional, any other key refused); the seven files pinning the bench line (D0.8), `tests/test_stage2_exit.py`, `tests/test_stage4_exit.py` and `tests/test_stage5_exit.py` untouched at W1 (14 pages, 29 key facts, the baseline lines byte-identical); `src/casefile/rules.py` (`check(text, *, unit, stamped=True, providers=())` with the
   provider mask of §1.12 and the `patterns_text_only` field; `check_stamps(pages, rules)`, §1.5), `playbook/rules.toml`
   (the §1.11 patterns at `:21-30`; the §1.12 split of the doctor pairing at `:24` and the `charges?|charged` mirror
   at `:27`; `rules.toml` `version` stays 1), `src/casefile/gates.py:20-33` (`Card` gains `coverage: bool = True`,
@@ -653,7 +630,7 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   echo=None, providers=())` where `echo` is the tuple `(key, values)`), `:256-262` (unit per key; `providers` passed
   to `rules.check`), `:263-273` (gate 6: `required_any` unless `card.echo`, the echo set equality, blanks except
   `optional_blank`), `:313-322` (no coverage rows when `card.coverage` is false; `Outcome.read/uncited/failed` empty
-  then), `:143-149` (`numbers_in`; for `00-HEADER` each `value` must be a span of its `quote`); `src/casefile/model.py:40-58`
+  then), `:143-149` (`numbers_in`); `src/casefile/model.py:40-58`
   (`no_reply_reason(exc, host)`, §1.5) with `memo_job.py:98-100`, `bench.py:101-104`, `doctor.py:150-151` and the
   pins `tests/test_bench_pipeline.py:90`, `test_fix_cycle2.py:127`, `test_bench_cli.py:123,210` re-pinned to each
   command's own sentence; `tests/fakemodel/core.py` (`FakeModel.record(row)` adds a recording to a live stand-in;
@@ -663,10 +640,8 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   *, body=None)` passing `body` through `gates.messages`; `recordings_for` unchanged); `tests/conftest.py`
   (`split_card(card)` returning `replace(card, max_answer_tokens=65536 - (7164 + 64 + 8192 + len(system bytes) +
   16))` so the page budget stays 7164 bytes whatever the card size: measured, the 920-byte card plus 400 bytes
-  already gives `[5, 4, 5]` and the derived budget gives `[5, 5, 4]` at plus 3000 on the 14-page matter; with the
-  petition page the split becomes `[5, 5, 4, 1]`, pinned by the builder after a run; review H2), used by
-  `tests/test_bench_pipeline.py:202`, `test_pipeline.py:31` and `test_status.py:184`; `tests/test_cards.py` (new),
-  `tests/test_matterinfo.py` (new), `tests/test_dates.py` (new), `tests/test_facts.py` (fields and the upgrade),
+  already gives `[5, 4, 5]` and the derived budget gives `[5, 5, 4]` at plus 3000; review H2), used by
+  `tests/test_bench_pipeline.py:202`, `test_pipeline.py:31` and `test_status.py:184`; `tests/test_cards.py` (new), `tests/test_matterinfo.py` (new), `tests/test_roles.py` (new), `tests/test_dates.py` (new), `tests/test_facts.py` (fields and the upgrade),
   `tests/test_schema.py:146-147` (`of 11`), `tests/test_extract.py` (the new name, a measured version),
   `tests/test_playbook.py` (the marking rules both ways), `tests/test_gate.py` (the row text), `tests/test_benchkey.py`,
   `tests/test_benchcandidate.py`, `tests/test_rules.py` (`rule5_forms=18 of 18` and `bills_forms=7 of 7`, §1.11 and
@@ -676,44 +651,35 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   `playbook_entries practice=13 samples=3`; gate `playbook PASS invalid=0 unmarked=0 practice=13 samples=3
   version=<measured>`; `rule5_forms=18 of 18`; `bills_forms=7 of 7`; `rules_selftest PASS misses=0 false_hits=0`;
   `dates_ok=9 of 9` (`03/11/2025`, `3/1/2025`, `2025-03-11`, `March 11, 2025`, `march 11, 2025` parse to
-  `2025-03-11`; `13/01/2025`, `03/11/25`, `Yesterday`, the empty string give None); `matterinfo_ok=9 of 9` (no
-  tables -> no roles, empty entries; the fixture file -> four roles and two issues; the intake layout with a
-  `matter.toml` without `binders` loads and `pages.load` still reads `pages/`; refusals naming the key: unknown key,
-  non-string value, unknown role, a binder the matter lacks, `issues` not an array of strings, a `matter.toml` with
-  `binders` beside `pages/` still refused as ambiguous); `stamps_compatible=2 of 2` (the default config over the
+  `2025-03-11`; `13/01/2025`, `03/11/25`, `Yesterday`, the empty string give None); `matterinfo_ok=12 of 12` (no tables -> empty entries, `plaintiffs` 1, no roles; the fixture file -> every header value, two issues, one typed role; the intake layout with a `matter.toml` without `binders` loads and `pages.load` still reads `pages/`; `ask` with injected streams answering every prompt writes `[header]` and `[hearing].issues` and a second `load` reads them back; `ask` with a blank client name leaves it empty; `ask` with a non-tty stdin (an `io.StringIO`) writes nothing and returns the empty info; `write` keeps an existing `[roles]` table; refusals naming the key: unknown key, non-string value, an issue outside the type's list, unknown role, a binder the matter lacks, a `matter.toml` with `binders` beside `pages/` still refused as ambiguous); `roles_by_name=6 of 6` (`DME-report`, `defense_medical`, `Defense Medical Exam` -> `defense`; `medical`, `records`, `ime-free-notes` -> `ours`; a typed `[roles]` entry wins; `plaintiffs = 2` with no typed role -> `ROLE NEEDED`); `stamps_compatible=2 of 2` (the default config over the
   fixture passes; a config `stamp_pattern` of `[A-Z]{1,8}\d{3,}` over an intake layout with stamp `ABC123` is refused
   with the §1.5 sentence before the run log exists); `casefile_ok=17 of 17` (the 14 cases of round 5 with the new
   fields, plus: a round 5 case file (its `fact` and `cite` lines in the old shape) loads with `upgraded=N`, every
   old fact undated with category `other`, and `append` adds a new-shape event after it with the chain intact; an
   old-shape file with one edited interior line is refused as `_broken`; a `cite` event carrying a different date for
-  the same quote on a second page loads with `dates == [d1, d2]`); `gate_cases=35 of 35` (the 31 of today plus
+  the same quote on a second page loads with `dates == [d1, d2]`); `gate_cases=34 of 34` (the 31 of today plus
   `no_coverage`: a `coverage=False` card over two pages writes zero coverage rows; `required_any`: a card with
   `required_any=("questions",)` and an answer `{"questions": [{"text": "x", "cite": "MED0001", "quote": "Pain 7/10",
   "note": ""}]}` passes gate 6 with `optional_blank=("note",)` and fails it without; `echo`: a card with
-  `echo="pages_seen"` passes on `{"pages_seen": [ids], "people": [], ...}` and fails when one id is missing;
-  `header_value`: a `00-HEADER` answer whose `value` is not a span of its `quote` fails gate 4); `no_reply_forms=3 of
+  `echo="pages_seen"` passes on `{"pages_seen": [ids], "people": [], ...}` and fails when one id is missing); `no_reply_forms=3 of
   3` (doctor, memo, bench sentences); `recording_body_ok=1` (a `recording_for(..., body="Matter 9001.001\nFacts:\n...")`
   row answers a live-nonce request built with the same body); `fault_branches=3 of 3` (the three fault modes on an
-  answer without `facts`); the full suite green with the memo producing today's layout (W4 changes it); both
-  `--candidate` bench lines as re-pinned for 15 pages (dates are parsed and kept, not yet scored).
+  answer without `facts`); the full suite green with the memo producing today's layout (W4 changes it); both `--candidate` bench lines byte-identical to the baseline (dates are parsed and kept, not yet scored).
 - CHECK: `scripts/run.sh pytest -q -s tests/test_cards.py tests/test_playbook.py tests/test_gate.py tests/test_rules.py
-  tests/test_matterinfo.py tests/test_dates.py tests/test_facts.py tests/test_schema.py tests/test_extract.py
+  tests/test_matterinfo.py tests/test_roles.py tests/test_dates.py tests/test_facts.py tests/test_schema.py tests/test_extract.py
   tests/test_gates.py tests/test_benchkey.py tests/test_benchcandidate.py tests/test_fakemodel.py
   tests/test_bench_pipeline.py tests/test_pipeline.py tests/test_status.py tests/test_fixture_matter.py` prints every
   line above and passes; `scripts/run.sh pytest -q` passes; `scripts/run.sh python -m casefile.gate` prints `0` and
   the new playbook row; `scripts/run.sh casefile bench --config config.example.toml --matters tests/fixtures/matters
-  --candidate tests/fixtures/matters/9001.001/ideal.json` exits 0 with the re-pinned line, and with `flawed.json`
-  exits 1 with the re-pinned line.
+  --candidate tests/fixtures/matters/9001.001/ideal.json` exits 0 with the baseline line, and with `flawed.json` exits 1 with the baseline line.
 - Seeds, each alone: (a) `cards.text` omitting the practice block -> every card version differs from the pinned
   measured values, `test_cards` red; (b) a sample entry admitted into a card (`sample` filter dropped) -> the
   `02-C-DEFDOC` text holds `SAMPLE:`, red; (b2) the deponent filter dropped -> `practice_filtered=0`; (c)
-  `playbook.py` accepting `sample = false` with `rule` starting `SAMPLE:` -> `test_playbook` red; (d)
-  `matterinfo.load` accepting an unknown role -> `matterinfo_ok=8 of 9`; (e) `check_stamps` called after `open_db`
+  `playbook.py` accepting `sample = false` with `rule` starting `SAMPLE:` -> `test_playbook` red; (d) `matterinfo.load` accepting an unknown role -> `matterinfo_ok=11 of 12`; (d2) `roles.role` matching `dme` without folding `-` and `_` to a space -> `defense_medical` or `DME-report` reads `ours`, `roles_by_name` red; (d3) `ask` prompting on a non-tty stdin -> the `StringIO` case writes a file, red; (e) `check_stamps` called after `open_db`
   -> the three-digit case finds a run log, red; (f) `FIELDS["fact"]` without `provider` -> the fixture round trip
   red; (f2) the upgrade accepting any key subset (the `FIELDS_V1` equality loosened to `issubset`) -> the
   edited-interior-line case loads, red; (g) coverage rows written for a `coverage=False` card -> `no_coverage` red;
-  (h) `optional_blank` ignored -> the `required_any` case red; (h2) the echo set compared by length -> the `echo`
-  case with a wrong id of the same count passes, red; (h3) the `value in quote` check dropped -> `header_value` red;
+  (h) `optional_blank` ignored -> the `required_any` case red; (h2) the echo set compared by length -> the `echo` case with a wrong id of the same count passes, red;
   (i) the deposition-fee pattern dropped -> `rule5_forms=16 of 18`; (j) the first draft's `retain|hire|engage ...
   you` pattern restored -> four must-pass rows red; (j2) the provider mask applied to every rule -> `bills_forms`
   must-pass row 3 still passes but the control row (a provider named with `IME` in our words) passes too, red;
@@ -729,8 +695,7 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   matter-entry refusals before the run log opens), #R05-CX-9, #R05-V-1, #R02-CX-5 (manifest ids and card names
   unique, refused otherwise), #R04-CX-7 (`cards.load` and `matterinfo.load` use `jsonrepair.loads` and `tomllib`
   only), #R01-OC-M7 (`matterinfo.load` never creates the file), #R04-PC-4 (the body-aware recording helper is the
-  one builder for every stand-in row), #R05-PC-7 (the upgrade on load never rewrites a complete line), #R02-OC-H1
-  (the chair reads the petition page and its two key facts).
+  one builder for every stand-in row), #R05-PC-7 (the upgrade on load never rewrites a complete line), #R01-OC-M7 (`matterinfo.write` runs only after the attorney answered on a tty; a non-tty run creates nothing).
 
 ### W2 (lane A): dates and providers verified in gate 4, bench `dates_wrong`
 - Files: `src/casefile/gates.py:93-158` (`_references`: the date and provider checks of §1.3),
@@ -741,10 +706,7 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   `tests/test_benchscore.py`, `tests/test_bench_detail.py` (a `dates_wrong:` line pinned), `tests/test_stage4_exit.py`
   (the modes still act on `facts[0..2]`; the line's numbers do not move: `answers=+21` depends on the mode table, not
   the card; the builder prints and the chair confirms).
-- Ships: `gate_cases=40 of 40`; bench baselines: flawed `bench 9001.001 model=candidate found=28 of 31 missed=3
-  invented=2 extra=<measured> dates_wrong=1 flags=8 of 9 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 15`
-  exit 1 with a `  dates_wrong: <id> (<wrong> for <right>)` line; ideal `... found=31 of 31 missed=0 invented=0
-  extra=<measured> dates_wrong=0 flags=9 of 9 ... pages_failed=0 of 15` exit 0; the stage 4 line unchanged in its
+- Ships: `gate_cases=40 of 40`; bench baselines: flawed `bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 flags_extra=1 rules=1 pages_failed=0 of 14` exit 1 with a `  dates_wrong: <id> (<wrong> for <right>)` line; ideal `... found=29 of 29 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 ... pages_failed=0 of 14` exit 0; the stage 4 line unchanged in its
   numbers.
 - CHECK: `scripts/run.sh pytest -q -s tests/test_gates.py tests/test_benchscore.py tests/test_bench_detail.py
   tests/test_bench_cli.py tests/test_stage4_exit.py` prints `gate_cases=40 of 40`, `invented_kinds=2 of 2
@@ -758,19 +720,15 @@ parser, schema, budget derivation and stand-in helper the fixture edits or lane 
   verified date confers nothing on the category label).
 
 ### W3: WITHDRAWN (the reconcile pass, owner Q55; §1.4)
-Not built. The three-chunk bench test keeps `(29, 29, 5, 9, 3)` on the 14-page split and gains the petition page as
-a fourth chunk `[5, 5, 4, 1]` (its facts cite no other page, so the flag counts stay; the builder re-pins the tuple
-after a run and prints `bench_chunks=4 found=31 of 31 flags=5 of 9 runs=+4 uncited=2`). `pipeline.batches` is built
+Not built. The three-chunk bench test keeps `(29, 29, 5, 9, 3)`, the split `[5, 5, 4]` held by `conftest.split_card`, and prints `bench_chunks=3 found=29 of 29 flags=5 of 9 runs=+3 uncited=2` as today. `pipeline.batches` is built
 in W5 where it is used. Numbering is kept so the review's dispositions still point at the right items.
 
 ### W4 (lane A, after W2): the memo's sections, conflict quotes, binder names, matter entries
 - Files: `src/casefile/memo.py:85-154` (§1.5 sections; `_cite` `:55-56` returns a `Run(..., exempt="cite")`; the
   binder name in a `Run(..., exempt="binder")`; `check_binders` deleted at `:164-171` and its call at `render`
-  `:192`; `build(casefile, pages, open_items, *, matter, playbook_version, model, info, header)` where `info` is the
-  `MatterInfo` and `header` the `00-HEADER` answer or `None`; the conflicts sentence of §1.4 with its added cloud
+  `:192`; `build(casefile, pages, open_items, *, matter, playbook_version, model, info)` where `info` is the `MatterInfo`; the conflicts sentence of §1.4 with its added cloud
   sentence; `check` `:174-188` needs no change, it already drops every exempt run, review L1), `src/casefile/memo_job.py:58-59,87,91`
-  (`matterinfo.load`, the `00-HEADER` call over the `petition` binder's pages before the extraction chunks, the
-  header block through `outputs.header` once W5 lands: until the merge, memo keeps its own two-line title and the
+  (`matterinfo.load`, never `ask`; the header block through `outputs.header` once W5 lands: until the merge, memo keeps its own two-line title and the
   chair accepts the join at the merge; `check_binders` calls removed), `tests/test_memo.py` (`memo_docx_ok=22 of
   22`: the round 5 checks re-pinned to the new sections plus: chronology order by parsed date with a tie kept in
   case-file order; a fact in two topical sections; providers' first and last dates; an undated fact under `Facts
@@ -779,11 +737,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   the `ROLE NEEDED` sentence with no roles; the opinion sections' `ROLE NEEDED` line with no roles; the binder `ime`
   heading with the name in an exempt run and `rule_hits=0`; `memo_refused=1 of 1` (title case only)),
   `tests/test_status.py:112-129` (`binder_shown=1`: the `ime` matter runs, exit 1, the heading run reads `ime`),
-  `tests/test_memo_intake.py` (sections; the scanned matter has no petition binder, so every header field prints
-  `NEEDED (no binder is marked petition in matter.toml)`), `tests/test_stage5_exit.py` (re-pinned: four runs as
-  today, no reconcile; each run makes one header call before any chunk, so answers `+8` (2, 3, 2, 1: the header
-  call runs even when nothing is unread), `casefile_lines` 44, 46, 49, 50, `conflicts=5` throughout, the memo lines
-  reading `sections=15 chronology=33 dated=33 of 33 providers=<measured> conflicts=5 conflict_quotes_ok=1
+  `tests/test_memo_intake.py` (sections; the scanned matter has no `matter.toml`, so every header field prints `NEEDED`), `tests/test_stage5_exit.py` (the four run lines, `answers=+4` and `casefile_lines=48` as today; only the memo lines move, reading `sections=15 chronology=31 dated=31 of 31 providers=<measured> conflicts=5 conflict_quotes_ok=1
   defense_first=1 header_ok=1 ...` (builder re-derives every number from the fixture)).
 - Ships: `memo_docx_ok=22 of 22 memo_refused=1 of 1 memo_changed=1 memo_reason_exempt=1 binder_shown=1`; the stage 5
   lines as re-derived; the gate `0`.
@@ -805,16 +759,14 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
 - Files: `src/casefile/packet.py` (new, §1.6: `Packet`, `PacketFact`, `build`, `body`, `to_json`, `from_json`,
   `batches`, with `pipeline.batches(blocks, budget)` as its byte splitter), `src/casefile/outputs.py` (new, §1.6:
   `Paragraph`, `Run`, `Section` moved from `memo.py` with `memo.py` importing them and nothing else moved, review
-  L4; `Doc`, `header(answer, ...)` from the `00-HEADER` answer, `check(doc, rules, stamped, providers)`, `render`,
-  `publish` with the `.partial.docx` rule, `start` (with `matterinfo.load` and the header call), `ask`,
+  L4; `Doc`, `header(info, ...)`, `check(doc, rules, stamped, providers)`, `render`, `publish` with the `.partial.docx` rule, `start` (with `matterinfo.load` and, on a tty with no `[header]`, `matterinfo.ask`), `ask`,
   `provider_pages(casefile, text)` for Q61, `open_items_section`, category groups as one table `GROUPS`),
   `src/casefile/report.py` (new, §1.7: `run(config, number, *, out, err, opener, ...)` and `render(answers, packet,
   casefile, pages, info, ...)`), `src/casefile/cli.py:37-40` (the `report` subparser: `--matter`, `--provider`,
   `--binder` (repeatable), `--pages`, `--defense`/`--ours` exclusive and required, `--config`),
   `cards/04-defense-report/g-concessions.md`, `cards/05-our-doctor/a-elements.md` (bodies; the schemas are W1's),
   `tests/test_packet.py` (new), `tests/test_outputs.py` (new), `tests/test_report.py` (new),
-  `tests/fixtures/outputs/9001.001/header-petition.json` (the invented header answer: the four fields with their
-  quotes from `PET0001`), `concessions-defense-report.json` and `elements-okonkwo-lind.json` (invented answers read
+  `tests/fixtures/outputs/9001.001/concessions-defense-report.json` and `elements-okonkwo-lind.json` (invented answers read
   from the pages: concessions may include `DEF0001`'s `He acknowledges a 2019 episode of low back pain that
   resolved.` only as a danger-zone item, never as a concession; the elements answer marks `causation` STATED with the
   MED0008 opinion sentence, `treatment_reasonable_necessary_related` and `bills_reasonable_related` absent, so the
@@ -823,9 +775,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   cited pages; `body()` holds the task line, one fact line per fact with `[deponent's record]` on the named pages,
   then every page block; `to_json` and `from_json` round-trip to an equal `Packet`; `batches` splits a 300-fact
   packet with its pages so every body fits the retry budget; a page that alone exceeds the budget is refused with
-  the `pipeline.chunk` reason); `outputs_ok=13 of 13` (header lines in order from the fixture header answer, each
-  with its cite; a header answer missing `hearing_date` prints `Hearing date: NEEDED (not found in the petition)`;
-  no `petition` role prints every field `NEEDED (no binder is marked petition in matter.toml)`; a question paragraph
+  the `pipeline.chunk` reason); `outputs_ok=13 of 13` (header lines in order from the fixture `matter.toml`; a blank `hearing_date` prints `Hearing date: NEEDED`; a matter with no `matter.toml` run with a non-tty stdin prints every field `NEEDED`, writes no file and exits 1 for the open items without blocking (the test runs it under a timeout); a question paragraph
   checked with `unit="question"` and the case file's providers masked for the conjunction rule; a `binder` run
   exempt; `publish` writes through `.tmp` and appends one `output` event; `stale_outputs` lists the new name after a
   fact; `publish` with a failed step writes `<name>.partial.docx`, appends no event, and `status` shows the outputs
@@ -851,8 +801,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   red; (d) question paragraphs checked as `text` -> a seeded compound question passes `check`, red; (e) `start`
   opening the run log before `check_stamps` -> red; (f) `body()` leaving the page blocks out -> `packet_ok=5 of 6`
   and the recorded prompt 404s; (g) `render` calling the model (any `ask` inside `render`) -> the fixture-answer
-  render case makes a request on port 9, red; (h) `header` printing a typed default instead of `NEEDED` -> the
-  missing-field case red; (i) `provider_pages` matching on the fact text instead of `providers` -> the `nobody` case
+  render case makes a request on port 9, red; (h) `header` printing a default instead of `NEEDED` -> the blank-field case red; (h2) `start` calling `ask` on a non-tty stdin -> the no-file case blocks or writes, red; (i) `provider_pages` matching on the fact text instead of `providers` -> the `nobody` case
   returns pages, red.
 - Librarian pre-flight: #R03-V-L1 (refusals before side effects), #R03-CX-2 (`outputs/` created by this run only,
   tmp removed on failure), #R01-CX-9 (the audit sentence and every `NEEDED` claim only what ran), #R04-PC-7 (every
@@ -901,8 +850,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   `client-cross.json` (direct questions open and not leading, each resting on a record quote; cross questions on the
   2019 strain and the tote weight with both cites in the note).
 - Ships: `hearing_ok=12 of 12` (the checklist first with the starred paragraph first and the totals sentence;
-  exhibits per binder with stamp ranges (four binders); the two issues read from `matter.toml` with `STANDARD
-  NEEDED`; `--issue "Only this issue"` overrides the stored list for the run and the file is unchanged; `--standard`
+  exhibits per binder with stamp ranges (three binders); the two issues `permanency` and `termination` read from `matter.toml` with `STANDARD NEEDED`; `--issue "Only this issue"` overrides the stored list for the run and the file is unchanged; `--standard`
   typed overrides `STANDARD NEEDED`; our key facts and defense position from the labels; conflicts with a `defense`
   page first with quotes; client direct and cross sections and the instruction block last; consistency flags;
   doctor preparation's five parts by `--provider "Okonkwo-Lind"` with the elements shared with W5's fixture and the
@@ -922,31 +870,27 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   `outputs.header`; its title line kept), `tests/test_stage5_exit.py` (the header lines), `docs/loop/round-06/` (the
   chair's records, not the lane).
 - Ships, printed with `capsys.disabled()`, every number asserted:
-  `stage6 memo sections=15 chronology=33 dated=33 of 33 providers=<measured> conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 rule_hits=0 exit=1`
+  `stage6 memo sections=15 chronology=31 dated=31 of 31 providers=<measured> conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 rule_hits=0 exit=1`
   `stage6 depo=defense-doctor-us outline_our=<measured> outline_defense=<measured> questions=<measured> rests_on_page=<Q> of <Q> danger=<measured> points=<measured> forbidden_topics=0 rule_hits=0 header_ok=1 exit=0`
   `stage6 depo=our-doctor-us ... treatment_q=1 bills_q=1 compound=0 providers_named=5 of 5 rule_hits=0 header_ok=1 exit=0`
   `stage6 hearing checklist_first=1 starred=1 issues=2 standard_needed=2 client_direct=<measured> client_cross=<measured> elements=14 not_found=2 closing=2 relief_needed=2 rule_hits=0 header_ok=1 exit=1`
   `stage6 report=defense-report concessions=<measured> labels=<measured> danger=<measured> conflicts=3 conflict_quotes_ok=1 audit_limit=1 rule_hits=0 header_ok=1 exit=0`
   `stage6 report=okonkwo-lind elements=14 stated=<measured> partial=<measured> not_found=2 gaps_separate=1 rule_hits=0 header_ok=1 exit=0`
   `stage6 status outputs=memo:current,depo-defense-doctor-us:current,depo-our-doctor-us:current,hearing:current,report-defense-report:current,report-okonkwo-lind:current partial=0`
-  `stage6 exit=0 docs=6 of 6 answers=+22 rule_hits=0 server_stopped=1`
+  `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1`
   where `rests_on_page` counts questions whose `Rests on` quote is verbatim on the cited page (read from the
   fixture pages by the test), `forbidden_topics` counts question texts hitting any rule at `error` over the whole
   document with the case file's providers masked (0 by construction: the gates refuse them), `compound` the
   our-doctor question texts hitting `treatment-and-bills-apart` under the same mask, `providers_named` the case
-  file's distinct providers found in the bills question's text (5 of 5, §1.12), `header_ok` the eight header
-  paragraphs in order with the petition's values and `[cite PET0001]` on each of the four fields (the deposition
-  lines carry `--when` absent as `NEEDED`), `rule_hits` the firm rules over every non-exempt run,
+  file's distinct providers found in the bills question's text (5 of 5, §1.12), `header_ok` the header paragraphs in order with the fixture `matter.toml` values (the deposition lines carry `--when` absent as `NEEDED`), `rule_hits` the firm rules over every non-exempt run,
   `conflict_quotes_ok` that every `From [cite X]:` block holds exactly the case file's quotes on X, `partial` the
-  `.partial.docx` files under `outputs/`; `answers=+22` is one extraction call, six header calls and fifteen
-  synthesis calls. The memo exits 1 (DEF0001 uncited after one chunk, as stage 5 run 1); the hearing exits 1
+  `.partial.docx` files under `outputs/`; `answers=+16` is one extraction call and fifteen synthesis calls; no prompt runs (stdin is not a tty). The memo exits 1 (DEF0001 uncited after one chunk, as stage 5 run 1); the hearing exits 1
   (`STANDARD NEEDED` and `RELIEF NEEDED` are open items); the others 0.
 - CHECK: `scripts/run.sh pytest -q -s tests/test_stage6_exit.py` prints the eight lines with `stage6 exit=0` and
   passes; `scripts/run.sh pytest -q` passes; `scripts/run.sh python -m casefile.gate` prints `0`;
   `scripts/run.sh scripts/suite_time.sh 3` prints `verdict=PASS` (budget 90 s, T-11).
 - Seeds, each alone: (a) a question fixture given a quote from another page -> `rests_on_page` short by one, the
-  job writes `.partial.docx` and exits 1, `partial=1`, red; (b) the header answer's `caption` quote moved to another
-  page -> gate 4 refuses, every header field `NEEDED`, `header_ok=0`; (c) `FakeModel.record` not registering -> 404,
+  job writes `.partial.docx` and exits 1, `partial=1`, red; (b) the fixture's `client_name` blanked -> `Client: NEEDED`, `header_ok=0`; (c) `FakeModel.record` not registering -> 404,
   `docs=1 of 6`; (d) a rule-hitting word seeded into a section title -> the document is refused, exit 2, red; (e)
   the provider mask dropped from gate 5 -> the five-provider bills question is refused, `bills_q=0`, red (the
   measured collision of D0.9 is the control).
@@ -965,7 +909,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
 
 - W1 first, one builder in the main tree, committed by the chair only after `scripts/run.sh pytest -q`, the gate and
   both `--candidate` bench runs are green on it (review H1); both lanes start from that commit (the gates, the case
-  file fields and upgrade, the parsers, the loader, the matter entries, the petition fixture, the rule changes, the
+  file fields and upgrade, the parsers, the loader, the matter entries and the terminal prompt, the roles by name, the rule changes, the
   stand-in helpers and the split budget are the shared contract).
 - Lane A (main tree): W2, W4, in that order (W3 withdrawn); then W8 after the merge. Owns `src/casefile/gates.py`
   (`_references` only after W1), `memo.py` (`build`, `render`, the sections), `memo_job.py`, `status.py`,
@@ -981,9 +925,8 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   `:70`; lane A does not touch it. `memo.py`: lane B moves exactly the `Paragraph`, `Run` and `Section` dataclasses
   (`memo.py:24-40`) to `outputs.py` and leaves `memo.py` importing them (`from casefile.outputs import Paragraph,
   Run, Section`); `OpenItem`, `Memo`, `label`, `build`, `check`, `render` stay where `status.py:31,37` finds them
-  (review L4); lane A edits `build` and `render` only; the chair resolves the import at the merge. `gates.py`, `facts.py`, `dates.py`, `matter.py`, `pages.py`, `matterinfo.py`, `rules.py`, `playbook/rules.toml`,
-  `benchkey.py`, `benchcandidate.py`, `cards/manifest.json`, the five output schemas (`procedural` included) and
-  `tests/fakemodel/core.py` are W1's and frozen after it: a lane that needs a change files it with the chair (one
+  (review L4); lane A edits `build` and `render` only; the chair resolves the import at the merge. `gates.py`, `facts.py`, `dates.py`, `matter.py`, `pages.py`, `matterinfo.py`, `roles.py`, `rules.py`, `playbook/rules.toml`,
+  `benchkey.py`, `benchcandidate.py`, `cards/manifest.json`, the four output schemas and `tests/fakemodel/core.py` are W1's and frozen after it: a lane that needs a change files it with the chair (one
   ruling, then one commit in the main tree that lane B merges). Fixture answers: lane B owns `tests/fixtures/outputs/`,
   lane A owns `tests/fixtures/matters/` and `tests/fixtures/bench/` after W1.
 - Sequential and why: W1 before both lanes (contract, green); W4 after W2 (the chronology rests on gate 4's final
@@ -992,14 +935,14 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
 - Interfaces fixed by this brief: `cards.card(id, book) -> gates.Card`; `gates.ask(card, pages, *, client, rules, log,
   matter, nonce=None, job, playbook_version, body=None, echo=None) -> Outcome` with `echo` a `(key, values)` tuple;
   `facts.Fact(id, quote, cites, page_ids, readings, reading_pages, dates, category, providers)`;
-  `matterinfo.load(folder) -> MatterInfo(roles, issues, standard, relief)`; `rules.check(text, *, unit, stamped=True,
-  providers=())`; `outputs.header(answer, matter, kind, *, when="", deponent="")`; `outputs.provider_pages(casefile,
+  `matterinfo.load(folder) -> MatterInfo(...)`, `matterinfo.ask(info, stdin, stdout)`, `matterinfo.write(folder, info)`; `roles.role(binder, info) -> str`; `rules.check(text, *, unit, stamped=True,
+  providers=())`; `outputs.header(info, matter, kind, *, when="", deponent="")`; `outputs.provider_pages(casefile,
   text)`;
   `rules.check_stamps(pages, rules)`; `pipeline.batches(blocks, budget) -> list[list[str]]`; `packet.build(casefile,
   pages, *, matter, task, options, playbook_version, facts=None) -> Packet`, `Packet.body()`, `to_json`, `from_json`,
   `packet.batches(packet, card, num_ctx)`; `outputs.ask(packet, card, *, client, rules, log, job, playbook_version)
   -> Outcome`; `report.render`, `depo.render`, `hearing.render` `(answers, packet(s), casefile, pages, info, *, open_items,
-  playbook_version, model) -> outputs.Doc` where `answers["header"]` is the `00-HEADER` answer or `None`; `outputs.header(...)`, `check`, `publish(..., failed_steps)`,
+  playbook_version, model) -> outputs.Doc`; `outputs.header(...)`, `check`, `publish(..., failed_steps)`,
   `start`; `extract.card(book=None)`; `FakeModel.record(row)`; `recording_for(card, pages,
   number, answer, *, body=None)`; `conftest.split_card(card)`.
 
@@ -1008,16 +951,13 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
 - Regression set and what moves on purpose: `gate` 0; `unused_imports=0`; `suite_time.sh 3` under 90 s; doctor
   `runlog_schema PASS schema=2 triggers=21` (schema untouched); stage 1 to 3 lines unchanged; stage 4 line's numbers
   unchanged (the card name under `open` keys becomes `medical_memo`); stage 2 line unchanged (`stage2 exit=0 runs=+1
-  answers_ok=+1 server_stopped=1`: one chunk, no reconcile call); the two `--candidate` bench lines are re-pinned for the 15-page matter (W1) and gain `dates_wrong=` (W2);
-  `bench_chunks` becomes four chunks `[5, 5, 4, 1]` with `flags=5 of 9` kept (W3 withdrawn); stage 5 lines
-  re-derived (W4: 15 pages, 33 facts, a header call per run, no reconcile); `gate_cases=31 of 31` -> `35 of 35`
-  (W1) -> `40 of 40` (W2); `schemas_loaded=20 of 20` -> `11 of 11`; `memo_docx_ok=14 of 14 memo_refused=2 of 2` ->
+  answers_ok=+1 server_stopped=1`: one chunk, no reconcile call); the two `--candidate` bench lines keep the baseline main lines (14 pages, 29 facts) and gain `dates_wrong=` in W2 only; `bench_chunks` stays `[5, 5, 4]` with `flags=5 of 9` (W3 withdrawn); the stage 5 run lines, `answers=+4` and `casefile_lines=48` stay, only its memo lines move (W4); `gate_cases=31 of 31` -> `34 of 34` (W1) -> `39 of 39` (W2); `schemas_loaded=20 of 20` -> `11 of 11`; `memo_docx_ok=14 of 14 memo_refused=2 of 2` ->
   `22 of 22` and `1 of 1`; `binder_refused=1` -> `binder_shown=1`;
   `card_version` measured; `len(MODES) == 17` untouched (the three fault branches are inside existing modes); the
   playbook row gains `practice=13 samples=3`; the three-chunk split `[5, 5, 4]` is held by `conftest.split_card`
   from W1 on.
 - New tables, each `*_ok=N of N` or a fixed line: `cards_loaded` 15, `schemas_loaded` 11, `rule5_forms` 18,
-  `bills_forms` 7, `matterinfo_ok` 9, `stamps_compatible` 2, `casefile_ok` 17, `no_reply_forms` 3, `dates_ok` 9,
+  `bills_forms` 7, `matterinfo_ok` 12, `roles_by_name` 6, `stamps_compatible` 2, `casefile_ok` 17, `no_reply_forms` 3, `dates_ok` 9,
   `fault_branches` 3, `recording_body_ok` 1, `practice_filtered` 1, `packet_ok` 6, `outputs_ok` 13, `report_ok` 9,
   `depo_ok` 12, `hearing_ok` 12, the eight `stage6` lines. Every N is fixed above; counts marked measured are
   printed and read by the chair before they are pinned.
@@ -1044,9 +984,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
 
 - R1 The practice port misstates a skill rule. Tripwire: the chair's read of every entry against its `learned`
   section before the lanes split, recorded in the agent log; the output critic's practice table in its report.
-- R2 The header card reads a wrong value off the petition (a claim number as the IAB number). Tripwire: every
-  header value must be a span of its quote and the quote on the page (`header_value` case); the critic reads the
-  four header lines against `PET0001`; a petition without a field prints `NEEDED`, never a guess.
+- R2 The terminal prompt blocks a non-interactive run, asks twice, or a binder-name role is wrong. Tripwire: `matterinfo_ok` non-tty case (nothing written, no block) and the `outputs_ok` no-file case under a timeout; `ask` never runs when `[header]` exists; `roles_by_name=6 of 6` with seed (d2); a multi-plaintiff matter prints `ROLE NEEDED` rather than a guess.
 - R3 The provider mask or the question-only pairing lets a forbidden question through (a provider name that
   hides a treatment word, or `charges` in a memo sentence). Tripwire: `bills_forms=7 of 7` with its must-fail rows,
   `rules_selftest` unchanged, `compound=0`, `bills_q=1` and `providers_named=5 of 5` on the stage 6 line; the
@@ -1080,7 +1018,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   and a quote or the field does not exist); one loader (`cards.py`, manifest version 2) builds each card's text from
   the firm rules, the card body and the playbook's practice entries of its kinds and deponent; the manifest fixes
   per card the arrays of which one must be non-empty, the keys that may be blank, an echo key whose array must
-  repeat the ids or page ids sent, and whether pages are marked read; 15 cards and 11 schemas remain (ten run by
+  repeat the ids or page ids sent, and whether pages are marked read; 15 cards and 11 schemas remain (nine run by
   stage 6 jobs, one for stage 7, five for stage 8), the rest retired at `53a6f82`; the extraction card is `01-MEMO`
   (`medical_memo`); the anonymization card `07-ANON` finds names and the anchor date only, quote and cite each, and
   passes on an empty answer that echoes every page sent (Q47, Q53)." Why: §1.2, D0.3; review H3, L3, M3, M4.
@@ -1101,12 +1039,8 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   opinions by binder role, gaps, conflicts, undated facts by page); each conflict shows the quotes of its two pages;
   conflicts between a `defense` binder and an `ours` binder come first and, with no such pair, the memo prints `ROLE
   NEEDED` and keeps the found order; binder names are shown as typed in exempt runs and `check_binders` is
-  withdrawn; `matter.toml` gains `[roles]` (binder to `defense`, `ours`, `petition`, `other`) and `[hearing]`
-  (`issues`, `standard`, `relief`), read in both layouts by `matterinfo.load`; the header block (caption, IAB hearing
-  number, date of accident, hearing date and time) comes from the pages of the `petition` binder through the
-  `00-HEADER` card, each value verified as a span of a quote on its page and printed with its cite, a missing field
-  printed `NEEDED`; a page stamp the playbook's cite rule would reject refuses the job; the no-reply reason is
-  transport-only and each command adds its own consequence." Why: §1.5; Q49 items 50, 54, 57; Q54 items 60, 62; Q56; #R05-CX-9; #R05-V-1.
+  withdrawn; a binder's role is read from its name (`dme` or `defense medical`, any case or separator, is `defense`; every other binder is `ours`), with `matter.toml` `[roles]` as the override that a multi-plaintiff matter must supply (else `ROLE NEEDED`); `matter.toml` also holds `[header]` (matter type, client name, date of accident, treating physician, IAB hearing number, hearing date and time, plaintiffs) and `[hearing]` (`issues` from the type's list, `standard`, `relief`), read in both layouts by `matterinfo.load`; the header block prints those entries, `NEEDED` when empty; a page stamp the playbook's cite rule would reject refuses the job; the no-reply reason is
+  transport-only and each command adds its own consequence." Why: §1.5; Q49 items 50, 54, 57; Q54 item 62; Q57 (superseding Q54 item 60 and Q56); #R05-CX-9; #R05-V-1.
 - **D49** (new; spec §2 deposition, hearing and report paragraphs made concrete; §3 step 6). "`casefile report`,
   `depo` and `hearing` build Word documents in `outputs/` in three fixed steps: `packet.build` (facts with quote,
   cite and page id, the cited pages, the task's options, the playbook version; JSON round trip), `outputs.ask`
@@ -1118,11 +1052,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
   one item, verify prose numbers against the cited page and question strings with the question unit; a failed step
   is disclosed in the document, which is written as `.partial.docx` with no output event (exit 1); the our-doctor
   primary section must hold a treatment question and a bills question or say which is missing; the checklist's
-  starred billing memo item is first; the standard, relief and issues come from `matter.toml` `[hearing]`, a run flag
-  overrides for that run, and an absent one is marked NEEDED; the doctor's own records are the pages of the facts
-  whose extracted provider matches `--provider`, with `--binder` or `--pages` as overrides; every job's first model
-  step is the `00-HEADER` call." Why: §1.6 to §1.9; spec §2; the firm skills; owner Q53; Q54 items 61, 62; review
-  H6, M1, M2, M6.
+  starred billing memo item is first; the standard, relief and issues come from `matter.toml` `[hearing]`, a run flag overrides for that run, and an absent one is marked NEEDED; the doctor's own records are the pages of the facts whose extracted provider matches `--provider`, with `--binder` or `--pages` as overrides; at a task run with no `[header]` table, code asks the attorney on the terminal (matter type, client name, date of accident, treating physician, IAB hearing number, hearing date and time, issues from the type's list), writes `matter.toml` once and never asks again; a non-interactive run prints `NEEDED` and does not block." Why: §1.6 to §1.9; spec §2; the firm skills; owner Q53; Q54 items 61, 62; Q57; review H6, M1, M2, M6.
 - **D50** (D16 amended). "`no-hired-paid-retained` also matches a fee paired with deposition, testimony or
   appearance, and `how often|frequently|many times ... retain`; the hire, engage, refer, `you`, share and split forms
   wait for the owner (question 64) because they block ordinary client and employment questions. Provider names
@@ -1143,10 +1073,7 @@ in W5 where it is used. Numbering is kept so the review's dispositions still poi
 
 ## §6b Privacy
 
-Every fixture this round adds is invented: `tests/fixtures/matters/9001.001/records/petition/001.txt` (an invented
-  petition page naming only the fixture's invented parties, an invented IAB number `1234567`, the fixture's invented
-  accident date, an invented filing date and hearing date, stamp `PET0001`) and the `[roles]` and `[hearing]`
-  tables of the fixture's `matter.toml` (invented issue wording about the fixture's invented injury); the dates, categories and providers added to `ideal.json`, `key.json` and
+Every fixture this round adds is invented: the `[header]`, `[hearing]` and `[roles]` tables of the fixture's `matter.toml` (the fixture's invented claimant and treating doctor, an invented IAB number `1234567`, the fixture's invented accident date, an invented hearing date, issues from the fixed list); no page is added, the matter stays 14 invented pages; the dates, categories and providers added to `ideal.json`, `key.json` and
 `flawed.json` are read from the invented pages; the 16 recorded answers under `tests/fixtures/outputs/9001.001/`
 quote the invented pages only and name only the invented people and providers of those pages; the playbook entries
 in `playbook/deposition.toml` and `playbook/hearing.toml` carry practice rules with placeholders (`[providers]`,
@@ -1269,3 +1196,31 @@ every reconcile row (parts of H4, M1, L2 case (5)) describe work that D47 withdr
   12, `hearing_ok` 10 -> 12, stage 6 `answers` +16 -> +22, stage 5 `answers` +4 -> +8 (a header call per run),
   recorded answers 15 -> 16; new tables `bills_forms` 7, `matterinfo_ok` 9; `attorney_ok` and `reconcile_ok` gone.
 - No new owner question.
+- Superseded by §10 (ledger Q57): the petition page, the `00-HEADER` card and its call per job, the `petition` role
+  and the counts those moved (`answers`, pages, key facts, `casefile_lines`, `gate_cases` 35/40, `outputs_ok`
+  header cases, `matterinfo_ok` 9).
+
+
+## §10 Owner amendment 2 (ledger Q57, 2026-10-28)
+
+- Binder roles by name: `dme` or `defense medical` in the binder name (any case; `-`, `_` or spaces between the
+  words) is `defense`, every other binder `ours`; `matter.toml` `[roles]` is the override, required on a
+  multi-plaintiff matter (`plaintiffs` > 1 else `ROLE NEEDED`) (§1.5; W1 `roles.py`, `roles_by_name=6 of 6`,
+  seed (d2); D48; §3 interfaces).
+- Header and issues from the attorney: the petition page (`records/petition/001.txt`, `PET0001`), the `00-HEADER`
+  card and schema rewrite and its model call per job are dropped; `00-PROCEDURAL` stays a stage 8 card untouched;
+  at a task run with no `[header]`, code asks on the terminal for matter type, client name, date of accident,
+  treating physician (optional), IAB hearing number (optional), hearing date and time (optional) and issues from
+  the type's list, writes `matter.toml` once, never asks again; run flags override; blank prints `NEEDED`; a
+  non-tty run with no file prints `NEEDED` and does not block or fail (§1.5, §1.6, §1.10; W1 `matterinfo.ask`,
+  `write`, `matterinfo_ok=12 of 12`, seeds (d3), (h2 in W5); W5 header cases; D48, D49; risk R2; §6b).
+- Counts restored to the pre-amendment-1 values: fixture 14 pages, three binders; key 29 facts, ideal 31; the
+  bench lines back to `found=26 of 29 ... pages_failed=0 of 14` and `found=29 of 29 ... of 14` (the W1 commit keeps
+  them byte-identical; W2 adds `dates_wrong=`); `bench_chunks=3 ... flags=5 of 9 runs=+3`, split `[5, 5, 4]`;
+  stage 2, 4 and 5 pins untouched at W1 and the stage 5 run lines, `answers=+4` and `casefile_lines=48` kept (only
+  the memo lines move in W4); stage 6 `answers=+22` -> `+16`, recorded answers 16 -> 15; `chronology=31 dated=31
+  of 31`; `gate_cases` 35/40 -> 34/39 (the `header_value` case gone); `outputs_ok` stays 13 (three header cases
+  replaced); `matterinfo_ok` 9 -> 12; new `roles_by_name` 6; cards 15 and schemas 11 unchanged (`00-PROCEDURAL`
+  back among the stage 8 five, nine cards run by stage 6).
+- Q62's per-matter storage now holds the type's issue list; standard and relief unchanged (§1.5, §1.9).
+- Everything else kept; no new owner question.
