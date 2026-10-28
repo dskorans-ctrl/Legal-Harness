@@ -16,18 +16,18 @@ FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 FLAWED_DETAIL = [
     "  missed: F04 F15 F24",
-    '  invented: MED0003 "Patient was lifting 80 pounds."',
-    '  invented: MED0099 "Date of service: 03/11/2025"',
+    '  invented: MED0003 "Patient was lifting 80 pounds." (quote not on the page)',
+    '  invented: MED0099 "Date of service: 03/11/2025" (no such page)',
     "  flags_missed: G3",
     "  flags_extra: conflict MED0001,MED0004",
-    "  rules: no-dme-ime DEF0003",
+    '  rules: no-dme-ime DEF0003 "IME"',
 ]
 LONG_QUOTE = "Patient was given a lumbar brace and told to rest for two full weeks at home."
 PROBE_LINE = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=1 extra=2 flags=9 of 9 flags_missed=0 "
               "flags_extra=0 rules=1 pages_failed=0 of 14")
 PROBE_DETAIL = [
-    '  invented: MED0002 "Patient was given a lumbar brace and told to rest for two fu"',
-    "  rules: no-dme-ime flag MED0002",
+    '  invented: MED0002 "Patient was given a lumbar brace and told to rest for two fu" (quote not on the page)',
+    '  rules: no-dme-ime flag MED0002 "IME"',
 ]
 
 

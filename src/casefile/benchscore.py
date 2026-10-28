@@ -24,9 +24,9 @@ class Score:
     missed_ids: tuple[str, ...]
     invented_quotes: tuple[str, ...]
     flags_missed_ids: tuple[str, ...]
-    invented_facts: tuple[tuple[str, str], ...] = ()
+    invented_facts: tuple[tuple[str, str, str], ...] = ()
     flags_extra_items: tuple[tuple[str, tuple[str, ...]], ...] = ()
-    rule_hits: tuple[tuple[str, str], ...] = ()
+    rule_hits: tuple[tuple[str, str, str], ...] = ()
     rungs: tuple[tuple[str, int], ...] = ()
 
     @property
@@ -53,14 +53,14 @@ class Score:
         out = []
         if self.missed_ids:
             out.append("  missed: " + " ".join(self.missed_ids))
-        for cite, quote in self.invented_facts:
-            out.append(f'  invented: {cite} "{quote}"')
+        for cite, quote, reason in self.invented_facts:
+            out.append(f'  invented: {cite} "{quote}" ({reason})')
         if self.flags_missed_ids:
             out.append("  flags_missed: " + " ".join(self.flags_missed_ids))
         for kind, cites in self.flags_extra_items:
             out.append(f"  flags_extra: {kind} {','.join(cites)}")
-        for rule_id, where in self.rule_hits:
-            out.append(f"  rules: {rule_id} {where}")
+        for rule_id, where, excerpt in self.rule_hits:
+            out.append(f'  rules: {rule_id} {where} "{excerpt}"')
         if any(count for rung, count in self.rungs if rung != "exact"):
             out.append("  rungs: " + " ".join(f"{rung}={count}" for rung, count in self.rungs))
         return out
@@ -79,7 +79,8 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
         page = matter.page(cite)
         matched_quote = None if page is None else quotes.match(fact.quote, page.text)
         if matched_quote is None:
-            invented_facts.append((cite, fact.quote[:60]))
+            reason = "no such page" if page is None else "quote not on the page"
+            invented_facts.append((cite, fact.quote[:60], reason))
             invented.append(fact.quote[:60])
             continue
         rungs[matched_quote.rung] += 1
@@ -116,7 +117,7 @@ def score(key: Key, candidate: Candidate, matter: Matter, rules, pages_failed: i
     rule_hits = []
     for text, where in checks:
         for finding in rules.check(text, unit="text", stamped=True):
-            rule_hits.append((finding.rule_id, where))
+            rule_hits.append((finding.rule_id, where, finding.excerpt))
     rules_count = len(rule_hits)
 
     missed_ids = tuple(k.id for k in key.facts if k.id not in matched)

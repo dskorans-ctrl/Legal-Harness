@@ -126,8 +126,21 @@ def test_score_cases(tmp_path, capsys):
         results.append(s)
 
     ok = sum(1 for i, (change, failed, check) in enumerate(CASES) if check(results[i]))
+    invented_expected = (
+        (("MED0002", "Diagnosis: chronic lumbar strain.", "quote not on the page"),),
+        (("MED0099", GOOD["facts"][1]["quote"][:60], "no such page"),),
+    )
+    invented_kinds = sum(results[i].invented_facts == expected
+                         for i, expected in zip((2, 3), invented_expected))
+    rule_excerpt_ok = int(
+        results[7].rule_hits == (("no-dme-ime", "MED0001", "IME"),)
+        and results[8].rule_hits == (("no-dme-ime", "flag MED0001,MED0002", "IME"),)
+    )
     with capsys.disabled():
         print(f"score_cases={ok} of 14")
+        print(f"invented_kinds={invented_kinds} of 2 rule_excerpt_ok={rule_excerpt_ok}")
+    assert invented_kinds == 2, f"invented_kinds={invented_kinds} of 2"
+    assert rule_excerpt_ok == 1, f"rule_excerpt_ok={rule_excerpt_ok}"
     assert len(CASES) == 14
     assert ok == 14, results
 
