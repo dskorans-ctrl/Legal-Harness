@@ -1,6 +1,6 @@
 Use the app-loop skill. Read docs/loop/HANDOFF.md first.
 
-Start round 7 of casefile on `loop/round-07`. Remote Control on. Begin with the owner check-in: present the design calls
+Continue round 7 of casefile on `loop/round-07` (opened in the round 6 session; the owner check-in is DONE, ledger Q60 and Q61: skip it and go straight to the brief). If round 7 is already closed, start round 8 instead with its check-in. For a fresh round 8, begin with the owner check-in: present the design calls
 pending veto (spec §9 D44 to D51 and D52 to D62, and the chair's round 6 build rulings in the ledger), the round 6 output
 critic's remaining findings (`docs/loop/round-06/round06-critic2.md` M1 to M6, leading with M1, fact identity), the 15
 practice questions at the end of `docs/loop/design/output-format-from-examples.md`, and the round 7 scope choice in the

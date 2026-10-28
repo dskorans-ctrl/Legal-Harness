@@ -411,3 +411,5 @@ ANSWERED 2026-10-28 (owner, ledger Q59): 82 our doctor's deposition is used at t
 source of truth for bills; 84 caption line per the owner's five example documents; 85 our doctor testifies to mechanism,
 injury, treatment, records reviewed, opinion, and reasonable, necessary and causally related; 86 only facts bearing on
 each issue, the rest once under "Other facts"; 87 skip (usual case only). 83 to 86 carried to the round 7 brief.
+ANSWERED 2026-10-28 (owner, ledger Q61): 74 the IAB hearing number and the claim number are replaced; the carrier, the
+adjuster and treating facilities are not.

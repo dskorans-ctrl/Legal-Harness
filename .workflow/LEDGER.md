@@ -979,3 +979,31 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
 - Close (2026-10-28): verifier PASS (`docs/loop/round-06/round06-verify.md`). Spec: D52 to D62 (cloud round trip) and the
   stage 7b roadmap row added pending veto; §11 stage 6 row. Librarian: 17 entries. Baselines moved (`## Project`). Round
   report `docs/loop/round-06/round06-report.md`. Not started: round 7.
+- Q60: after the round 6 close (owner, 2026-10-28) -> "Start round 7 here. I'll open a new session when I get home."
+  Overrides "one round per session" for this session only (as Q48 did); round 7 opens on `loop/round-07` with the Q46
+  tiers and an owner check-in first.
+- Q61: round 7 check-in (owner, 2026-10-28) -> fact identity (round 6 critic 2 M1): fix in round 7, identity is the
+  folded wording plus date plus provider, existing case files upgraded in place. Scope: spec §7 stage 7, the brief
+  package and the anonymizer under casefile-anon/1, with the fact identity fix; the stage 6 output follow-up (Q59 items
+  82 to 86, the format specification and its 15 practice questions, critic 2 M2 to M6) waits for a later round. Design
+  calls D44 to D62 and the round 6 chair build rulings: all ratified. Binder roles: keep the rule as built for clear
+  cases (a whole-word DME or IME, with or without digits or dots, or `defense medical`, is defense); an edge case where
+  the name only starts with dme or ime (for example `Imelda Health`) is asked of the attorney at the first task run and
+  stored in `matter.toml` `[roles]`; a non-interactive run prints ROLE NEEDED. Name list (held question 74): the IAB
+  hearing number and the claim number are replaced (`[ID-n]`); the carrier, the adjuster and treating facilities are
+  NOT replaced. The claimant's employer is always `[EMPLOYER]`; other organizations are numbered. Reference code
+  `~/local-worker/anonymize.py`: port the code's logic only; fixtures are written fresh from the repo's invented matter;
+  nothing from `~/local-worker` data or `fixtures/anon-matter/` enters the repo. Additional instructions: none.
+  Owner asked to compact the session before the round 7 brief starts.
+
+## Round 7: stage 7 brief package and anonymizer (opened 2026-10-28 on `loop/round-07` at 85675dc, same session, owner Q60)
+Tiers: Q46. Owner check-in held at the open (Q61). Exit test (spec §7 stage 7): the identifier check passes on the test
+matter; re-import fact-checks a draft. All records are invented fixtures.
+- [ ] R7-1. Anonymizer under casefile-anon/1 (ledger Q47, Q61): local model finds names and the anchor date only, code
+  replaces, converts dates, re-identifies and checks; identifier check fails closed before anything leaves; restore
+  check after; key only in the matter folder.
+- [ ] R7-2. Brief package (spec §2) and re-import: an anonymized fact package is built, a draft re-imported is
+  re-identified and fact-checked against the case file.
+- [ ] R7-3. Fact identity (round 6 critic 2 M1): wording plus date plus provider; old case files upgraded in place.
+- [ ] R7-4. Binder role edge cases asked of the attorney (Q61); round 6 verifier test gaps S1, S3, S4.
+- [ ] V. Fresh blind verification: every non-deferred R7 item `[x]` with the verifier's own evidence.
