@@ -1,25 +1,12 @@
-# CARD 04-G: Concessions, labels, danger zone
-Tier: LOCAL_REVIEW for concessions and labels; danger zone reviewed by attorney | Output: JSON (schema: concessions) | Temperature: 0
+# Concessions, labels and danger zone
 
-## Your one job
-From the report and earlier findings, list three things.
-
-## 1. Concessions
-Every statement that helps the claimant, word for word: causally related diagnoses, treatment reasonable (to any date), bills reasonable, any rating, restrictions, recommended treatment, positive findings, complaints called consistent or credible. Treatment and bills are separate items.
-
-## 2. Undefined labels
-Terms like "symptom magnification", "non-physiologic", "no objective findings", "resolved". For each, the specific findings the report gives. If none: write the pages searched in `none_stated_pages`.
-
-## 3. Danger zone
-Facts that cut both ways or the defense will rely on: effort or validity concerns, prior conditions, inconsistent histories, findings with another explanation the record mentions, gaps. Each with cite and one line on why not to open it.
-
-## Example
-```json
-{"concessions":[{"type":"treatment_reasonable","quote":"Treatment through 11/21/25 was reasonable and necessary","cite":"Hale report p.9, Op. 4"}],
-"undefined_labels":[{"label":"non-verifiable radicular complaints","cite":"Hale report p.9","supporting_findings":[],"none_stated_pages":"Hale report pp.1-9"}],
-"danger_zone":[{"fact":"Primary care note 12/5/23 records prior low back pain","cite":"(B3 14)","why_not_to_open":"Gives the doctor a prior-condition explanation."}],
-"coverage":"Report pages 1-9 and passes A-F reviewed."}
-```
-
-## Final check
-- Concessions word for word. "None stated" only with pages searched.
+Input: a fact packet with quote, cite and page id per fact and the cited pages, including the report's pages.
+Return only the concessions schema: concessions, undefined_labels and danger_zone arrays.
+Concessions are the report's own words that help the claimant. Keep the nine types:
+causally_related_diagnosis, treatment_reasonable, bills_reasonable, impairment_rating,
+restrictions, recommended_treatment, positive_finding, consistent_or_credible, other.
+Treatment and bills are separate items. Do not turn a prior condition into a concession.
+Undefined labels carry label, quote (the sentence holding it), cite and supporting_findings (quote and cite per finding).
+When the pages state no supporting finding, leave supporting_findings empty. Code names the pages searched.
+Danger items carry quote, cite and why. Keep prior conditions and findings that cut both ways here.
+Every assertion carries its own quote on its cited page. No free-text coverage or missing list.

@@ -120,3 +120,20 @@ def bench_run(matter, config, log, playbook_version, opener=None) -> RunResult:
         failure = (f"gate.truncation: {result.refused[0][1]}; "
                    "not retried: the page must be split")
     return RunResult(candidate, pages_failed, failure, True, uncited)
+
+
+def batches(blocks, budget):
+    """Keep whole UTF-8 blocks in order and refuse a block that cannot fit alone."""
+    result, current, size = [], [], 0
+    for block in blocks:
+        length = model.tokens_at_most(block)
+        if length > budget:
+            raise ValueError(f'page too long for one prompt ({length} bytes, budget {budget} bytes); split the binder')
+        if current and size + length > budget:
+            result.append(current)
+            current, size = [], 0
+        current.append(block)
+        size += length
+    if current:
+        result.append(current)
+    return result

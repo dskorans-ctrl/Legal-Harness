@@ -1,28 +1,18 @@
-# CARD 03-CLIENT: Client hearing testimony prep (one topic)
-Tier: LOCAL_REVIEW | Output: Markdown | Temperature: 0.1
+# CARD 03-CLIENT: Client hearing testimony preparation
 
 ## Your one job
-Write direct examination questions for our client on ONE topic, plus likely cross topics, with the record entries for each.
+Write questions for the requested section from the fact packet and its cited pages.
+Primary is direct examination: open questions, not leading. Cross is likely defense cross.
 
 ## Topics
-Background and work history; the job and its physical demands; the incident; reporting; treatment; current complaints; work status and attempts to work; daily activities.
+Background and work history; the job and its physical demands; the incident; reporting; treatment;
+current complaints; work status and attempts to work; daily activities.
 
-## Format
-```
-## [Topic]
-### Direct (open questions, not leading, unless the attorney says otherwise)
-1. [question]
-   Record on this: [entry summary] (cite; ID)
-### Likely cross
-- [question]
-  Record shows: [entry summary] (cite; ID)
-### Consistency flags
-- [from the consistency check, with both cites]
-```
-Add once, at the end of the last topic, the instruction block: listen to the whole question; pause; answer only what was asked; do not guess; "I don't know" or "I don't remember" only when true; speak to the Hearing Officer; keep answers short.
-
-## Never
-- Never write the client's answer. Never suggest a false, misleading, or minimizing answer.
-
-## Final check
-- Every record line cited. No scripted answers.
+## Answer
+Return only the questions schema: section, questions [{text, cite, quote, note}],
+points_for_our_expert [{text, quote, cite}]. Copy section from the request.
+Every item rests on its own quote from its cited page. Notes may be empty. For conflicting accounts,
+put both cites in the note. Never write the client's answer or suggest a misleading answer.
+The renderer adds consistency flags and the instruction block once, after the questions:
+listen to the whole question; pause; answer only what was asked; do not guess; "I don't know" or
+"I don't remember" only when true; speak to the Hearing Officer; keep answers short.

@@ -1,12 +1,7 @@
-# CARD 02-C-OURDOC: Questions for our doctor (one topic)
-Tier: LOCAL_REVIEW | Output: JSON (schema: questions) | Temperature: 0.1
+# CARD 02-C-OURDOC: Questions for our doctor
 
 ## Your one job
-Write leading questions for our treating or rating doctor on ONE topic, using the doctor's own words.
-
-## You receive
-- Snapshot, doctor name, depo type (discovery or trial preservation), section (primary, cross, or redirect), the topic.
-- The fact sheet for that topic.
+Write leading questions for our treating or rating doctor using the doctor's own words.
 
 ## Topic order for the primary section
 1. Qualifications and treating relationship
@@ -26,19 +21,19 @@ Write leading questions for our treating or rating doctor on ONE topic, using th
 - Topics 7 and 8 are ALWAYS two separate questions. Never combine them. For 8, name the bill memo and list the providers.
 - Cross section: write the question the defense is likely to ask from `danger` facts. In `note`, put what record supports a good answer (with cite), or "NO RECORD SUPPORT FOUND".
 - Redirect section: short leading questions that go back to the record to repair a cross point.
-- Never ask who hired, paid, or retained any doctor. Never use DME or IME.
-- If a needed fact is not in the fact sheet, put it in `missing`. Do not write the question.
 - One fact per question. Every question has a cite.
 
-## Example (primary, topic 7 and 8)
-```json
-{"deponent":"Ana Lee, M.D.","section":"primary","topic":"Treatment and bills",
-"questions":[
-{"text":"Doctor, do you have an opinion, within a reasonable degree of medical probability, whether all of the treatment reflected in the Harbor Orthopaedics and Bayside PT records was reasonable, necessary, and causally related to the February 5, 2025 accident?","cite":"Bill memo p.1; (B1 140-212)","verified":"V","note":""},
-{"text":"And separately, Doctor, as to the bills listed on the bill memo, the charges from Harbor Orthopaedics and Bayside PT, do you have an opinion whether those bills are reasonable and causally related to that same accident?","cite":"Bill memo p.1","verified":"V","note":""}],
-"missing":[],"danger_zone":[],"points_for_our_expert":[],
-"coverage":"Topic 7-8. Facts used: 3. Questions: 2."}
-```
+## Input and answer
+Read the fact packet, its cited pages and labels. Return only the questions schema: section, questions
+({text, cite, quote, note}), points_for_our_expert ({text, quote, cite}). Copy section from the request.
+Every question and expert point rests on a quote on its cited page. Notes may be empty. No missing list.
+When taken_by=us, primary is ours, cross the other side's likely questions, redirect ours after cross.
+When taken_by=defense, primary is theirs, cross ours, redirect theirs. Purpose is discovery or trial.
+Never script a client's answer. Never supply an unsupported assertion.
 
-## Final check
-- Treatment and bills separate. No new medical words. Every question cited.
+For our primary, always ask treatment separately from bills. Treatment wording:
+Doctor, do you have an opinion, within a reasonable degree of medical probability, whether all of the
+treatment reflected in [providers] records was reasonable, necessary, and causally related to the work incident?
+Bills wording: And separately, Doctor, as to the bills themselves, the charges from [every provider in
+the packet], do you have an opinion whether those bills are reasonable and causally related to that
+same work incident? Name the bill memo in this bills question. Keep treatment out of that question.

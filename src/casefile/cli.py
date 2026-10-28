@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 
-from casefile import __version__, bench, doctor, intake, memo_job, playbook, status
+from casefile import __version__, bench, depo, doctor, hearing, intake, memo_job, playbook, report, status
 from casefile.config import ConfigError, load
 
 
@@ -38,6 +38,38 @@ def main() -> int:
         command_parser = subcommands.add_parser(command)
         command_parser.add_argument("--matter", required=True)
         command_parser.add_argument("--config", type=Path)
+    report_parser = subcommands.add_parser("report")
+    report_parser.add_argument("--matter", required=True)
+    report_parser.add_argument("--provider", default="")
+    report_parser.add_argument("--binder", action="append", default=[])
+    report_parser.add_argument("--pages")
+    side = report_parser.add_mutually_exclusive_group(required=True)
+    side.add_argument("--defense", action="store_true")
+    side.add_argument("--ours", action="store_true")
+    report_parser.add_argument("--config", type=Path)
+    depo_parser = subcommands.add_parser("depo")
+    depo_parser.add_argument("--matter", required=True)
+    depo_parser.add_argument("--deponent", choices=tuple(depo.CARD_IDS), required=True)
+    depo_parser.add_argument("--taken-by", choices=("us", "defense"), required=True)
+    depo_parser.add_argument("--purpose", choices=("discovery", "trial"), default="discovery")
+    depo_parser.add_argument("--provider", default="")
+    depo_parser.add_argument("--binder", action="append", default=[])
+    depo_parser.add_argument("--pages")
+    depo_parser.add_argument("--name", default="")
+    depo_parser.add_argument("--when", default="")
+    depo_parser.add_argument("--config", type=Path)
+    hearing_parser = subcommands.add_parser("hearing")
+    hearing_parser.add_argument("--matter", required=True)
+    for part in ("outline", "client", "doctor", "closing"):
+        hearing_parser.add_argument("--" + part, action="store_true")
+    hearing_parser.add_argument("--provider", default="")
+    hearing_parser.add_argument("--binder", action="append", default=[])
+    hearing_parser.add_argument("--pages")
+    hearing_parser.add_argument("--issue", action="append", default=[])
+    hearing_parser.add_argument("--standard")
+    hearing_parser.add_argument("--relief")
+    hearing_parser.add_argument("--when", default="")
+    hearing_parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     if args.command == "version":
         print(f"casefile {__version__}")
@@ -68,6 +100,34 @@ def main() -> int:
             return 2
         job = memo_job if args.command == "memo" else status
         return job.run(config, args.matter, out=sys.stdout, err=sys.stderr)
+    elif args.command == "report":
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"report: cannot run: {exc}", file=sys.stderr)
+            return 2
+        return report.run(config, args.matter, out=sys.stdout, err=sys.stderr,
+                          provider=args.provider, binder=args.binder, selected=args.pages,
+                          defense=args.defense, ours=args.ours)
+    elif args.command == "depo":
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"depo: cannot run: {exc}", file=sys.stderr)
+            return 2
+        return depo.run(config, args.matter, out=sys.stdout, err=sys.stderr, deponent=args.deponent,
+                        taken_by=args.taken_by, purpose=args.purpose, provider=args.provider,
+                        binder=args.binder, selected=args.pages, name=args.name, when=args.when)
+    elif args.command == "hearing":
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"hearing: cannot run: {exc}", file=sys.stderr)
+            return 2
+        return hearing.run(config, args.matter, out=sys.stdout, err=sys.stderr,
+                           outline=args.outline, client=args.client, doctor=args.doctor, closing=args.closing,
+                           provider=args.provider, binder=args.binder, selected=args.pages,
+                           issue=args.issue, standard=args.standard, relief=args.relief, when=args.when)
     elif args.command == "bench":
         return bench.main(args.matters, args.config, args.candidate)
     elif args.command == "config":

@@ -1,0 +1,18 @@
+{
+  "section": "cross",
+  "questions": [
+    {
+      "text": "You reported a lumbar strain in 2019, correct?",
+      "cite": "MED0003",
+      "quote": "Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.",
+      "note": "Review [cite MED0003] and [cite DEF0001]."
+    },
+    {
+      "text": "The history in the report describes a tote of about 60 pounds, correct?",
+      "cite": "DEF0001",
+      "quote": "The examinee reports lifting a tote of about 60 pounds.",
+      "note": "Compare [cite MED0001] and [cite DEF0001]."
+    }
+  ],
+  "points_for_our_expert": []
+}

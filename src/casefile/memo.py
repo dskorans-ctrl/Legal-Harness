@@ -1,12 +1,13 @@
 """Build the interim medical memo from case file evidence (D41)."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
 from docx import Document
 
 from casefile.rules import Finding, Rules
+from casefile.outputs import Paragraph, Run, Section
 
 
 class MemoError(ValueError):
@@ -19,25 +20,6 @@ class OpenItem:
     label: str
     status: str
     reason: str
-
-
-@dataclass(frozen=True)
-class Run:
-    text: str
-    exempt: str = ""
-
-
-@dataclass
-class Paragraph:
-    runs: list[Run]
-    level: int | None = None
-    warning_pages: tuple[str, ...] = ()
-
-
-@dataclass
-class Section:
-    title: str
-    paragraphs: list[Paragraph] = field(default_factory=list)
 
 
 @dataclass

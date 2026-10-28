@@ -1,0 +1,48 @@
+{
+  "section": "primary",
+  "questions": [
+    {
+      "text": "Your report lists Ridgeline Physical Therapy notes among the records reviewed, correct?",
+      "cite": "DEF0001",
+      "quote": "Ridgeline Physical Therapy notes",
+      "note": ""
+    },
+    {
+      "text": "Your report says straight leg raise was negative bilaterally, correct?",
+      "cite": "DEF0002",
+      "quote": "Straight leg raise negative bilaterally.",
+      "note": ""
+    },
+    {
+      "text": "Your report dated 06/20/2025 states no work restrictions are indicated, correct?",
+      "cite": "DEF0003",
+      "quote": "No work restrictions are indicated.",
+      "note": ""
+    },
+    {
+      "text": "Your report states \"The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.\", correct?",
+      "cite": "DEF0003",
+      "quote": "The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.",
+      "note": ""
+    },
+    {
+      "text": "Your report states \"The examinee is at maximum medical improvement as of today's examination.\", correct?",
+      "cite": "DEF0003",
+      "quote": "The examinee is at maximum medical improvement as of today's examination.",
+      "note": ""
+    },
+    {
+      "text": "Your report states \"No further treatment is medically necessary.\", correct?",
+      "cite": "DEF0003",
+      "quote": "No further treatment is medically necessary.",
+      "note": ""
+    }
+  ],
+  "points_for_our_expert": [
+    {
+      "text": "Address the differing straight leg raise findings.",
+      "cite": "MED0007",
+      "quote": "Positive straight leg raise on the left at 45 degrees."
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "elements": [
+    {
+      "element": "treating_relationship",
+      "status": "STATED",
+      "quote": "Patient presents for orthopedic consultation regarding a work injury.",
+      "cite": "MED0007",
+      "absent_note": ""
+    },
+    {
+      "element": "mechanism",
+      "status": "STATED",
+      "quote": "The patient describes the mechanism of injury as lifting a plastic tote from a floor level pallet.",
+      "cite": "MED0007",
+      "absent_note": ""
+    },
+    {
+      "element": "history_prior_conditions",
+      "status": "PARTIAL",
+      "quote": "Patient reports seeking care at Brightwater Family Medicine on 03/14/2025.",
+      "cite": "MED0007",
+      "absent_note": "The consultation names earlier care without a prior-condition history."
+    },
+    {
+      "element": "exam_findings",
+      "status": "STATED",
+      "quote": "Positive straight leg raise on the left at 45 degrees.",
+      "cite": "MED0007",
+      "absent_note": ""
+    },
+    {
+      "element": "imaging_reviewed",
+      "status": "STATED",
+      "quote": "The MRI findings were reviewed during this consultation.",
+      "cite": "MED0007",
+      "absent_note": ""
+    },
+    {
+      "element": "diagnosis",
+      "status": "STATED",
+      "quote": "Impression: L4-L5 disc protrusion with left L5 radiculopathy.",
+      "cite": "MED0007",
+      "absent_note": ""
+    },
+    {
+      "element": "causation",
+      "status": "STATED",
+      "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
+      "cite": "MED0008",
+      "absent_note": ""
+    },
+    {
+      "element": "work_status_restrictions",
+      "status": "STATED",
+      "quote": "Restrictions: sedentary duty, no lifting over 15 pounds, until re-evaluation on 06/20/2025.",
+      "cite": "MED0008",
+      "absent_note": ""
+    },
+    {
+      "element": "mmi",
+      "status": "STATED",
+      "quote": "The patient has not reached maximum medical improvement.",
+      "cite": "MED0008",
+      "absent_note": ""
+    },
+    {
+      "element": "permanency_rating",
+      "status": "PARTIAL",
+      "quote": "The patient has not reached maximum medical improvement.",
+      "cite": "MED0008",
+      "absent_note": "The record gives no permanency rating."
+    },
+    {
+      "element": "future_treatment",
+      "status": "STATED",
+      "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
+      "cite": "MED0008",
+      "absent_note": ""
+    },
+    {
+      "element": "records_reviewed",
+      "status": "STATED",
+      "quote": "The MRI findings were reviewed during this consultation.",
+      "cite": "MED0007",
+      "absent_note": ""
+    }
+  ]
+}
