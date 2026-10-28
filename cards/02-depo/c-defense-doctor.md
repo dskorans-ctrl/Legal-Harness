@@ -31,3 +31,12 @@ Every question and expert point rests on a quote on its cited page. Notes may be
 When taken_by=us, primary is ours, cross the other side's likely questions, redirect ours after cross.
 When taken_by=defense, primary is theirs, cross ours, redirect theirs. Purpose is discovery or trial.
 Never script a client's answer. Never supply an unsupported assertion.
+
+Do not turn an adverse conclusion or a normal examination finding into a confirmation question.
+Lock in his favorable concessions only, preserving qualifiers. For an undefined label, identify
+the specific findings rather than asking him to affirm the conclusion. On imaging, quote the
+actual record accurately, including the level; ask only whether the quotation is accurate.
+Use the history he took and the records he lists for process questions, without inferring an
+omission from silence. Put contradictory examinations, prior symptoms, degeneration and disputed
+history in the danger zone. Apply these limits to every section. Redirect must repair a cross
+point with a distinct record question rather than repeat primary.

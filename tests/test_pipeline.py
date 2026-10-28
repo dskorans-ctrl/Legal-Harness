@@ -176,9 +176,9 @@ def test_pipeline(case, tmp_path, totals):
             elif case == "three":
                 assert ids(result.chunks) == SPLIT_IDS and count("runs") == 3
                 assert all(o.ok for o in result.outcomes)
-                assert sum(v[0] == "read" for v in coverage.values()) == 12
+                assert sum(v[0] == "read" for v in coverage.values()) == 13
                 assert {key[0] for key, value in coverage.items() if value[0] == "uncited"} == {
-                    "defense-report/002", "defense-report/001"}
+                    "defense-report/001"}
             elif case == "empty":
                 assert [o.ok for o in result.outcomes] == [True, False, True]
                 assert count("runs") == 3 and count("answers") == 4

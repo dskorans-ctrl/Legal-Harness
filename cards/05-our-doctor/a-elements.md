@@ -10,3 +10,6 @@ PARTIAL means a related statement is present; quote it and state the missing par
 Omit every element with no statement on the pages. Code computes NOT FOUND from the omitted elements.
 Treatment and bills always remain separate. Preserve temporary or permanent marks and qualifiers.
 Never suggest what the doctor should write. No invented negative quote and no pages_searched field.
+Do not label a permanency rating present from an MMI statement. Do not use a care location as
+prior-condition history. Imaging review alone does not establish a review of other records.
+Omit these elements when the required subject is absent; a related topic is not partial proof.

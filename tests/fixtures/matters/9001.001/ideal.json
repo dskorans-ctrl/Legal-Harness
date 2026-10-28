@@ -247,6 +247,62 @@
       "date": "03/11/2025",
       "category": "employment",
       "provider": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Range of motion (ROM) in the lumbar spine is limited in flexion.",
+      "text": "Range of motion (ROM) in the lumbar spine is limited in flexion.",
+      "date": "06/20/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Theodore Marchetti"
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Strength testing of lower extremities is 5/5 bilaterally.",
+      "text": "Strength testing of lower extremities is 5/5 bilaterally.",
+      "date": "06/20/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Theodore Marchetti"
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Reflexes are 2+ and symmetric in all tested segments.",
+      "text": "Reflexes are 2+ and symmetric in all tested segments.",
+      "date": "06/20/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Theodore Marchetti"
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Sensation is intact to light touch throughout the dermatomes.",
+      "text": "Sensation is intact to light touch throughout the dermatomes.",
+      "date": "06/20/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Theodore Marchetti"
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Straight leg raise negative bilaterally.",
+      "text": "Straight leg raise negative bilaterally.",
+      "date": "06/20/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Theodore Marchetti"
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "No objective findings of radiculopathy on today's examination.",
+      "text": "No objective findings of radiculopathy on today's examination.",
+      "date": "06/20/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Theodore Marchetti"
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "The L4-L5 disc changes are described as degenerative.",
+      "text": "The L4-L5 disc changes are described as degenerative.",
+      "date": "06/20/2025",
+      "category": "imaging_result",
+      "provider": "Dr. Theodore Marchetti"
     }
   ],
   "flags": [

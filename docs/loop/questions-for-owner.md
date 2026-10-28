@@ -392,3 +392,22 @@ ANSWERED 2026-10-28 (owner, ledger Q53): 70 standard commercial API terms with 3
     real matter it must be replaced. Interim: kept as is (the chair cannot tell); the card is a stage 8 card and runs
     no job in round 6.
 ANSWERED 2026-10-28 (owner, ledger Q58): 81 the `classify.md` example caption is invented; kept.
+
+## Held 2026-10-28 (round 6 output critic, round06-critic.md; interim rulings by the chair, pending veto)
+
+82. For a deposition of our own doctor, should the purpose default to trial preservation (testimony read at the
+    hearing) rather than discovery? Interim: as built (no purpose default).
+83. Should the bills question's providers come from the bill memo you supply rather than from the providers the
+    record extraction finds? Interim: extracted providers of our binders only, the defense examiner excluded.
+84. Should the header carry a caption line (claimant v. employer, carrier) as a field you are asked for? Interim: as built (no
+    caption line).
+85. Should the our-doctor primary examination cover more than the firm's two required questions (treatment; bills)
+    by default, following the seed topic order (Q54 item 68)? Interim: as built.
+86. Should hearing facts be filtered per issue (permanency facts under permanency, termination facts under
+    termination) rather than all facts under each issue? Interim: as built.
+87. When we take the deposition of the defense examiner, what should the sections be called (primary is ours,
+    cross theirs, redirect ours)? Interim: as built (the Q54 item 69 reading, reversed).
+ANSWERED 2026-10-28 (owner, ledger Q59): 82 our doctor's deposition is used at the hearing; 83 the bill memo is the
+source of truth for bills; 84 caption line per the owner's five example documents; 85 our doctor testifies to mechanism,
+injury, treatment, records reviewed, opinion, and reasonable, necessary and causally related; 86 only facts bearing on
+each issue, the rest once under "Other facts"; 87 skip (usual case only). 83 to 86 carried to the round 7 brief.

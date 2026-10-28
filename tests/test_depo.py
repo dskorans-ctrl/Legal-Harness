@@ -111,6 +111,8 @@ def test_depo_contract(tmp_path, monkeypatch, row, capsys):
         assert sum(len(r._r.xpath('.//w:br[@w:type="page"]')) for p in doc.paragraphs for r in p.runs)==2
         for title,uses in (('Case outline: our view',('our_case','both')),('Case outline: the defense view',('defense_case','both'))):
             expected=[f for f in cf.facts if any(i['use'] in uses and i['quote']==f.quote and i['cite'] in f.cites for i in data['factsheet']['facts'])]
+            if 'defense view' in title:
+                expected = [f for f in expected if any(pid.startswith('defense-report/') for pid in f.page_ids)]
             actual=[p for p in section(doc,title) if ': "' in p]
             assert len(actual)==len(expected), 'W6 outline included none or danger labels'
         for part,title in zip(depo.SECTIONS,depo.TITLES):
@@ -124,7 +126,7 @@ def test_depo_contract(tmp_path, monkeypatch, row, capsys):
     elif row==1:
         primary=section(doc,'Questions: primary')
         bills=next(p for p in primary if 'as to the bills themselves' in p)
-        assert sum(provider in bills for provider in outputs.providers(cf))==6, 'W6 providers_named differs from 6 of 6'
+        assert sum(provider in bills for provider in outputs.providers(cf))==5, 'W6 providers_named differs from 5 of 5 (defense-only providers excluded)'
         assert not any(p.startswith('Missing:') for p in primary)
         assert not [f for f in outputs.check(depo.render(data,value,cf,loaded.pages,info,open_items=(),playbook_version=book.version,model=cfg.model.name),book.rules,providers=outputs.providers(cf)) if f.severity=='error']
     elif row==3:

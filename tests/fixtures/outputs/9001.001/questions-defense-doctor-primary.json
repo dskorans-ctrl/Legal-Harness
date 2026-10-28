@@ -8,33 +8,33 @@
       "note": ""
     },
     {
-      "text": "Your report says straight leg raise was negative bilaterally, correct?",
+      "text": "What specific findings support the label \"No objective findings of radiculopathy\" in your report?",
       "cite": "DEF0002",
-      "quote": "Straight leg raise negative bilaterally.",
+      "quote": "No objective findings of radiculopathy on today's examination.",
+      "note": "Identify the findings; stop without asking for a medical explanation."
+    },
+    {
+      "text": "Your report dated 06/20/2025 lists an MRI dated 04/18/2025, correct?",
+      "cite": "DEF0002",
+      "quote": "Review of MRI dated 04/18/2025 performed by Dr. Ansgar Velloso-Krantz.",
       "note": ""
     },
     {
-      "text": "Your report dated 06/20/2025 states no work restrictions are indicated, correct?",
-      "cite": "DEF0003",
-      "quote": "No work restrictions are indicated.",
+      "text": "The MRI report reads \"L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.\"; have I quoted that accurately?",
+      "cite": "MED0006",
+      "quote": "L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.",
       "note": ""
     },
     {
-      "text": "Your report states \"The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.\", correct?",
-      "cite": "DEF0003",
-      "quote": "The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.",
+      "text": "The MRI report reads \"Mild degenerative disc disease at L5-S1.\"; have I quoted that accurately?",
+      "cite": "MED0006",
+      "quote": "Mild degenerative disc disease at L5-S1.",
       "note": ""
     },
     {
-      "text": "Your report states \"The examinee is at maximum medical improvement as of today's examination.\", correct?",
-      "cite": "DEF0003",
-      "quote": "The examinee is at maximum medical improvement as of today's examination.",
-      "note": ""
-    },
-    {
-      "text": "Your report states \"No further treatment is medically necessary.\", correct?",
-      "cite": "DEF0003",
-      "quote": "No further treatment is medically necessary.",
+      "text": "Your history records lifting a tote from a floor level pallet to a cart, correct?",
+      "cite": "DEF0001",
+      "quote": "He describes the mechanism of injury as lifting a plastic tote from a floor level pallet to a cart.",
       "note": ""
     }
   ],

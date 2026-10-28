@@ -2,10 +2,10 @@
   "section": "cross",
   "questions": [
     {
-      "text": "The consultation records a positive straight leg raise on the left, correct?",
-      "cite": "MED0007",
-      "quote": "Positive straight leg raise on the left at 45 degrees.",
-      "note": "Compare [cite DEF0002]."
+      "text": "Your report identifies the examination date as 06/20/2025, correct?",
+      "cite": "DEF0001",
+      "quote": "Date of Examination: 06/20/2025",
+      "note": ""
     }
   ],
   "points_for_our_expert": []

@@ -75,7 +75,7 @@ def test_hearing_contract(tmp_path,monkeypatch,row,capsys):
         expected=next(e.rule for e in book.entries if e.id=='billing-memo-first').split('item is: ')[1].split(' When known')[0]
         assert section(doc,'Pre-hearing checklist')[0]==expected, 'W7 starred paragraph wording differs'
         checklist=section(doc,'Pre-hearing checklist')
-        assert checklist[1]=='Totals: not on file; the billing memo is supplied by the attorney (question 28).'
+        assert checklist[1]=='Totals: not on file; the billing memo is supplied by the attorney.'
         exhibits=[p for p in checklist if p.startswith('Exhibits to mark:')]
         assert exhibits==['Exhibits to mark: medical: [cite MED0001] to [cite MED0008] (8 pages)',
                           'Exhibits to mark: employer: [cite EMP0001] to [cite EMP0003] (3 pages)',
@@ -110,13 +110,13 @@ def test_hearing_contract(tmp_path,monkeypatch,row,capsys):
     elif row==6:
         doctor=section(doc,'Doctor preparation')
         for title in ("What the doctor's records say",'Opinions the case needs','Defense report points to be ready for',
-                      'Records the doctor may not have seen: not checked this round (no records audit card runs).',
+                      "Records the doctor may not have seen: review not performed; compare the report's records list with the records on file.",
                       "Conflicts between the doctor's records and other records"):
             assert title in doctor
-        elements=[p for p in doctor[:doctor.index('Gaps')] if any(p.startswith(e+':') for e in outputs.ELEMENTS)]
+        elements=[p for p in doctor[:doctor.index('Gaps')] if any(p.startswith(outputs.human_label(e)+':') for e in outputs.ELEMENTS)]
         assert len(elements)==14
         missing=[p for p in doctor if ': NOT FOUND' in p]
-        assert [p.split(':')[0] for p in missing[:2]]==['treatment_reasonable_necessary_related','bills_reasonable_related']
+        assert [p.split(':')[0] for p in missing[:2]]==['Prior conditions and history','Treatment reasonable, necessary and related']
         assert values['elements'].task=='report' and values['elements'].options['side']=='ours'
     elif row==7:
         closing=section(doc,'Closing outline')

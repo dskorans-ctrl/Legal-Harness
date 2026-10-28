@@ -11,9 +11,9 @@ from conftest import ROOT, write_config
 MATTER = ROOT / "tests" / "fixtures" / "matters" / "9001.001"
 IDEAL = MATTER / "ideal.json"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 model=qwen3.8:27b found=29 of 29 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=qwen3.8:27b found=36 of 36 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 model=qwen3.8:27b found=26 of 29 missed=3 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 model=qwen3.8:27b found=26 of 36 missed=10 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 

@@ -11,7 +11,24 @@
       "label": "No objective findings of radiculopathy",
       "quote": "No objective findings of radiculopathy on today's examination.",
       "cite": "DEF0002",
-      "supporting_findings": []
+      "supporting_findings": [
+        {
+          "quote": "Strength testing of lower extremities is 5/5 bilaterally.",
+          "cite": "DEF0002"
+        },
+        {
+          "quote": "Reflexes are 2+ and symmetric in all tested segments.",
+          "cite": "DEF0002"
+        },
+        {
+          "quote": "Sensation is intact to light touch throughout the dermatomes.",
+          "cite": "DEF0002"
+        },
+        {
+          "quote": "Straight leg raise negative bilaterally.",
+          "cite": "DEF0002"
+        }
+      ]
     }
   ],
   "danger_zone": [

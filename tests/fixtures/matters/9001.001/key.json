@@ -202,6 +202,55 @@
       "quote": "Lumbar strain, likely work related.",
       "text": "The family medicine record assessed a lumbar strain, likely work related.",
       "date": "03/14/2025"
+    },
+    {
+      "id": "F30",
+      "cite": "DEF0002",
+      "quote": "Range of motion (ROM) in the lumbar spine is limited in flexion.",
+      "text": "Range of motion (ROM) in the lumbar spine is limited in flexion.",
+      "date": "06/20/2025"
+    },
+    {
+      "id": "F31",
+      "cite": "DEF0002",
+      "quote": "Strength testing of lower extremities is 5/5 bilaterally.",
+      "text": "Strength testing of lower extremities is 5/5 bilaterally.",
+      "date": "06/20/2025"
+    },
+    {
+      "id": "F32",
+      "cite": "DEF0002",
+      "quote": "Reflexes are 2+ and symmetric in all tested segments.",
+      "text": "Reflexes are 2+ and symmetric in all tested segments.",
+      "date": "06/20/2025"
+    },
+    {
+      "id": "F33",
+      "cite": "DEF0002",
+      "quote": "Sensation is intact to light touch throughout the dermatomes.",
+      "text": "Sensation is intact to light touch throughout the dermatomes.",
+      "date": "06/20/2025"
+    },
+    {
+      "id": "F34",
+      "cite": "DEF0002",
+      "quote": "Straight leg raise negative bilaterally.",
+      "text": "Straight leg raise negative bilaterally.",
+      "date": "06/20/2025"
+    },
+    {
+      "id": "F35",
+      "cite": "DEF0002",
+      "quote": "No objective findings of radiculopathy on today's examination.",
+      "text": "No objective findings of radiculopathy on today's examination.",
+      "date": "06/20/2025"
+    },
+    {
+      "id": "F36",
+      "cite": "DEF0002",
+      "quote": "The L4-L5 disc changes are described as degenerative.",
+      "text": "The L4-L5 disc changes are described as degenerative.",
+      "date": "06/20/2025"
     }
   ],
   "flags": [

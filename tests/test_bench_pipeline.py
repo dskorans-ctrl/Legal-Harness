@@ -18,7 +18,7 @@ from fakemodel.core import FakeModel, FakeTransport
 
 
 MATTER = ROOT / "tests/fixtures/matters/9001.001"
-PERFECT = ("bench 9001.001 model=qwen3.8:27b found=29 of 29 missed=0 invented=0 extra=2 dates_wrong=0 "
+PERFECT = ("bench 9001.001 model=qwen3.8:27b found=36 of 36 missed=0 invented=0 extra=2 dates_wrong=0 "
            "flags=9 of 9 flags_missed=0 flags_extra=0 rules=0 pages_failed=0 of 14")
 MODES = (
     ("replay", 0, None, ("ok",)),
@@ -202,7 +202,7 @@ def split_setup(monkeypatch, *, repeated=False, duplicate=False):
     card = split_card(extract.card())
     monkeypatch.setattr(pipeline.extract, "card", lambda book=None: card)
     ideal = json.loads((MATTER / "ideal.json").read_text(encoding="utf-8"))
-    quote = ideal["facts"][0]["quote"]
+    quote = ideal["facts"][1]["quote"]
     if repeated:
         pages = list(loaded.pages)
         pages[5] = replace(pages[5], text=pages[5].text + "\n" + quote)
@@ -234,10 +234,10 @@ def test_bench_chunks(tmp_path, monkeypatch, capsys):
     with capsys.disabled():
         print(f"bench_chunks=3 found={score.found} of {score.key_total} flags={score.flags_found} "
               f"of {score.flags_total} runs=+{count} uncited={len(result.uncited)}")
-    assert (score.found, score.key_total, score.flags_found, score.flags_total, count) == (29, 29, 5, 9, 3)
+    assert (score.found, score.key_total, score.flags_found, score.flags_total, count) == (36, 36, 5, 9, 3)
     assert "  flags_missed: G1 G3 G6 G9" in score.details()
     assert result.pages_failed == 0 and result.failure is None
-    assert result.uncited == ("DEF0001", "DEF0002"), "split coverage must retain every uncited page"
+    assert result.uncited == ("DEF0001",), "split coverage must retain every uncited page"
 
 
 @pytest.mark.parametrize("duplicate", (False, True), ids=("second_page", "same_page_duplicate"))
@@ -250,7 +250,7 @@ def test_merge_identity(tmp_path, monkeypatch, duplicate):
     score = benchscore.score(key, result.candidate, loaded, playbook.load(cfg.paths.playbook).rules, 0)
     assert score.extra == 3, f"merged extra={score.extra}, expected 3 for one new page cite"
     found = [fact for fact in result.candidate.facts if fact.quote == quote]
-    first_reading = json.loads((MATTER / "ideal.json").read_text(encoding="utf-8"))["facts"][0]["text"]
+    first_reading = json.loads((MATTER / "ideal.json").read_text(encoding="utf-8"))["facts"][1]["text"]
     assert [(fact.cite, fact.text) for fact in found] == [("MED0001", first_reading), ("MED0006", first_reading)], (
         "merged fact must retain two cites and use its first reading for both")
 

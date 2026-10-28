@@ -70,9 +70,7 @@ def _closing_answer(casefile, pages, info, defense_ids):
             continue
         result.extend(outputs.p("Model's reading: " + text) for text in flag.abouts)
         pairs = sorted(zip(flag.page_ids, flag.cites), key=lambda pair: pair[0] not in defense_ids)
-        for pid, cite in pairs:
-            result.append(outputs.Paragraph([outputs.Run('From '), outputs.cite(cite), outputs.Run(':')]))
-            result.extend(outputs.evidence(dict(quote=f.quote, cite=cite)) for f in casefile.facts if pid in f.page_ids)
+        result.extend(outputs.conflict_quotes(casefile, flag, pairs))
     return result or [outputs.p('none')]
 
 
@@ -83,14 +81,14 @@ def render(answers, packets, casefile, pages, info, *, open_items, playbook_vers
     header = outputs.header(header_info, base.matter, 'hearing')
     header.extend(outputs.page_warning(pages))
     header.append(outputs.build_line(casefile, playbook_version, model))
-    checklist = [outputs.p(STARRED), outputs.p('Totals: not on file; the billing memo is supplied by the attorney (question 28).')]
+    checklist = [outputs.p(STARRED), outputs.p('Totals: not on file; the billing memo is supplied by the attorney.')]
     for binder in dict.fromkeys(p.binder for p in pages):
         entries = [p for p in pages if p.binder == binder]
         first, last = (p.stamps[0] if p.stamps else p.page_id for p in (entries[0], entries[-1]))
         checklist.append(outputs.Paragraph([outputs.Run('Exhibits to mark: '), outputs.Run(binder, exempt='binder'),
             outputs.Run(': '), outputs.cite(first), outputs.Run(' to '), outputs.cite(last),
             outputs.Run(f' ({len(entries)} pages)')]))
-    checklist.extend(outputs.p(text) for text in ('Deposition transcripts to submit: none on file (transcripts are stage 8).',
+    checklist.extend(outputs.p(text) for text in ('Deposition transcripts to submit: none on file.',
                      'Witness availability: not on file.', 'Stipulations: none on file.'))
     sections = [outputs.Section('Pre-hearing checklist', checklist)]
     extra = outputs.needed(header_info, pages)
@@ -117,9 +115,9 @@ def render(answers, packets, casefile, pages, info, *, open_items, playbook_vers
                 paragraphs.append(outputs.failure('Issue: ' + issue, failures.get(key)))
             paragraphs += [outputs.p('Issue: ' + issue, level=2), outputs.p('Standard: ' + (choices['standard'] or 'STANDARD NEEDED')),
                            outputs.p('Our key facts', level=3)]
-            paragraphs.extend(outputs.grouped(outputs.labelled_facts(answer, casefile, ('our_case','both')), pages))
+            paragraphs.extend(outputs.grouped(outputs.labelled_facts(answer, casefile, ('our_case','both')), pages, level=4))
             paragraphs += [outputs.p('Deposition designations: none on file.'), outputs.p('Defense position', level=3)]
-            paragraphs.extend(outputs.grouped(outputs.labelled_facts(answer, casefile, ('defense_case','both')), pages))
+            paragraphs.extend(outputs.grouped(outputs.role_facts(outputs.labelled_facts(answer, casefile, ('defense_case','both')), pages, info, 'defense'), pages, level=4))
             paragraphs.append(outputs.p('Conflicts', level=3))
             paragraphs.extend(outputs.conflicts(casefile, pages, info,
                               predicate=lambda flag: bool(set(flag.page_ids) & defense_ids)))
@@ -143,7 +141,7 @@ def render(answers, packets, casefile, pages, info, *, open_items, playbook_vers
         own = packets['elements']
         ids = set(own.options['report_pages'])
         records = [f for f in casefile.facts if set(f.page_ids) & ids]
-        paragraphs = [outputs.p("What the doctor's records say", level=2), *outputs.grouped(records, own.pages),
+        paragraphs = [outputs.p("What the doctor's records say", level=2), *outputs.grouped(records, own.pages, level=3),
                       outputs.p('Opinions the case needs', level=2)]
         elements, gaps, _ = outputs.elements(answers.get('elements'), own.pages,
                                title='Opinions the case needs', reason=failures.get('elements'))
@@ -152,16 +150,17 @@ def render(answers, packets, casefile, pages, info, *, open_items, playbook_vers
                        outputs.p('Defense report points to be ready for', level=2)]
         defense_opinions = [f for f in casefile.facts if f.category in outputs.GROUPS['Opinions']
                            and set(f.page_ids) & defense_ids]
+        seen = set()
         for fact in defense_opinions:
             paragraphs.extend(outputs.fact_paragraphs(fact, pages))
             paragraphs.extend(outputs.conflicts(casefile, pages, info,
-                              predicate=lambda flag: bool(set(flag.page_ids) & set(fact.page_ids))))
+                              predicate=lambda flag: bool(set(flag.page_ids) & set(fact.page_ids)), seen=seen))
         if not defense_opinions:
             paragraphs.append(outputs.p('none'))
-        paragraphs += [outputs.p('Records the doctor may not have seen: not checked this round (no records audit card runs).'),
+        paragraphs += [outputs.p("Records the doctor may not have seen: review not performed; compare the report's records list with the records on file."),
                        outputs.p("Conflicts between the doctor's records and other records", level=2)]
         paragraphs.extend(outputs.conflicts(casefile, pages, info,
-                          predicate=lambda flag: bool(set(flag.page_ids) & ids)))
+                          predicate=lambda flag: bool(set(flag.page_ids) & ids), seen=seen))
         sections.append(outputs.Section('Doctor preparation', paragraphs))
     if parts['closing']:
         paragraphs = [] if issues else [outputs.p(missing)]
@@ -170,12 +169,15 @@ def render(answers, packets, casefile, pages, info, *, open_items, playbook_vers
             answer = answers.get(key)
             if answer is None:
                 paragraphs.append(outputs.failure('Closing: ' + issue, failures.get(key)))
+            ranked = bool((answer or {}).get('facts'))
+            strongest = (outputs.labelled_facts(answer, casefile, ('our_case',)) if ranked else casefile.facts)
+            strongest = outputs.role_facts(strongest, pages, info, 'ours')
             paragraphs += [outputs.p('Issue: ' + issue, level=2), outputs.p('Standard: ' + (choices['standard'] or 'STANDARD NEEDED')),
-                           outputs.p('Our strongest facts', level=3)]
-            for fact in _chronological(outputs.labelled_facts(answer, casefile, ('our_case','both')), pages):
+                           outputs.p('Our strongest facts' if ranked else 'Facts (not ranked)', level=3)]
+            for fact in _chronological(strongest, pages):
                 paragraphs.extend(outputs.fact_paragraphs(fact, pages))
             paragraphs.append(outputs.p('Defense says', level=3))
-            for fact in outputs.labelled_facts(answer, casefile, ('defense_case',)):
+            for fact in outputs.role_facts(outputs.labelled_facts(answer, casefile, ('defense_case', 'both')), pages, info, 'defense'):
                 paragraphs.extend(outputs.fact_paragraphs(fact, pages))
             paragraphs += [outputs.p('Our answer', level=3), *_closing_answer(casefile, pages, info, defense_ids),
                            outputs.p('Relief requested: ' + (choices['relief'] or 'RELIEF NEEDED')),

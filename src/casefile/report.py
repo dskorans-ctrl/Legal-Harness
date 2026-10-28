@@ -33,7 +33,12 @@ def render(answers, packet, casefile, pages, info, *, open_items, playbook_versi
         outputs.Run('Report page: '), outputs.cite(page.stamps[0] if page.stamps else page.page_id),
         outputs.Run(': ' + ('open' if any(item.page_id == page.page_id for item in open_items) else 'read'))])
         for page in own_pages])
-    sections = [coverage, outputs.Section('What the report states', outputs.grouped(records, own_pages)),
+    statements = outputs.grouped(records, own_pages)
+    for page in own_pages:
+        if not any(page.page_id in f.page_ids for f in records):
+            value = page.stamps[0] if page.stamps else page.page_id
+            statements.append(outputs.p(f'On page {value}, the model returned no item; read the page.'))
+    sections = [coverage, outputs.Section('What the report states', statements),
                 outputs.Section('Conflicts with other records', outputs.conflicts(
                     casefile, pages, info, predicate=lambda flag: bool(set(flag.page_ids) & ids)))]
     failed, extra = [], outputs.needed(info, pages)
@@ -51,23 +56,33 @@ def render(answers, packet, casefile, pages, info, *, open_items, playbook_versi
         if answer is None:
             concessions.paragraphs.append(outputs.failure(concessions.title, reason))
         else:
+            searched = [page for page in own_pages if page.page_id in
+                        answer.get('searched_pages', [p.page_id for p in own_pages])]
+            searched_labels = ', '.join(page.stamps[0] if page.stamps else page.page_id for page in searched) or 'none'
+            for field, section in (('concessions', concessions), ('undefined_labels', labels), ('danger_zone', danger)):
+                if not answer[field]:
+                    section.paragraphs.append(outputs.p('The model returned no item on report pages sent: '
+                        + searched_labels + '; read the pages before treating this as an absence.'))
             for item in answer['concessions']:
-                concessions.paragraphs.append(outputs.evidence(item, item['type'] + ': '))
-                topics.paragraphs.append(outputs.evidence(item, item['type'] + ': '))
+                concessions.paragraphs.append(outputs.evidence(item, outputs.human_label(item['type']) + ': '))
+                topics.paragraphs.append(outputs.evidence(item, outputs.human_label(item['type']) + ': '))
             for item in answer['undefined_labels']:
                 labels.paragraphs += [outputs.p("Model's note: " + item['label']), outputs.evidence(item)]
                 labels.paragraphs.append(outputs.p('Findings the report gives:'))
                 labels.paragraphs.extend(outputs.evidence(finding) for finding in item['supporting_findings'])
                 if not item['supporting_findings']:
-                    labels.paragraphs.append(outputs.p('none stated on the pages sent: ' + ', '.join(
-                        page.stamps[0] if page.stamps else page.page_id for page in own_pages)))
+                    labels.paragraphs.append(outputs.p('The model returned no item for supporting findings on report pages sent: '
+                                                      + searched_labels + '; read the pages.'))
                 topics.paragraphs.append(outputs.evidence(item, "Model's note: " + item['label'] + ': '))
             for item in answer['danger_zone']:
                 danger.paragraphs += [outputs.evidence(item), outputs.note(item['why'])]
         topics.paragraphs.extend(outputs.conflicts(casefile, pages, info,
                                 predicate=lambda flag: bool(set(flag.page_ids) & ids)))
-        topics.paragraphs.append(outputs.p("Records review audit: not built this round; the report's "
-            'records-referenced statements are listed under What the report states for your own comparison.'))
+        if any(f.category == 'records_referenced' for f in records):
+            message = 'Records-referenced statements are listed under What the report states, Records referenced.'
+        else:
+            message = 'No records-referenced item was returned by the model for the report pages; read the records list in the report.'
+        topics.paragraphs.append(outputs.p('Records review audit: not performed. ' + message))
         sections += [concessions, labels, danger, topics]
     else:
         elements, gaps, subjects = outputs.elements(answer, own_pages, reason=reason)

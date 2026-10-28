@@ -15,13 +15,6 @@
       "absent_note": ""
     },
     {
-      "element": "history_prior_conditions",
-      "status": "PARTIAL",
-      "quote": "Patient reports seeking care at Brightwater Family Medicine on 03/14/2025.",
-      "cite": "MED0007",
-      "absent_note": "The consultation names earlier care without a prior-condition history."
-    },
-    {
       "element": "exam_findings",
       "status": "STATED",
       "quote": "Positive straight leg raise on the left at 45 degrees.",
@@ -64,24 +57,10 @@
       "absent_note": ""
     },
     {
-      "element": "permanency_rating",
-      "status": "PARTIAL",
-      "quote": "The patient has not reached maximum medical improvement.",
-      "cite": "MED0008",
-      "absent_note": "The record gives no permanency rating."
-    },
-    {
       "element": "future_treatment",
       "status": "STATED",
       "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
       "cite": "MED0008",
-      "absent_note": ""
-    },
-    {
-      "element": "records_reviewed",
-      "status": "STATED",
-      "quote": "The MRI findings were reviewed during this consultation.",
-      "cite": "MED0007",
       "absent_note": ""
     }
   ]

@@ -897,3 +897,32 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   trace and M1 and M2 by probe (M1: fee questions to the examiner pass since the Q59 exemption, a regression). Rulings
   in `docs/loop/round-06/round06-code-review.md`; fix cycle 1 (Codex) carries H1, H2, M1 to M5, L1 to L6, L8 to L10; L7
   recorded limit. M2 ruling (IME and unseparated DME count as defense) pending owner veto.
+- 8b output critic (fresh Opus, 2026-10-28): `OUTPUT CRITIC 5/10 · high 4 · med 9 · low 8`
+  (`docs/loop/round-06/round06-critic.md`); 479 quotes checked on their cited pages, none off; no DME or IME wording.
+  Chair reproduced H1 to H4 in the documents. Root of H3, H4: the answer key holds no fact on DEF0002 (exam findings), a
+  key gap since round 2; ruled a deliberate fixture and baseline move. Practice in recorded answers (H1, M6 to M8, L4,
+  L5) is rewritten from the skill; recorded limit: no code gate judges question quality. L8 rejected by owner Q54
+  item 68. Owner questions 82 to 87 held with as-built interims. Fix cycle 2 (Codex) carries the rest plus A1.
+- Chair ruling withdrawn (2026-10-28, after fix cycle 2): critic L7 ruling "a fact's date must appear in its quote" was
+  wrong. Measured on the rebuilt key: MED0008's 05/09/2025 causation opinion was re-dated 03/11/2025 (the accident date
+  it cites), MED0003's restrictions 04/11/2025 and MED0008's restrictions 06/20/2025 (dates they refer to); the flawed
+  candidate's `dates_wrong` rose 1 -> 7 from these, not from deliberate faults. A treatment chronology runs by the date
+  of the record. Ruled: restore the round 6 W2 rule (a fact's date is a date written on its cited page; the key's dates
+  are the record's date of service), revert the L7 gate change and every key and ideal date it moved, keep the DEF0002
+  facts dated 06/20/2025, and restore flawed `dates_wrong=1`. The critic's L7 (a hire date fact filed under the
+  report's 03/11/2025) is acceptable under that rule: the chronology heading says entries run by the date of the record.
+  Adjacent A2 (re-extraction cannot correct a stored date): recorded limit.
+- Q59: output critic questions 82 to 87 (owner, 2026-10-28) -> 82: our doctor's deposition is used at the hearing
+  (testimony preserved for the hearing); the firm has a skill for preparing our doctor for that deposition. 83: the
+  bill memo is the source of truth for bills (bills-question providers come from the attorney's bill memo, not from
+  extraction; matches the standing memory "billing memo supplied by attorney"). 84: add a caption line, following five
+  example final documents the owner uploaded (real work product; the owner waived the no-client-data rule for reading
+  those five files in this session only; no name, date or fact from them enters the repo, the ledger, a fixture or a
+  card; a format specification with placeholders is distilled from them). 85: our doctor must testify to the mechanism
+  of injury, the injury itself, treatment for the injury, the records reviewed, the opinion on the injury and whether
+  the treatment was reasonable, necessary and causally related, etc.; this is the our-doctor primary examination.
+  86: each hearing issue section lists only the facts that bear on that issue; facts that fit no issue go once under
+  "Other facts". 87: skip; the usual case only (the defense takes its own doctor's deposition and we cross); if we
+  notice it, the same sections with a note.
+  Chair: the fix-cycle cap (three) is reached in round 6; 83, 84, 85 and 86 are new output content and go to the round 7
+  brief with the format specification, not into round 6 (pending the owner's say-so at the close check-in).

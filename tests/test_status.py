@@ -58,11 +58,11 @@ def test_status_six_cases(tmp_path, monkeypatch, capsys, totals):
     assert code == 1, "memo with open items must exit=1"
     assert error == ""
     assert line.splitlines()[0] == (
-        "memo 9001.001 chunks=1 runs=+1 read=13 open=1 facts=31 conflicts=5 gaps=4 "
-        f"new_facts=31 new_flags=9 memo={folder / 'outputs/memo.docx'}")
+        "memo 9001.001 chunks=1 runs=+1 read=13 open=1 facts=37 conflicts=5 gaps=4 "
+        f"new_facts=37 new_flags=9 memo={folder / 'outputs/memo.docx'}")
     current = status.matter_status(settings, "9001.001")
     current_ok = {key: value for key, value in current.items() if key != "open_items"} == dict(
-        pages=14, read=13, failed=0, uncited=1, empty=0, open=1, facts=31,
+        pages=14, read=13, failed=0, uncited=1, empty=0, open=1, facts=37,
         conflicts=5, gaps=4, outputs="memo:current")
     opened = "  open: DEF0001 (defense-report/001): uncited: no fact or flag cites defense-report/001"
     assert line.splitlines()[1:] == [opened], "open label lost its stamp or page ID"
@@ -80,7 +80,7 @@ def test_status_six_cases(tmp_path, monkeypatch, capsys, totals):
     assert failed_code == 1 and failed_error == ""
     assert len(bad.requests) == 2
     stored = facts.load(folder / "casefile.jsonl")
-    assert len(stored.facts) == 31, "failed outcome added fact events"
+    assert len(stored.facts) == 37, "failed outcome added fact events"
     assert stored.runs[-1]["ok"] is False and stored.runs[-1]["failed"] == ["defense-report/001"]
     assert "new_facts=0 new_flags=0" in failed_line
     output = folder / "outputs/memo.docx"
@@ -97,7 +97,7 @@ def test_status_six_cases(tmp_path, monkeypatch, capsys, totals):
     printed = capsys.readouterr()
     assert printed.err == ""
     assert printed.out.splitlines()[0] == (
-        "status 9001.001 pages=14 read=13 failed=1 uncited=0 empty=0 open=1 facts=32 "
+        "status 9001.001 pages=14 read=13 failed=1 uncited=0 empty=0 open=1 facts=38 "
         "conflicts=5 gaps=4 outputs=memo:stale")
     assert printed.out.splitlines()[1].startswith("  open: DEF0001 (defense-report/001): failed: gate.schema:")
     monkeypatch.setattr(sys, "argv", ["casefile", "status", "--matter", "9009.001", "--config", str(config_path)])
@@ -117,6 +117,7 @@ def test_binder_shown(tmp_path, totals):
     (folder / "records/medical").rename(folder / "records/ime")
     loaded = matter.load(folder)
     answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
+    answer['facts'][0]['date'] = ''
     transport = FakeTransport(FakeModel(recordings=[recording_for(extract.card(), loaded.pages, loaded.number, answer)]))
     code, _, error = invoke(settings, transport)
     assert code == 1 and not error, f"binder_shown=0: {error}"
@@ -165,14 +166,14 @@ def test_no_unread_pages_calls_no_model_and_exits_zero(tmp_path):
     loaded = matter.load(folder)
     answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
     answer["facts"].append(dict(cite="DEF0001", quote="The examinee reports lifting a tote of about 60 pounds.",
-                                text="The examinee reports lifting a tote of about 60 pounds.", date="06/20/2025", category="patient_statement", provider="Dr. Theodore Marchetti"))
+                                text="The examinee reports lifting a tote of about 60 pounds.", date="", category="patient_statement", provider="Dr. Theodore Marchetti"))
     transport = FakeTransport(FakeModel(recordings=[recording_for(extract.card(), loaded.pages, "9001.001", answer)]))
     assert invoke(settings, transport)[0] == 0
     before = len(transport.requests)
     code, line, error = invoke(settings, transport)
     assert code == 0 and error == ""
     assert len(transport.requests) == before, "read pages sent again"
-    assert "chunks=0 runs=+0 read=14 open=0 facts=32" in line
+    assert "chunks=0 runs=+0 read=14 open=0 facts=38" in line
     assert "new_facts=0 new_flags=0" in line
     assert len(facts.load(folder / "casefile.jsonl").outputs) == 2
 

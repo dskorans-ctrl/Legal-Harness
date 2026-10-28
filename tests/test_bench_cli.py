@@ -14,9 +14,9 @@ from conftest import ROOT, write_config
 MATTERS = ROOT / "tests" / "fixtures" / "matters"
 MATTER = MATTERS / "9001.001"
 FLAWED = ROOT / "tests" / "fixtures" / "bench" / "flawed.json"
-PERFECT = ("bench 9001.001 model=candidate found=29 of 29 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
+PERFECT = ("bench 9001.001 model=candidate found=36 of 36 missed=0 invented=0 extra=2 dates_wrong=0 flags=9 of 9 flags_missed=0 "
            "flags_extra=0 rules=0 pages_failed=0 of 14")
-FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 "
+FLAWED_LINE = ("bench 9001.001 model=candidate found=26 of 36 missed=10 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1 "
                "flags_extra=1 rules=1 pages_failed=0 of 14")
 
 def bench(config, *args):
@@ -137,7 +137,7 @@ def test_bench_received_404_stays_exit1(tmp_path, capsys):
     assert err == ""
     assert lines[0] == ("bench 9001.001 failure gate.model: status=404: fakemodel: unknown model; "
                         "not retried: the one retry was used")
-    assert lines[1] == ("bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 dates_wrong=0 "
+    assert lines[1] == ("bench 9001.001 model=qwen3.8:27b found=0 of 36 missed=36 invented=0 extra=0 dates_wrong=0 "
                         "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14")
     assert lines[-1] == "bench matters=1 imperfect=1"
 
@@ -159,7 +159,7 @@ def test_bench_received_bad_answer_stays_exit1(tmp_path, capsys):
     assert (code, err) == (1, "")
     assert lines[0] == ("bench 9001.001 failure gate.truncation: the answer stopped before it finished "
                         "(done_reason=length); not retried: the one retry was used")
-    assert lines[1] == ("bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 dates_wrong=0 "
+    assert lines[1] == ("bench 9001.001 model=qwen3.8:27b found=0 of 36 missed=36 invented=0 extra=0 dates_wrong=0 "
                         "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14")
 
 
@@ -177,9 +177,9 @@ def test_bench_prompt_too_long_stays_exit1(tmp_path, capsys):
         'the prompt is longer than the context length currently available to the model; '
         'shorten the prompt, adjust the context length in settings, or use a model ...; '
         'not retried: the prompt was too long; the chunk must be made smaller',
-        "bench 9001.001 model=qwen3.8:27b found=0 of 29 missed=29 invented=0 extra=0 dates_wrong=0 "
+        "bench 9001.001 model=qwen3.8:27b found=0 of 36 missed=36 invented=0 extra=0 dates_wrong=0 "
         "flags=0 of 9 flags_missed=9 flags_extra=0 rules=0 pages_failed=14 of 14",
-        "  missed: " + " ".join(f"F{i:02}" for i in range(1, 30)),
+        "  missed: " + " ".join(f"F{i:02}" for i in range(1, 37)),
         "  flags_missed: G1 G2 G3 G4 G5 G6 G7 G8 G9",
         "bench matters=1 imperfect=1",
     ]

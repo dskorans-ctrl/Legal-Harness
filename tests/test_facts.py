@@ -127,16 +127,16 @@ def ideal_merge(path):
     pages = matter.load(FIXTURE).pages
     answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
     events = facts.merge(facts.CaseFile(), answer, pages, 7)
-    assert sum(event.kind == "fact" for event in events) == 31
+    assert sum(event.kind == "fact" for event in events) == 37
     assert sum(event.kind == "flag" for event in events) == 9
     stored = facts.append(path, events)
-    assert len(stored.facts) == 31 and len(stored.flags) == 9 and stored.last_seq == 40
+    assert len(stored.facts) == 37 and len(stored.flags) == 9 and stored.last_seq == 48
     assert stored.flags[0].page_ids == ["medical/001", "employer/001"], "G1 pages were not resolved"
     known = {page.page_id for page in pages}
     assert all(set(record.page_ids) <= known for record in [*stored.facts, *stored.flags])
     assert all(event.payload["run_id"] == 7 for event in stored.events)
-    assert [event.payload["id"] for event in events] == [
-        *[f"F{seq}" for seq in range(1, 32)], *[f"G{seq}" for seq in range(32, 41)]]
+    assert [event.payload["id"] for event in events if event.kind in ("fact", "flag")] == [
+        *[f"F{seq}" for seq in range(1, 36)], "F38", "F39", *[f"G{seq}" for seq in range(40, 49)]]
 
 
 def repeat_merge(path):

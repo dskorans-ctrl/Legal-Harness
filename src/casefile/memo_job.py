@@ -69,6 +69,7 @@ def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, 
     temporary = output.with_name("memo.docx.tmp")
     if temporary.is_symlink() or temporary.exists():
         raise memo.MemoError(f"cannot write memo: temporary output already exists: {temporary}")
+    previous = output.read_bytes() if output.exists() else None
     try:
         memo.render(document, temporary, rules=book.rules)
         rendered = Document(temporary)
@@ -82,9 +83,8 @@ def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, 
     finally:
         temporary.unlink(missing_ok=True)
     changes = casefile.changed_since(before)
-    casefile = facts.append(path, [facts.Event("output", dict(name="memo", path=str(output),
-        built_from_seq=casefile.last_seq, facts=counts["facts"], conflicts=counts["conflicts"],
-        gaps=counts["gaps"], open=counts["open"]))])
+    casefile = outputs.record_output(folder, "memo", output, casefile, counts, previous=previous)
+    (output.parent / 'memo.partial.docx').unlink(missing_ok=True)
     print(f'memo {number} chunks={len(chunks)} runs=+{runs} read={counts["read"]} '
           f'open={counts["open"]} facts={counts["facts"]} conflicts={counts["conflicts"]} '
           f'gaps={counts["gaps"]} new_facts={changes["fact"]} new_flags={changes["flag"]} '

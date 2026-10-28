@@ -1,7 +1,7 @@
 """Shared checked document primitives and fixed output job steps."""
 
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 import fcntl
 import os
@@ -64,6 +64,20 @@ ELEMENTS = ('treating_relationship', 'mechanism', 'history_prior_conditions', 'e
             'bills_reasonable_related', 'work_status_restrictions', 'mmi', 'permanency_rating',
             'future_treatment', 'records_reviewed')
 
+LABELS = {
+    'history_prior_conditions': 'Prior conditions and history',
+    'treatment_reasonable_necessary_related': 'Treatment reasonable, necessary and related',
+    'bills_reasonable_related': 'Bills reasonable and related',
+    'work_status_restrictions': 'Work status and restrictions',
+    'mmi': 'Maximum medical improvement',
+    'mmi_statement': 'Maximum medical improvement',
+    'positive_finding': 'Positive finding',
+}
+
+
+def human_label(value):
+    return LABELS.get(value, value.replace('_', ' ').capitalize())
+
 
 def p(text, **kwargs):
     return Paragraph([Run(text)], **kwargs)
@@ -88,7 +102,8 @@ def header(info, matter, kind, *, when='', deponent=''):
                        ('iab_hearing_number', 'IAB hearing number'), ('hearing_date', 'Hearing date')):
         result.append(p(f'{label}: {getattr(info, key) or "NEEDED"}'))
     if kind == 'depo':
-        result.append(p(f'Deposition of {deponent or "NEEDED"}, {when or "NEEDED"}'))
+        result.append(p(f'Deposition of: {deponent or "NEEDED (doctor\'s name)"}'))
+        result.append(p(f'Deposition date and time: {when or "NEEDED"}'))
     result.append(p(f'Matter {matter}'))
     return result
 
@@ -167,6 +182,13 @@ def providers(casefile):
     return tuple(dict.fromkeys(value for fact in casefile.facts for value in fact.providers if value))
 
 
+def bills_providers(casefile, pages, info):
+    by_id = {page.page_id: page for page in pages}
+    eligible = {provider for fact in casefile.facts for pid, provider in zip(fact.page_ids, fact.providers)
+                if provider and pid in by_id and roles.role(by_id[pid].binder, info) != 'defense'}
+    return [provider for provider in providers(casefile) if provider in eligible]
+
+
 def publish(folder, name, doc, rules, casefile, counts, *, failed_steps):
     folder = Path(folder)
     directory = folder / 'outputs'
@@ -179,6 +201,7 @@ def publish(folder, name, doc, rules, casefile, counts, *, failed_steps):
         raise OutputError(f'cannot write {name}: output or temporary path is a link or already exists: {temporary}')
     created = not directory.exists()
     owned = False
+    previous = target.read_bytes() if target.exists() else None
     try:
         directory.mkdir(exist_ok=True)
         with temporary.open('xb'):
@@ -192,11 +215,28 @@ def publish(folder, name, doc, rules, casefile, counts, *, failed_steps):
             directory.rmdir()
         raise
     if not failed_steps:
-        casefile = facts.append(folder / 'casefile.jsonl', [facts.Event('output', dict(name=name,
-            path=str(target), built_from_seq=casefile.last_seq, facts=counts['facts'],
-            conflicts=counts['conflicts'], gaps=counts['gaps'], open=counts['open']))])
+        casefile = record_output(folder, name, target, casefile, counts, previous=previous)
         (directory / (name + '.partial.docx')).unlink(missing_ok=True)
     return casefile
+
+
+def record_output(folder, name, target, casefile, counts, *, previous):
+    """On a failed receipt, preserve the candidate as partial and restore the prior publication."""
+    try:
+        return facts.append(Path(folder) / 'casefile.jsonl', [facts.Event('output', dict(name=name,
+            path=str(target), built_from_seq=casefile.last_seq, facts=counts['facts'],
+            conflicts=counts['conflicts'], gaps=counts['gaps'], open=counts['open']))])
+    except BaseException:
+        os.replace(target, target.with_name(name + '.partial.docx'))
+        if previous is not None:
+            temporary = target.with_name(target.name + '.tmp')
+            try:
+                with temporary.open('xb') as stream:
+                    stream.write(previous)
+                os.replace(temporary, target)
+            finally:
+                temporary.unlink(missing_ok=True)
+        raise
 
 
 def provider_pages(casefile, text, *, pages=(), info=None):
@@ -332,34 +372,52 @@ def fact_paragraphs(fact, pages):
     return result
 
 
-def grouped(records, pages):
+def grouped(records, pages, *, level=2):
     result = []
     used = set()
     for title, categories in (*GROUPS.items(), ('Other statements', ())):
         selected = [fact for fact in records if (fact.category in categories if categories else fact.id not in used)]
         if selected:
-            result.append(p(title, level=2))
+            result.append(p(title, level=level))
             for fact in selected:
                 result.extend(fact_paragraphs(fact, pages))
                 used.add(fact.id)
     return result or [p('none')]
 
 
-def conflicts(casefile, pages, info, *, predicate=lambda flag: True):
+def conflict_quotes(casefile, flag, pairs=None):
+    result = []
+    for pid, value in zip(flag.page_ids, flag.cites) if pairs is None else pairs:
+        result.append(Paragraph([Run('From '), cite(value), Run(':')]))
+        own = [f for f in casefile.facts if pid in f.page_ids]
+        other_categories = {f.category for f in casefile.facts
+                            if set(f.page_ids) & (set(flag.page_ids) - {pid})}
+        matching = [f for f in own if f.category in other_categories]
+        if not own:
+            result.append(p(f'No verified fact quoted from {value}; read the page.'))
+        else:
+            if not matching:
+                result.append(p('(all facts on this page)'))
+            result.extend(evidence(dict(quote=f.quote, cite=value)) for f in matching or own)
+    return result
+
+
+def conflicts(casefile, pages, info, *, predicate=lambda flag: True, seen=None):
     by_id = {page.page_id: page for page in pages}
-    selected = [flag for flag in casefile.flags if flag.kind == 'conflict' and predicate(flag)]
+    selected = [flag for flag in casefile.flags if flag.kind == 'conflict' and predicate(flag)
+                and (seen is None or flag.id not in seen)]
     def priority(flag):
         pair = {roles.role(by_id[pid].binder, info) for pid in flag.page_ids if pid in by_id}
         return not {'defense', 'ours'} <= pair
     selected.sort(key=priority)
     result = []
     for flag in selected:
+        if seen is not None:
+            seen.add(flag.id)
         result.append(Paragraph([Run('Conflict between '), *[run for i,c in enumerate(flag.cites)
             for run in ((Run(' and ') if i else Run('')), cite(c))], Run('.')]))
         result.extend(p("Model's reading: " + text) for text in flag.abouts)
-        for pid, value in zip(flag.page_ids, flag.cites):
-            result.append(Paragraph([Run('From '), cite(value), Run(':')]))
-            result.extend(evidence(dict(quote=fact.quote, cite=value)) for fact in casefile.facts if pid in fact.page_ids)
+        result.extend(conflict_quotes(casefile, flag))
     return result or [p('none')]
 
 
@@ -375,18 +433,19 @@ def elements(answer, pages, *, title='Elements', reason=None):
     pages = tuple(page for page in pages if page.page_id in answer.get('searched_pages', [p.page_id for p in pages]))
     labels = ', '.join(page.stamps[0] if page.stamps else page.page_id for page in pages)
     for name in ELEMENTS:
+        label = human_label(name)
         item = found.get(name)
         if item is None:
-            paragraph = Paragraph([Run(name + ': NOT FOUND on pages '), *[run for i,page in enumerate(pages)
+            paragraph = Paragraph([Run(label + ': NOT FOUND on pages '), *[run for i,page in enumerate(pages)
                 for run in (Run(', ' if i else ''), cite(page.stamps[0] if page.stamps else page.page_id))]])
         else:
-            paragraph = evidence(item, name + ': ' + item['status'] + ': ')
+            paragraph = evidence(item, label + ': ' + item['status'] + ': ')
         section.paragraphs.append(paragraph)
         if item and item['absent_note']:
             section.paragraphs.append(note(item['absent_note']))
         if item is None or item['status'] == 'PARTIAL':
             gaps.paragraphs.append(paragraph)
-            subjects.paragraphs.append(p(name))
+            subjects.paragraphs.append(p(label))
     if not labels:
         gaps.paragraphs.append(p('No pages sent'))
     return section, gaps, subjects
@@ -397,6 +456,20 @@ def labelled_facts(answer, casefile, uses):
         return []
     return [fact for fact in casefile.facts if any(item['use'] in uses and quotes.same(item['quote'], fact.quote)
             and item['cite'] in (*fact.cites, *fact.page_ids) for item in answer['facts'])]
+
+
+def role_facts(records, pages, info, wanted):
+    ids = {page.page_id for page in pages if roles.role(page.binder, info) == wanted}
+    result = []
+    for fact in records:
+        indexes = [i for i,pid in enumerate(fact.page_ids) if pid in ids]
+        if indexes:
+            readings = [(text, pid) for text,pid in zip(fact.readings, fact.reading_pages) if pid in ids]
+            result.append(replace(fact, page_ids=[fact.page_ids[i] for i in indexes],
+                cites=[fact.cites[i] for i in indexes], dates=[fact.dates[i] for i in indexes],
+                providers=[fact.providers[i] for i in indexes],
+                readings=[text for text,_ in readings], reading_pages=[pid for _,pid in readings]))
+    return result
 
 
 def question_paragraphs(answer, title, *, reason=None, omitted=0, bills_question=False):

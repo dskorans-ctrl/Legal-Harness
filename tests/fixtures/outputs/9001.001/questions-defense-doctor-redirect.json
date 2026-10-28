@@ -2,9 +2,9 @@
   "section": "redirect",
   "questions": [
     {
-      "text": "Your report states no work restrictions are indicated, correct?",
-      "cite": "DEF0003",
-      "quote": "No work restrictions are indicated.",
+      "text": "Your report identifies the MRI reader as Dr. Ansgar Velloso-Krantz, correct?",
+      "cite": "DEF0002",
+      "quote": "Review of MRI dated 04/18/2025 performed by Dr. Ansgar Velloso-Krantz.",
       "note": ""
     }
   ],

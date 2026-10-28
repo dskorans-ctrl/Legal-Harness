@@ -3,14 +3,14 @@
     {
       "cite": "MED0001",
       "quote": "Date of service: 03/11/2025",
-      "use": "our_case",
+      "use": "none",
       "note": ""
     },
     {
       "cite": "MED0001",
       "quote": "Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
-      "use": "our_case",
-      "note": ""
+      "use": "danger",
+      "note": "This is the patient history; compare the employer weight without treating the report as proof."
     },
     {
       "cite": "MED0001",
@@ -21,14 +21,14 @@
     {
       "cite": "MED0001",
       "quote": "Patient denies any prior back injury or back pain.",
-      "use": "our_case",
-      "note": ""
+      "use": "danger",
+      "note": "The denial conflicts with the later history of a prior strain."
     },
     {
       "cite": "MED0002",
       "quote": "Straight leg raise negative bilaterally.",
-      "use": "our_case",
-      "note": ""
+      "use": "danger",
+      "note": "The negative emergency examination can be contrasted with the later positive finding."
     },
     {
       "cite": "MED0002",
@@ -129,13 +129,13 @@
     {
       "cite": "EMP0001",
       "quote": "Employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
-      "use": "our_case",
-      "note": ""
+      "use": "danger",
+      "note": "The employer and emergency histories differ on the tote weight."
     },
     {
       "cite": "EMP0003",
       "quote": "Average weekly wage: $912.40",
-      "use": "our_case",
+      "use": "none",
       "note": ""
     },
     {
@@ -184,6 +184,54 @@
       "cite": "EMP0002",
       "quote": "Lift up to 50 pounds repeatedly during the shift.",
       "use": "our_case",
+      "note": ""
+    },
+    {
+      "cite": "MED0006",
+      "quote": "There is mild degenerative change noted at the lower vertebral levels.",
+      "use": "danger",
+      "note": "Degeneration offers a possible defense explanation; reserve medicine for our expert."
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Range of motion (ROM) in the lumbar spine is limited in flexion.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Strength testing of lower extremities is 5/5 bilaterally.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Reflexes are 2+ and symmetric in all tested segments.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Sensation is intact to light touch throughout the dermatomes.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "Straight leg raise negative bilaterally.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "No objective findings of radiculopathy on today's examination.",
+      "use": "defense_case",
+      "note": ""
+    },
+    {
+      "cite": "DEF0002",
+      "quote": "The L4-L5 disc changes are described as degenerative.",
+      "use": "defense_case",
       "note": ""
     }
   ]

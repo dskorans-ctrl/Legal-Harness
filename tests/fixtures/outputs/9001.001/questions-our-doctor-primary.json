@@ -4,14 +4,14 @@
     {
       "text": "Doctor, do you have an opinion, within a reasonable degree of medical probability, whether all of the treatment reflected in the records was reasonable, necessary, and causally related to the work incident?",
       "cite": "MED0008",
-      "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
-      "note": ""
+      "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
+      "note": "This plan identifies treatment to ask about; it does not establish that all treatment was reasonable, necessary and related."
     },
     {
-      "text": "And separately, Doctor, as to the bills themselves listed on the bill memo, the charges from Fennimore County Hospital, Brightwater Family Medicine, Ridgeline Physical Therapy, Lakeshore Imaging, Dr. Priya Okonkwo-Lind, Dr. Theodore Marchetti, do you have an opinion whether those bills are reasonable and causally related to that same work incident?",
+      "text": "And separately, Doctor, as to the bills themselves listed on the bill memo, the charges from Fennimore County Hospital, Brightwater Family Medicine, Ridgeline Physical Therapy, Lakeshore Imaging, Dr. Priya Okonkwo-Lind, do you have an opinion whether those bills are reasonable and causally related to that same work incident?",
       "cite": "MED0008",
       "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
-      "note": ""
+      "note": "The attorney must supply and confirm the bill memo; this record does not establish the bills opinion."
     }
   ],
   "points_for_our_expert": []

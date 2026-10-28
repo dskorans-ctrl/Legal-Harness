@@ -34,6 +34,11 @@ Never script a client's answer. Never supply an unsupported assertion.
 For our primary, always ask treatment separately from bills. Treatment wording:
 Doctor, do you have an opinion, within a reasonable degree of medical probability, whether all of the
 treatment reflected in [providers] records was reasonable, necessary, and causally related to the work incident?
-Bills wording: And separately, Doctor, as to the bills themselves, the charges from [every provider in
-the packet], do you have an opinion whether those bills are reasonable and causally related to that
+Bills wording: And separately, Doctor, as to the bills themselves, the charges from [bills_providers in
+the packet options], do you have an opinion whether those bills are reasonable and causally related to that
 same work incident? Name the bill memo in this bills question. Keep treatment out of that question.
+Exclude providers whose records are exclusively defense examinations. The attorney must confirm the
+bill memo and its provider list; the case file does not establish which bills are on that memo.
+Anchor treatment to a treatment quote, not merely a causation opinion. If the record only gives a
+plan, say in the note that the plan does not establish reasonableness, necessity and relatedness
+of all treatment. Seek the missing opinion without representing it as already documented.

@@ -16,7 +16,8 @@ def prepare(casefile, pages, book, info, *, number, deponent, taken_by, purpose=
     own = outputs.select_pages(casefile, pages, provider=provider, binder=binder, selected=selected,
                                doctor=deponent.endswith('doctor'), info=info)
     return packet.build(casefile, pages, matter=number, task='depo', options=dict(
-        deponent=deponent, taken_by=taken_by, purpose=purpose, deponent_pages=[p.page_id for p in own]),
+        deponent=deponent, taken_by=taken_by, purpose=purpose, deponent_pages=[p.page_id for p in own],
+        bills_providers=outputs.bills_providers(casefile, pages, info)),
         playbook_version=book.version)
 
 
@@ -37,7 +38,7 @@ def missing_questions(answer, options):
 def render(answers, packet, casefile, pages, info, *, open_items, playbook_version, model):
     options = packet.options
     header = outputs.header(info, packet.matter, 'depo', when=options.get('when', ''),
-                            deponent=options.get('name') or options['deponent'])
+                            deponent=options.get('name', ''))
     header.extend(outputs.page_warning(pages))
     header += [outputs.p('Purpose: ' + options['purpose']), outputs.build_line(casefile, playbook_version, model)]
     labels = answers.get('factsheet')
@@ -46,7 +47,10 @@ def render(answers, packet, casefile, pages, info, *, open_items, playbook_versi
     sections = []
     for title, uses in (('Case outline: our view', ('our_case', 'both')),
                         ('Case outline: the defense view', ('defense_case', 'both'))):
-        paragraphs = (outputs.grouped(outputs.labelled_facts(labels, casefile, uses), pages) if labels is not None
+        records = outputs.labelled_facts(labels, casefile, uses)
+        if title == 'Case outline: the defense view':
+            records = outputs.role_facts(records, pages, info, 'defense')
+        paragraphs = (outputs.grouped(records, pages) if labels is not None
                       else [outputs.failure(title, failures.get('factsheet'))])
         paragraphs.append(outputs.p('', page_break=True))
         sections.append(outputs.Section(title, paragraphs))

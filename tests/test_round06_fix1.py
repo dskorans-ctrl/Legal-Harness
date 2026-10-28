@@ -54,7 +54,7 @@ def test_h2_elements(tmp_path):
     a = dict(element='diagnosis', status='STATED', quote='Normal.', cite='MED0001', absent_note='')
     b = dict(a, status='PARTIAL', absent_note='Some findings absent')
     section, _, _ = outputs.elements({'elements': [a, b]}, loaded.pages)
-    line = next(''.join(r.text for r in p.runs) for p in section.paragraphs if p.runs[0].text.startswith('diagnosis:'))
+    line = next(''.join(r.text for r in p.runs) for p in section.paragraphs if p.runs[0].text.startswith('Diagnosis:'))
     assert 'STATED' in line, 'H2: later partial overwrote stated element'
     scoped, _, _ = outputs.elements({'elements': [], 'searched_pages': [loaded.pages[0].page_id]}, loaded.pages)
     scope = ''.join(r.text for r in scoped.paragraphs[0].runs)
@@ -91,10 +91,10 @@ def test_m3(tmp_path):
 
 def test_m4(tmp_path):
     _, _, _, loaded, cf, _ = setup_case(tmp_path)
-    with pytest.raises(outputs.OutputError, match='ambiguous provider.*Okonkwo-Lind.*Marchetti'):
+    with pytest.raises(outputs.OutputError, match='ambiguous provider.*Marchetti.*Okonkwo-Lind'):
         outputs.provider_pages(cf, 'Dr', pages=loaded.pages)
     assert outputs.provider_pages(cf, 'archett', pages=loaded.pages) == (), 'M4: provider fragment matched'
-    assert outputs.provider_pages(cf, 'Marchetti') == ('defense-report/003',)
+    assert outputs.provider_pages(cf, 'Marchetti') == ('defense-report/002', 'defense-report/003')
     merged = facts.CaseFile(list(cf.events))
     merged.extend([facts.Event('cite', dict(fact=cf.facts[0].id, cite='MED0002', page_id='medical/002', run_id=2, date='', provider=cf.facts[0].providers[0].upper()))])
     try:

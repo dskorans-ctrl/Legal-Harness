@@ -75,8 +75,8 @@ def test_h2_append_failure_resends_pages(tmp_path, monkeypatch):
     assert facts.append is append
     code, line, error = invoke(settings, transport)
     assert len(transport.requests) == 2, "H2: pages with uncommitted facts were not re-sent"
-    assert code == 1 and error == "" and "facts=31" in line
-    assert len(facts.load(folder / "casefile.jsonl").facts) == 31
+    assert code == 1 and error == "" and "facts=37" in line
+    assert len(facts.load(folder / "casefile.jsonl").facts) == 37
 
 
 def test_h2_status_joins_latest_coverage_to_casefile_runs(tmp_path):
@@ -91,7 +91,7 @@ def test_h2_status_joins_latest_coverage_to_casefile_runs(tmp_path):
     assert snapshot["read"] == 0 and snapshot["open"] == 14, "H2: status trusts coverage without a case-file run"
     assert invoke(settings, transport)[0] == 1
     assert len(transport.requests) == 2, "H2: deleted complete run tail did not re-send pages"
-    assert len(facts.load(path).facts) == 31
+    assert len(facts.load(path).facts) == 37
 
 
 def test_h2_probe_refuses_before_model(tmp_path, monkeypatch):

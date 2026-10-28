@@ -7,7 +7,7 @@ from pathlib import Path
 from docx import Document
 
 from casefile.rules import Finding, Rules
-from casefile.outputs import Paragraph, Run, Section, checked_runs
+from casefile.outputs import Paragraph, Run, Section, checked_runs, conflict_quotes, human_label
 
 
 class MemoError(ValueError):
@@ -64,7 +64,7 @@ def _fact_paragraphs(fact, primary, heading_page, *, detail=False, binder=""):
         runs.append(Run(f'{fact.dates[primary]}, '))
         runs.append(Run(fact.providers[primary]) if fact.providers[primary]
                     else Run(binder, exempt="binder"))
-        runs.append(Run(f', {fact.category}: '))
+        runs.append(Run(f', {human_label(fact.category)}: '))
     runs.extend([Run(f'"{fact.quote}"', exempt="quote"),
                  _cite(fact.cites[primary], fact.page_ids[primary], " ")])
     paragraphs = [Paragraph(runs)]
@@ -109,9 +109,11 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
     present = {page.page_id: page for page in pages}
     placement = {fact.id: next((index for index, page_id in enumerate(fact.page_ids)
                                if page_id in present), None) for fact in records}
-    chronology = Section("Treatment chronology")
+    chronology = Section("Treatment chronology", [_paragraph("Entries run by the date of the record.")])
     dated = [(fact, placement[fact.id]) for fact in records
              if placement[fact.id] is not None and fact.dates[placement[fact.id]]]
+    if not dated:
+        chronology.paragraphs.append(_paragraph("none"))
     for fact, primary in sorted(dated, key=lambda pair: dates.parse(pair[0].dates[pair[1]])):
         page = present[fact.page_ids[primary]]
         chronology.paragraphs.extend(_fact_paragraphs(fact, primary, page.page_id,
@@ -153,7 +155,7 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
         if fact.category == "work_status":
             targets.append(restrictions)
         if fact.category in {"prior_history", "family_history", "comorbidity_social"}:
-            history.paragraphs.append(_paragraph(fact.category + ":"))
+            history.paragraphs.append(_paragraph(human_label(fact.category) + ":"))
             targets.append(history)
         if fact.category in {"causation_statement", "mmi_statement", "impairment_rating",
                              "future_treatment", "work_status", "diagnosis"}:
@@ -166,7 +168,7 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
     conflicts = Section("Conflicts", [_paragraph(
         f'Pages read in {len(runs)} {"run" if len(runs) == 1 else "runs"}; '
         'conflicts and gaps are checked only between pages sent to the model together. '
-        'A cloud task run reads the whole matter (stage 7b).')])
+        'A cloud task run reads the whole matter.')])
     has_pair = {"defense", "ours"} <= set(binder_roles.values())
     if not has_pair or "ROLE NEEDED" in binder_roles.values():
         conflicts.paragraphs.append(_paragraph('ROLE NEEDED: no binder pair is marked defense and ours in matter.toml; '
@@ -187,11 +189,7 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
         for about in flag.abouts:
             section.paragraphs.append(_paragraph(f"Model's reading: {about}"))
         if flag.kind == "conflict":
-            for cite, page_id in zip(flag.cites, flag.page_ids):
-                section.paragraphs.append(_citations([cite], [page_id], prefix="From ", suffix=":"))
-                for fact in records:
-                    if page_id in fact.page_ids:
-                        section.paragraphs.append(Paragraph([Run(f'"{fact.quote}"', exempt="quote")]))
+            section.paragraphs.extend(conflict_quotes(casefile, flag))
     if not flags:
         conflicts.paragraphs.append(_paragraph("none"))
     undated = Section("Facts without a date, by page")
@@ -200,6 +198,10 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
         undated.paragraphs.append(Paragraph([], warning_pages=unstamped))
     open_status = {item.page_id: item.status for item in open_items}
     for page in pages:
+        page_facts = [fact for fact in records if placement[fact.id] is not None
+                      and fact.page_ids[placement[fact.id]] == page.page_id]
+        if page_facts and all(fact.dates[placement[fact.id]] for fact in page_facts):
+            continue
         undated.paragraphs.append(Paragraph([Run('Page '), Run(label(page), exempt="cite"),
             Run(', binder '), Run(page.binder, exempt="binder")], level=2))
         quoted = False

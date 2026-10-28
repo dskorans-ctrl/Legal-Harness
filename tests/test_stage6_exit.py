@@ -22,12 +22,12 @@ NUMBER = '9001.001'
 MATTER = ROOT / 'tests/fixtures/matters' / NUMBER
 ANSWERS = ROOT / 'tests/fixtures/outputs' / NUMBER
 EXPECTED = (
-    'stage6 memo sections=15 chronology=31 dated=31 of 31 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 rule_hits=0 exit=1',
-    'stage6 depo=defense-doctor-us outline_our=25 outline_defense=7 questions=8 rests_on_page=8 of 8 danger=1 points=1 forbidden_topics=0 rule_hits=0 header_ok=1 exit=1',
-    'stage6 depo=our-doctor-us outline_our=25 outline_defense=7 questions=4 rests_on_page=4 of 4 danger=1 points=0 treatment_q=1 bills_q=1 compound=0 providers_named=6 of 6 rule_hits=0 header_ok=1 exit=1',
-    'stage6 hearing checklist_first=1 starred=1 issues=2 standard_needed=2 client_direct=2 client_cross=2 elements=14 not_found=2 closing=2 relief_needed=2 rule_hits=0 header_ok=1 exit=1',
-    'stage6 report=defense-report concessions=1 labels=1 danger=1 conflicts=3 conflict_quotes_ok=1 audit_limit=1 rule_hits=0 header_ok=1 exit=1',
-    'stage6 report=okonkwo-lind elements=14 stated=10 partial=2 not_found=2 gaps_separate=1 rule_hits=0 header_ok=1 exit=1',
+    'stage6 memo sections=15 chronology=37 dated=37 of 37 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 rule_hits=0 exit=1',
+    'stage6 depo=defense-doctor-us outline_our=19 outline_defense=11 questions=8 rests_on_page=8 of 8 danger=6 points=1 forbidden_topics=0 rule_hits=0 header_ok=1 exit=1',
+    'stage6 depo=our-doctor-us outline_our=19 outline_defense=11 questions=4 rests_on_page=4 of 4 danger=6 points=0 treatment_q=1 bills_q=1 compound=0 providers_named=5 of 5 rule_hits=0 header_ok=1 exit=1',
+    'stage6 hearing checklist_first=1 starred=1 issues=2 standard_needed=2 client_direct=2 client_cross=2 elements=14 not_found=5 closing=2 relief_needed=2 rule_hits=0 header_ok=1 exit=1',
+    'stage6 report=defense-report concessions=1 labels=5 danger=1 conflicts=3 conflict_quotes_ok=1 audit_limit=1 rule_hits=0 header_ok=1 exit=1',
+    'stage6 report=okonkwo-lind elements=14 stated=9 partial=0 not_found=5 gaps_separate=1 rule_hits=0 header_ok=1 exit=1',
     'stage6 status outputs=memo:current,depo-defense-doctor-us:current,depo-our-doctor-us:current,hearing:current,report-defense-report:current,report-okonkwo-lind:current partial=0',
     'stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1',
 )
@@ -39,6 +39,11 @@ ELEMENTS = ('treating_relationship', 'mechanism', 'history_prior_conditions', 'e
             'imaging_reviewed', 'diagnosis', 'causation', 'treatment_reasonable_necessary_related',
             'bills_reasonable_related', 'work_status_restrictions', 'mmi', 'permanency_rating',
             'future_treatment', 'records_reviewed')
+
+ELEMENT_LABELS = ('Treating relationship', 'Mechanism', 'Prior conditions and history', 'Exam findings',
+    'Imaging reviewed', 'Diagnosis', 'Causation', 'Treatment reasonable, necessary and related',
+    'Bills reasonable and related', 'Work status and restrictions', 'Maximum medical improvement',
+    'Permanency rating', 'Future treatment', 'Records reviewed')
 
 
 def _answer(name):
@@ -61,7 +66,7 @@ def _texts(paragraphs):
 def _header_ok(doc, cf, book, model, *, who=''):
     expected = [*HEADER]
     if who:
-        expected.append('Deposition of Dr. ' + who + ', NEEDED')
+        expected.extend(['Deposition of: Dr. ' + who, 'Deposition date and time: NEEDED'])
     expected.append('Matter ' + NUMBER)
     actual = _texts(doc.paragraphs)
     index = 1 + len(expected) + int(bool(who))
@@ -150,12 +155,20 @@ def _outline(doc, title):
 def _conflicts_ok(paragraphs, cf):
     actual = _texts(paragraphs)
     blocks = []
+    cites = []
     for i, text in enumerate(actual):
+        if text.startswith('Conflict between '):
+            cites = re.findall(r'\[cite ([^\]]+)\]', text)
         match = re.fullmatch(r'From \[cite ([A-Z]+\d+)\]:', text)
         if match:
-            end = next((j for j in range(i + 1, len(actual)) if not actual[j].startswith('"')), len(actual))
-            expected = [f'"{fact.quote}" [cite {match[1]}]' for fact in cf.facts if match[1] in fact.cites]
-            blocks.append(actual[i + 1:end] == expected)
+            value = match[1]
+            own = [f for f in cf.facts if value in f.cites]
+            other = {f.category for f in cf.facts if set(f.cites) & (set(cites)-{value})}
+            matching = [f for f in own if f.category in other]
+            expected = ([f'No verified fact quoted from {value}; read the page.'] if not own else
+                ([] if matching else ['(all facts on this page)']) +
+                [f'"{f.quote}" [cite {value}]' for f in matching or own])
+            blocks.append(actual[i+1:i+1+len(expected)] == expected)
     return int(bool(blocks) and all(blocks))
 
 
@@ -185,6 +198,7 @@ def _depo_line(doc, who, code, cf, loaded, book, header_ok, rule_hits, errors):
         primary = _questions(doc, 'Questions: primary')
         treatment = sum(bool(re.search(r'\btreatment\b', p.text, re.I)) for p in primary)
         bills = [p for p in primary if re.search(r'\bbills?\b', p.text, re.I)]
+        providers = [p for p in providers if 'Marchetti' not in p]
         named = sum(any(provider in p.text for p in bills) for provider in providers)
         compound = sum(hit.rule_id == 'treatment-and-bills-apart' for hit in findings)
         line += f'treatment_q={treatment} bills_q={len(bills)} compound={compound} providers_named={named} of {len(providers)} '
@@ -208,7 +222,7 @@ def _hearing_line(doc, code, header_ok, rule_hits):
         f'issues={sum(p.startswith("Issue: ") for p in outline)} standard_needed={outline.count("Standard: STANDARD NEEDED")} '
         f'client_direct={sum(bool(re.match(r"^\d+\. ", p)) for p in direct)} '
         f'client_cross={sum(bool(re.match(r"^\d+\. ", p)) for p in cross)} '
-        f'elements={sum(any(p.startswith(e + ":") for e in ELEMENTS) for p in elements)} '
+        f'elements={sum(any(p.startswith(e + ":") for e in ELEMENT_LABELS) for p in elements)} '
         f'not_found={sum(": NOT FOUND" in p for p in elements)} '
         f'closing={sum(p.startswith("Issue: ") for p in closing)} relief_needed={closing.count("Relief requested: RELIEF NEEDED")} '
         f'rule_hits={rule_hits} header_ok={header_ok} exit={code}')
@@ -218,8 +232,8 @@ def _report_line(doc, defense, code, cf, header_ok, rule_hits):
     if defense:
         conflicts = _section(doc, 'Conflicts with other records')
         topics = _texts(_section(doc, 'Candidate cross topics (document-based)'))
-        limit = ("Records review audit: not built this round; the report's records-referenced statements "
-                 'are listed under What the report states for your own comparison.')
+        limit = ('Records review audit: not performed. No records-referenced item was returned by the model '
+                 'for the report pages; read the records list in the report.')
         return (f'stage6 report=defense-report concessions={_outline(doc, "Concessions (the report\'s own words)")} '
             f'labels={_outline(doc, "Undefined labels")} danger={_outline(doc, "Danger zone")} '
             f'conflicts={sum(p.text.startswith("Conflict between ") for p in conflicts)} '
@@ -227,9 +241,9 @@ def _report_line(doc, defense, code, cf, header_ok, rule_hits):
             f'rule_hits={rule_hits} header_ok={header_ok} exit={code}')
     elements = _texts(_section(doc, 'Elements'))
     gaps = _texts(_section(doc, 'Gaps'))
-    actual = [p.split(':', 1)[0] for p in elements if any(p.startswith(e + ':') for e in ELEMENTS)]
-    separate = int(actual == list(ELEMENTS) and all(any(p.startswith(e + ': NOT FOUND') for p in gaps)
-                   for e in ('treatment_reasonable_necessary_related', 'bills_reasonable_related')))
+    actual = [p.split(':', 1)[0] for p in elements if any(p.startswith(e + ':') for e in ELEMENT_LABELS)]
+    separate = int(actual == list(ELEMENT_LABELS) and all(any(p.startswith(e + ': NOT FOUND') for p in gaps)
+                   for e in ('Treatment reasonable, necessary and related', 'Bills reasonable and related')))
     return (f'stage6 report=okonkwo-lind elements={len(actual)} stated={sum(": STATED:" in p for p in elements)} '
         f'partial={sum(": PARTIAL:" in p for p in elements)} not_found={sum(": NOT FOUND" in p for p in elements)} '
         f'gaps_separate={separate} rule_hits={rule_hits} header_ok={header_ok} exit={code}')
@@ -280,7 +294,7 @@ def test_stage6_exit(tmp_path, capsys):
         memo_hits = _saved_rules(Document(folder / 'outputs/memo.docx'), book.rules, outputs.providers(cf), loaded.pages)
         rule_hits += memo_hits
         lines.append('stage6 memo sections=' + metrics + f' rule_hits={memo_hits} exit=' + str(result.returncode))
-        if result.stderr or 'chunks=1 runs=+1 read=13 open=1 facts=31 conflicts=5 gaps=4' not in result.stdout:
+        if result.stderr or 'chunks=1 runs=+1 read=13 open=1 facts=37 conflicts=5 gaps=4' not in result.stdout:
             errors.append('memo CLI differs: ' + result.stdout + result.stderr)
         if result.returncode != 1:
             errors.append(f'memo exit={result.returncode}, expected 1')

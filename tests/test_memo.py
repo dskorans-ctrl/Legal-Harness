@@ -127,7 +127,7 @@ def test_l1_changed_counts_and_grammar(tmp_path, additions, expected):
 
 @pytest.mark.parametrize("title, expected", [
     ("Open items", ["none"]),
-    ("Conflicts", ["Pages read in 0 runs; conflicts and gaps are checked only between pages sent to the model together. A cloud task run reads the whole matter (stage 7b).", "ROLE NEEDED: no binder pair is marked defense and ours in matter.toml; conflicts are in the order found.", "none"]),
+    ("Conflicts", ["Pages read in 0 runs; conflicts and gaps are checked only between pages sent to the model together. A cloud task run reads the whole matter.", "ROLE NEEDED: no binder pair is marked defense and ours in matter.toml; conflicts are in the order found.", "none"]),
     ("Gaps and missing records", ["none"]),
     ("Outputs out of date", ["none"]),
 ])
@@ -213,8 +213,8 @@ def test_memo(tmp_path):
             "probe/002: uncited: no fact or flag cites probe/002"],
         [p.text for p in conflicts[2:]] == ["Conflict between [cite MED0001] and [cite DEF0002].",
                                              "Model's reading: The histories disagree.",
-                                             "From [cite MED0001]:", f'"{QUOTE}"', '"No prior injury."',
-                                             "From [cite DEF0002]:"],
+                                             "From [cite MED0001]:", "(all facts on this page)", f'"{QUOTE}" [cite MED0001]', '"No prior injury." [cite MED0001]',
+                                             "From [cite DEF0002]:", "No verified fact quoted from DEF0002; read the page."],
         [p.text for p in gaps] == ["Gap at [cite MED0002].", *[f"Model's reading: {s}" for s in GAP_ABOUTS]],
         fact.text == f'"{QUOTE}" [cite MED0001]' and [run.text for run in fact.runs] == [f'"{QUOTE}"', " [cite MED0001]"],
         verified[fact_index + 1].text == "Also cited: [cite MED0002]",
@@ -225,7 +225,7 @@ def test_memo(tmp_path):
         '"Therapy continued." [page probe/001]' in [p.text for p in verified],
         heading_texts == ["Page MED0001 (medical/001), binder medical", "Page MED0002 (medical/002), binder medical",
                           "Page probe/001, binder probe"] and seen == expected_quotes and page_quotes.get("medical/002") == [],
-        conflicts[0].text == "Pages read in 2 runs; conflicts and gaps are checked only between pages sent to the model together. A cloud task run reads the whole matter (stage 7b).",
+        conflicts[0].text == "Pages read in 2 runs; conflicts and gaps are checked only between pages sent to the model together. A cloud task run reads the whole matter.",
     ]
     checks.extend(round6_checks(tmp_path))
     assert len(checks) == 22
@@ -289,7 +289,7 @@ def test_conflicts_sentence_counts_read_runs(tmp_path, count, noun):
     path = tmp_path / "memo.docx"
     memo.render(build(stored), path, rules=rules.load(Path(__file__).resolve().parents[1] / "playbook/rules.toml"))
     assert section(Document(path), "Conflicts")[0].text == (
-        f"Pages read in {count} {noun}; conflicts and gaps are checked only between pages sent to the model together. A cloud task run reads the whole matter (stage 7b).")
+        f"Pages read in {count} {noun}; conflicts and gaps are checked only between pages sent to the model together. A cloud task run reads the whole matter.")
 
 
 def round6_checks(tmp_path):
@@ -326,14 +326,14 @@ def round6_checks(tmp_path):
     result, doc = make()
     chronology = [p.text for p in section(doc, 'Treatment chronology') if '"' in p.text]
     assert chronology == [
-        f'March 11, 2025, Invented Clinic, other: "{pages[0].text}" [cite MED0001]',
-        f'03/14/2025, Invented Clinic, diagnosis: "{pages[1].text}" [cite MED0002]',
-        f'03/14/2025, Invented Clinic, work_status: "{pages[2].text}" [cite MED0003]',
+        f'March 11, 2025, Invented Clinic, Other: "{pages[0].text}" [cite MED0001]',
+        f'03/14/2025, Invented Clinic, Diagnosis: "{pages[1].text}" [cite MED0002]',
+        f'03/14/2025, Invented Clinic, Work status: "{pages[2].text}" [cite MED0003]',
     ], 'chronology: parsed date order or stable tie lost'
     conflicts = [p.text for p in section(doc, 'Conflicts')]
     start = conflicts.index('From [cite DEF0001]:',
         conflicts.index('Conflict between [cite DEF0001] and [cite MED0001].'))
-    assert conflicts[start + 1:start + 3] == [f'"{pages[3].text}"', 'From [cite MED0001]:'], \
+    assert conflicts[start + 1:start + 4] == ['(all facts on this page)', f'"{pages[3].text}" [cite DEF0001]', 'From [cite MED0001]:'], \
         'conflict_quotes: quote from outside the cited page'
     assert [p for p in conflicts if p.startswith('Conflict between ')] == [
         'Conflict between [cite DEF0001] and [cite MED0001].',
@@ -387,7 +387,7 @@ def upgraded_fact_check(tmp_path):
     memo.render(upgraded_memo, path, rules=firm)
     upgrade_doc = Document(path)
     assert upgraded.upgraded == 1
-    assert [p.text for p in section(upgrade_doc, 'Treatment chronology')] == ['none'], 'upgrade: undated fact entered chronology'
+    assert [p.text for p in section(upgrade_doc, 'Treatment chronology')] == ['Entries run by the date of the record.', 'none'], 'upgrade: undated fact entered chronology'
     assert f'"{pages[0].text}" [cite MED0001]' in [p.text for p in section(upgrade_doc, 'Facts without a date, by page')], 'upgrade: undated fact lost'
 
 
