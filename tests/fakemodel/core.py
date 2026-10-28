@@ -8,7 +8,8 @@ from urllib.error import HTTPError
 from urllib.parse import urlsplit
 
 
-MODES = ("replay", "truncated", "malformed", "forbidden", "short_context", "empty", "incomplete")
+MODES = ("replay", "truncated", "malformed", "forbidden", "short_context", "empty", "incomplete",
+         "prompt_too_long")
 DEFAULT_MODEL = "qwen3.8:27b"
 
 
@@ -75,7 +76,7 @@ class FakeModel:
             return 400, {"error": "fakemodel: expected JSON object"}
         allowed = {"/_fake/mode": {"mode"}, "/api/show": {"model", "verbose"},
                    "/api/chat": {"model", "messages", "stream", "options", "format",
-                                 "keep_alive", "tools", "think"}}[path]
+                                 "keep_alive", "tools", "think", "truncate"}}[path]
         unknown = data.keys() - allowed
         if unknown:
             return 400, {"error": f"fakemodel: unknown keys: {', '.join(sorted(unknown))}"}
@@ -103,6 +104,10 @@ class FakeModel:
         if key not in self._answers:
             return 404, {"error": "fakemodel: no recording for these messages"}
         content = self._answers[key]
+        if self.mode == "prompt_too_long":
+            return 400, {"error": "the prompt is longer than the context length currently available "
+                        "to the model; shorten the prompt, adjust the context length in settings, "
+                        "or use a model with a longer context length"}
         done_reason = "stop"
         if self.mode == "truncated":
             content = content[:len(content) // 2]

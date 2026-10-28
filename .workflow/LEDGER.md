@@ -173,6 +173,27 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   worker; Codex `gpt-6-astra` (read-only) takes the plan review (6) and the code review (8a). Opus 5.5 still
   orchestrates and runs the output critic and blind verifier; Fable still revises. Round 4 only. The Sol plan review
   in progress was stopped and rerun on Astra (partial log kept, `round04-brief-codex-sol-stopped.log`).
+- Q46: tiers from round 5 on (owner, 2026-10-27, round 4 session 2)? -> "For the next rounds use Opus 5.5 to
+  orchestrate, Codex Sol 6.1 to code, Fable to review." Chair's reading: from round 5, Opus 5.5 orchestrates, Codex
+  `gpt-6.1-sol` codes and fixes, Fable takes the plan review and the code review (each a fresh Fable agent with no
+  context from the brief's writing, read-only). Unchanged unless the owner says otherwise: Fable writes the brief,
+  Opus runs the output critic and blind verifier. Round 4 stays on Q45 (Astra reviews its code). Chair's caution,
+  for the round 5 check-in: a Fable review of a Fable brief is one model family checking itself; the fresh agent
+  and the blind verifier are the guard.
+- Q47: anonymization convention (owner input, 2026-10-27, `~/local-worker/handoff/anonymization-convention.md`,
+  "casefile-anon/1"; outside the repo)? -> four decisions asked for stage 7, not round 4: (1) one fixed bracketed
+  placeholder convention on every matter (`[CLAIMANT]`, numbered `[DR-n]`, `[ATTY-n]`, `[PERSON-n]`, org and place
+  kinds, dates relative to the injury date `[DATE D+n]`, `[MONTH M+n]`, `[YEAR Y+n]`, `[DATE-REF-n]`, `[ID-n]` and
+  contact kinds, `[SRC-n]`; titles outside brackets; restored dates M/D/YYYY); (2) the local model finds only names
+  and the anchor date, code does every replacement, date conversion, re-identification and check; (3) fail closed
+  both ways (draft check before re-identifying, restore check after, line count kept for page:line cites); (4) spec
+  §3 Anonymizer row to "local model entity pass plus code rules, the matter's name list in the identifier check;
+  Presidio or GLiNER-PII optional as a second detector". Reference code `~/local-worker/anonymize.py` with 16 offline
+  tests on `fixtures/anon-matter/`. Status: logged; carried to the stage 7 brief and its plan review (spec §10). Open
+  there: the spec's unnumbered `[EMPLOYER]` examples; Q41 excerpt size; the key lives only in the `casefile` user's
+  matter folder (§8b). Chair's privacy note: the convention's evidence came from a de-identified real matter, and
+  `~/local-worker/log.jsonl` holds real client prompts; before any port, the stage 7 builder copies code only, and
+  the chair confirms `fixtures/anon-matter/` is invented before it enters the repo.
 
 ## Round 1: stage 1 skeleton and harness (opened 2026-10-25)
 

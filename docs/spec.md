@@ -258,6 +258,7 @@ and read-only Outbox shares for the operations computer; D16 no local agent loop
 - Conflict excerpts for Claude review (owner Q41): where records conflict, above all a defense examination against our records, the attorney wants the records around the conflict anonymized for upload to Claude. Which stage builds it (the brief package, spec §2), and how much surrounding text goes with each conflict?
 - Uncited pages (owner question 47, round 4): what, if anything, closes a page a passing answer never cites; interim: it stays an open item (D38).
 - Summary wording (owner question 48, round 4): label a fact's summary as the model's reading, or judge it against its quote with a second call; interim: no output uses a summary as verified (D38).
+- Anonymization convention casefile-anon/1 (owner input, ledger Q47): fixed bracketed placeholders, local model finds names and the anchor date only, code replaces and re-identifies, fail closed both ways, §3 Anonymizer row change; decided in the stage 7 brief and its plan review.
 
 ## §11 As-built
 

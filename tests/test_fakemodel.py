@@ -120,6 +120,27 @@ def test_short_context_caps_large_recorded_prompt():
     assert chat(model, messages=messages)[1]["prompt_eval_count"] == 8192
 
 
+def test_truncate_key(capsys):
+    replies = [chat(FakeModel(), truncate=value) for value in (False, True)]
+    ok = all(status == 200 and answer.get("message", {}).get("content") == "READY"
+             for status, answer in replies)
+    with capsys.disabled():
+        print(f"fake_truncate_key={int(ok)}", flush=True)
+    assert ok, f"fake_truncate_key={int(ok)}"
+
+
+def test_prompt_too_long(capsys):
+    expected = {"error": "the prompt is longer than the context length currently available "
+                "to the model; shorten the prompt, adjust the context length in settings, "
+                "or use a model with a longer context length"}
+    replies = [chat(FakeModel(mode="prompt_too_long"), **options)
+               for options in ({}, {"truncate": False}, {"truncate": True})]
+    with capsys.disabled():
+        print(f"prompt_too_long_status={replies[0][0]}", flush=True)
+    for status, answer in replies:
+        assert status == 400 and answer == expected
+
+
 @pytest.mark.socket
 def test_http_roundtrip(capsys):
     try:
