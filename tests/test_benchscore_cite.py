@@ -11,8 +11,8 @@ from test_matter import make
 RULES = rules_mod.load(ROOT / "playbook" / "rules.toml")
 PAGES = {"medical": [("Pain 7/10 in the low back.", "MED0001"),
                      ("Pain 7/10 in the low back.\nDiagnosis: acute lumbar strain.", "MED0002")]}
-KEY = {"facts": [{"id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
-                 {"id": "F2", "cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.", "text": "A lumbar strain."}],
+KEY = {"facts": [{"date": "", "id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
+                 {"date": "", "id": "F2", "cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.", "text": "A lumbar strain."}],
        "flags": [{"id": "G1", "kind": "conflict", "cites": ["MED0001", "MED0002"], "about": "The pages differ."}]}
 WRONG_PAGE = {"facts": [{"cite": "MED0002", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
                         {"cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.", "text": "A lumbar strain."}],

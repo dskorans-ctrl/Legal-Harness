@@ -28,8 +28,8 @@ def test_playbook_show(tmp_path):
                             env=env, capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines()[0].startswith("version=pb-")
-    assert "entries=7" in result.stdout.splitlines()[0]
-    assert len(result.stdout.splitlines()) == 8
+    assert "entries=20" in result.stdout.splitlines()[0]
+    assert len(result.stdout.splitlines()) == 21
 
 
 def test_doctor_config_override(tmp_path):

@@ -71,3 +71,17 @@ def test_refusals(capsys):
     with capsys.disabled():
         print(f"candidate_refusals={ok} of 7")
     assert ok == 7
+
+
+def test_metadata_optional_and_kept():
+    data=copy.deepcopy(GOOD)
+    data['facts'][0].update(date='03/11/2025',category='pain_score',provider='Invented Clinic')
+    fact=parse(data).facts[0]
+    assert (fact.date,fact.category,fact.provider) == ('03/11/2025','pain_score','Invented Clinic')
+    data['facts'][0]['date']=1
+    try:
+        parse(data)
+    except CandidateError:
+        pass
+    else:
+        raise AssertionError('numeric date accepted')

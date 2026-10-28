@@ -14,9 +14,9 @@ PAGES = {"medical": [("ER visit.\nPain 7/10 in the low back, no radiation.", "ME
 
 KEY = {
     "facts": [
-        {"id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back, no radiation.",
+        {"date": "", "id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back, no radiation.",
          "text": "Pain was 7/10 in the low back."},
-        {"id": "F2", "cite": "MED0002", "quote": 'He said "no prior   injury"',
+        {"date": "", "id": "F2", "cite": "MED0002", "quote": 'He said "no prior   injury"',
          "text": "He reported no prior injury."},
     ],
     "flags": [{"id": "G1", "kind": "gap", "cites": ["MED0001"], "about": "An x-ray report is missing."}],
@@ -24,6 +24,8 @@ KEY = {
 
 
 def write(tmp_path, data):
+    for item in data.get("facts", []):
+        item.setdefault("date", "")
     path = tmp_path / "key.json"
     path.write_text(json.dumps(data), encoding="utf-8")
     return path
@@ -77,7 +79,7 @@ def case_flag_cite_not_a_page():
 
 def case_duplicate_fact_quote():
     data = copy.deepcopy(KEY)
-    data["facts"].append({"id": "F3", "cite": "MED0002", "quote": "he said “no prior injury”",
+    data["facts"].append({"date": "", "id": "F3", "cite": "MED0002", "quote": "he said “no prior injury”",
                           "text": "He reported no prior injury."})
     return data
 
@@ -146,8 +148,8 @@ def test_key_refusals(tmp_path, capsys):
         "medical": [("The exam-\nination and examination were normal.", "MED0001")],
     }))
     collision = {"facts": [
-        {"id": "F1", "cite": "MED0001", "quote": "exam-\nination", "text": "The report."},
-        {"id": "F2", "cite": "MED0001", "quote": "examination", "text": "The report."},
+        {"date": "", "id": "F1", "cite": "MED0001", "quote": "exam-\nination", "text": "The report."},
+        {"date": "", "id": "F2", "cite": "MED0001", "quote": "examination", "text": "The report."},
     ], "flags": []}
     try:
         load(write(tmp_path / "collision", collision), collision_matter)
@@ -180,3 +182,18 @@ def test_whitespace_only_text_and_about_are_refused(tmp_path):
         load(write(tmp_path, blank_text), matter)
     with pytest.raises(BenchKeyError, match="flag G1: about must be a nonempty string"):
         load(write(tmp_path, blank_about), matter)
+
+
+def test_key_date_contract(tmp_path):
+    pages={"medical":[("Date of service: March 11, 2025\nPain 7/10.","MED0001")]}
+    loaded=matters.load(make(tmp_path,pages))
+    data={"facts":[{"id":"F1","cite":"MED0001","quote":"Pain 7/10.","text":"Pain 7/10.","date":"March 11, 2025"}],"flags":[]}
+    assert load(write(tmp_path,data),loaded).facts[0].date == 'March 11, 2025'
+    for date in ('03/12/2025','Yesterday'):
+        data['facts'][0]['date']=date
+        with pytest.raises(BenchKeyError,match='date'):
+            load(write(tmp_path,data),loaded)
+    del data['facts'][0]['date']
+    path=tmp_path/'missing-date.json';path.write_text(json.dumps(data),encoding='utf-8')
+    with pytest.raises(BenchKeyError,match='expected keys'):
+        load(path,loaded)

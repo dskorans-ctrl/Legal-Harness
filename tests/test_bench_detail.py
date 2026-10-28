@@ -74,7 +74,7 @@ def test_hyphen_rung_detail(tmp_path):
     root = make(tmp_path / "matters", {
         "medical": [("The exam-\nination was normal.", "MED0001")],
     })
-    key = {"facts": [{"id": "F1", "cite": "MED0001", "quote": "The exam-\nination was normal.",
+    key = {"facts": [{"date": "", "id": "F1", "cite": "MED0001", "quote": "The exam-\nination was normal.",
                       "text": "The report was normal."}], "flags": []}
     (root / "key.json").write_text(json.dumps(key), encoding="utf-8")
     candidate = tmp_path / "candidate.json"

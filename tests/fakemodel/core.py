@@ -36,6 +36,19 @@ def _prompt_parts(messages):
 
 def _fault_content(content, mode):
     obj = json.loads(content)
+    if "facts" not in obj and mode in {"bad_schema", "forbidden_json", "empty_answer"}:
+        arrays = [v for k,v in obj.items() if isinstance(v, list)]
+        if mode == "empty_answer":
+            for value in arrays:
+                value.clear()
+        else:
+            item = next(item for values in arrays for item in values if isinstance(item, dict))
+            key = next(key for key,value in item.items() if isinstance(value, str))
+            if mode == "bad_schema":
+                del item[key]
+            else:
+                item[key] = "The IME found no injury."
+        return json.dumps(obj, ensure_ascii=False)
     if mode == "bad_schema":
         del obj["facts"][0]["text"]
     elif mode == "bad_quote":
@@ -79,6 +92,11 @@ class FakeModel:
             recordings = json.loads(Path(recordings).read_text(encoding="utf-8"))
         self.recordings = deepcopy(recordings)
         self._answers = {_canonical(row["messages"]): row["answer"] for row in self.recordings}
+
+    def record(self, row):
+        row = deepcopy(row)
+        self.recordings.append(row)
+        self._answers[_canonical(row["messages"])] = row["answer"]
 
     @property
     def mode(self):

@@ -24,7 +24,12 @@ class Card:
     name: str
     text: str
     schema: dict
-    unit: str = "text"
+    coverage: bool = True
+    required_any: tuple[str, ...] = ("facts", "flags")
+    optional_blank: tuple[str, ...] = ()
+    echo: str | None = None
+    question_keys: tuple[str, ...] = ()
+    numbers_in: str = "quote"
     think: bool = False
     max_answer_tokens: int = 8192
 
@@ -53,10 +58,10 @@ class Outcome:
     run_id: int
 
 
-def messages(card, pages: Sequence[Page], nonce, *, matter):
+def messages(card, pages: Sequence[Page], nonce, *, matter, body=None):
     """The matter number is explicit because a Page carries no matter number."""
     return [{"role": "system", "content": f"prompt_id: {nonce}\n{card.text}"},
-            {"role": "user", "content": f"Matter {matter}\n"
+            {"role": "user", "content": body if body is not None else f"Matter {matter}\n"
              + "".join(extract.page_block(page) for page in pages)}]
 
 
@@ -90,7 +95,7 @@ def _page_label(page):
     return page.stamps[0] if page.stamps else page.page_id
 
 
-def _references(obj, pages, rules):
+def _references(obj, pages, rules, *, numbers_in="quote"):
     faults, rungs, cited = [], [], set()
     cite_fault = False
     cite_rule = next(rule for rule in rules.rules if rule.id == "bates-cites")
@@ -130,7 +135,7 @@ def _references(obj, pages, rules):
                 flag_pages.add(page.page_id)
         if item.get("kind") == "conflict" and len(flag_pages) < 2:
             faults.append(f"{path}: a conflict must cite two different pages")
-        for key in ("text", "about"):
+        for key in ("text", "about", "note", "why", "absent_note"):
             if isinstance(item.get(key), str):
                 location = f"{path}.{key}"
 
@@ -140,13 +145,22 @@ def _references(obj, pages, rules):
 
                 prose[location] = re.sub(cite_rule.cite_pattern, remove_cite, item[key],
                                          flags=re.IGNORECASE)
-    for index, fact in enumerate(obj.get("facts", [])):
-        if not fact["quote"].strip():
+    for path, item in _objects(obj):
+        if not isinstance(item.get("quote"), str) or not item["quote"].strip():
             continue
-        numbers = set(re.findall(r"\d+", fact["quote"]))
-        for number in dict.fromkeys(re.findall(r"\d+", prose[f"facts[{index}].text"])):
-            if number not in numbers:
-                faults.append(f"facts[{index}].text: number {number} is not in its quote")
+        source = item["quote"]
+        if numbers_in == "page":
+            matches = [p for p in pages if item.get("cite") == p.page_id
+                       or stamps.normalize(item.get("cite", "")) in p.stamps]
+            if len(matches) != 1:
+                continue
+            source = matches[0].text
+        numbers = set(re.findall(r"\d+", source))
+        keys = ("text",) if numbers_in == "quote" else ("text", "note", "why", "absent_note")
+        for key in keys:
+            for number in dict.fromkeys(re.findall(r"\d+", prose.get(f"{path}.{key}", ""))):
+                if number not in numbers:
+                    faults.append(f"{path}.{key}: number {number} is not in its {numbers_in}")
     if faults:
         noun = "fault" if len(faults) == 1 else "faults"
         detail = f"{len(faults)} {noun} (faults={len(faults)}): " + "; ".join(faults)
@@ -169,11 +183,11 @@ def open_items(log, matter, *, job):
 
 
 def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
-        job="gates", playbook_version="") -> Outcome:
+        job="gates", playbook_version="", body=None, echo=None, providers=()) -> Outcome:
     """Check every received reply; a failed transport without a reply remains the caller's error."""
     pages = tuple(pages)
     nonce = secrets.token_hex(8) if nonce is None else nonce
-    initial = messages(card, pages, nonce, matter=matter)
+    initial = messages(card, pages, nonce, matter=matter, body=body)
     run_id = log.start_run(job=job, matter=matter, card=card.name, card_version=card.version,
                            playbook_version=playbook_version, model=client.config.name,
                            pages_in=len(pages), prompt_sha256=extract.prompt_sha256(initial))
@@ -185,11 +199,11 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
     for attempt in (1, 2):
         if attempt == 2:
             nonce = secrets.token_hex(8)
-        msgs = initial if attempt == 1 else messages(card, pages, nonce, matter=matter)
+        msgs = initial if attempt == 1 else messages(card, pages, nonce, matter=matter, body=body)
         if attempt == 2:
-            header, body = msgs[1]["content"].split("\n", 1)
+            header, tail = (msgs[1]["content"].split("\n", 1) + [""])[:2]
             msgs[1]["content"] = header + "\nRetry: the previous answer failed the " + reason + (
-                ". Answer again with one JSON object and nothing else.\n") + body
+                ". Answer again with one JSON object and nothing else.\n") + tail
         gate, message, retryable = "truncation", "", True
         raw = None
         fields = {}
@@ -250,32 +264,44 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                     if faults:
                         message = "the answer does not match the schema: " + "; ".join(faults)
                 elif gate == "quotes":
-                    detail, cited = _references(obj, pages, rules)
+                    detail, cited = _references(obj, pages, rules, numbers_in=card.numbers_in)
                     if re.match(r"\d+ faults? \(faults=", detail):
                         message = detail
                 elif gate == "rules":
                     findings = [(path, finding) for path, value in _rules_strings(obj)
-                                for finding in rules.check(value, unit=card.unit,
-                                                           stamped=all(p.stamps for p in pages))]
+                                for finding in rules.check(value, unit="question" if path.rsplit(".", 1)[-1] in card.question_keys else "text",
+                                                           stamped=all(p.stamps for p in pages), providers=providers)]
                     instructions = {rule.id: rule.rule for rule in rules.rules}
                     message = "; ".join(f"{path}: {instructions[f.rule_id]} ({f.rule_id}: {f.excerpt})"
                                         for path, f in findings if f.severity == "error")
                 elif gate == "coverage":
-                    if not obj.get("facts") and not obj.get("flags"):
-                        message = "the answer has no facts and no flags"
-                    else:
-                        blanks = [f"{group}[{index}].{key}" for group, keys in
-                                  (("facts", ("text", "quote")), ("flags", ("about", "cites")))
-                                  for index, item in enumerate(obj.get(group, []))
-                                  for key in keys if not (item[key].strip() if isinstance(item[key], str)
-                                                         else item[key])]
+                    if card.echo:
+                        expected = echo[1] if echo is not None and echo[0] == card.echo else [p.page_id for p in pages]
+                        values = obj.get(card.echo)
+                        if not isinstance(values, list) or set(values) != set(expected):
+                            message = f"the answer does not echo every id at {card.echo}"
+                    elif not any(isinstance(obj.get(key), list) and obj[key] for key in card.required_any):
+                        message = ("the answer has no facts and no flags" if card.required_any == ("facts", "flags")
+                                   else "the answer has no items in " + ", ".join(card.required_any))
+                    if not message:
+                        blanks = []
+                        for path, item in _objects(obj):
+                            if path == "answer":
+                                continue
+                            for key, value in item.items():
+                                # Missing date and provider are explicitly allowed by the memo contract.
+                                absent_metadata = card.name == "medical_memo" and key in ("date", "provider")
+                                if (isinstance(value, str) and not value.strip()
+                                        and key not in card.optional_blank and not absent_metadata
+                                        or key == "cites" and not value):
+                                    blanks.append(f"{path}.{key}")
                         if blanks:
                             message = "; ".join(f"the answer has a blank value at {path}" for path in blanks)
                 if message:
                     break
                 detail = ""
                 if gate == "quotes":
-                    detail, _ = _references(obj, pages, rules)
+                    detail, _ = _references(obj, pages, rules, numbers_in=card.numbers_in)
                 elif gate == "rules":
                     unstamped = [p.page_id for p in pages if not p.stamps]
                     warnings = [f"{path}: {f.rule_id}: {f.excerpt}" for path, f in findings
@@ -310,11 +336,11 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
         reason = f"{gate} check: {message}"
         if not retryable:
             break
-    read = tuple(_page_id(page) for page in pages if _page_id(page) in cited) if ok else ()
-    uncited = tuple(_page_id(page) for page in pages if _page_id(page) not in cited) if ok else ()
+    read = tuple(_page_id(page) for page in pages if _page_id(page) in cited) if ok and card.coverage else ()
+    uncited = tuple(_page_id(page) for page in pages if _page_id(page) not in cited) if ok and card.coverage else ()
     final_reason = "" if ok else f"{name}: {message}; the page stays open until a later run reads it"
-    failed = () if ok else tuple((_page_id(page), final_reason) for page in pages)
-    for page in pages:
+    failed = () if ok or not card.coverage else tuple((_page_id(page), final_reason) for page in pages)
+    for page in pages if card.coverage else ():
         page_id = _page_id(page)
         status = ("read" if page_id in read else "uncited") if ok else "failed"
         why = ("" if status == "read" else f"no fact or flag cites {page_id}") if ok else final_reason

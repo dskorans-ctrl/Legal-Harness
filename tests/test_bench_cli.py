@@ -119,11 +119,10 @@ def test_bench_no_reply_exit2(tmp_path, capsys):
     with capsys.disabled():
         print(f"no_reply_exit={code}")
     assert code == 2
-    reason = ("no reply from the model server (connection refused); "
-              "the page stays open until a later run reads it")
+    reason = "no reply from the model server at http://127.0.0.1:9 (connection refused)"
     assert lines == [f"bench 9001.001 failure gate.model: {reason}"], "no-reply reason is not plain text"
     assert "bench matters=" not in "\n".join(lines)
-    assert err == f"bench: cannot run: no reply from the model server at http://127.0.0.1:9: gate.model: {reason}\n"
+    assert err == f"bench: cannot run: {reason}\n"
 
 
 def test_bench_received_404_stays_exit1(tmp_path, capsys):
@@ -206,8 +205,7 @@ def test_bench_no_reply_plain_words(tmp_path, failure, detail):
             raise failure
 
     code, lines, err = run_runner_mode(tmp_path, NoReply())
-    reason = (f"gate.model: no reply from the model server ({detail}); "
-              "the page stays open until a later run reads it")
+    reason = f"gate.model: no reply from the model server at http://127.0.0.1:9 ({detail})"
     assert code == 2
     assert lines == [f"bench 9001.001 failure {reason}"], "no-reply reason is not plain text"
-    assert err == f"bench: cannot run: no reply from the model server at http://127.0.0.1:9: {reason}\n"
+    assert err == f"bench: cannot run: {reason.removeprefix('gate.model: ')}\n"

@@ -39,7 +39,7 @@ CASES = (
     'repairable', 'unrepairable', 'bad_schema', 'bad_quote', 'fact_cite', 'text_number',
     'flag_cite', 'forbidden_json', 'quoted_ime', 'unstamped', 'empty_answer', 'retry_ok',
     'retry_budget', 'no_reply', 'open_items', 'request_body',
-    'text_cite_ok', 'text_cite_bad', 'text_see_page', 'mixed_chunk',
+    'text_cite_ok', 'text_cite_bad', 'text_see_page', 'mixed_chunk', 'no_coverage', 'required_any', 'echo',
 )
 
 
@@ -55,6 +55,8 @@ def probe():
 
 
 def recording(card, pages, number, obj):
+    for fact in obj.get('facts', []):
+        fact.update(date=fact.get('date', ''), category=fact.get('category', 'other'), provider=fact.get('provider', ''))
     return {'name': 'invented-probe',
             'messages': gates.messages(card, pages, '__PROMPT_ID__', matter=number),
             'answer': json.dumps({'prompt_id': '__PROMPT_ID__', **obj, 'end_id': '__PROMPT_ID__'})}
@@ -77,7 +79,7 @@ def content_edit(change):
 def gate_totals():
     passed = []
     yield passed
-    print(f'gate_cases={len(passed)} of 31', flush=True)
+    print(f'gate_cases={len(passed)} of 34', flush=True)
 
 
 @pytest.mark.parametrize('case', CASES)
@@ -87,13 +89,15 @@ def test_gate_cases(case, tmp_path, gate_totals):
     card = extraction_card()
     firm = rules.load(ROOT / 'playbook/rules.toml')
     settings = config.load(write_config(tmp_path)).model
-    assert len(CASES) == 31
+    assert len(CASES) == 34
     with open_db(tmp_path / f'{case}.sqlite') as log:
         _case(case, log, loaded, ideal, card, firm, settings)
     gate_totals.append(case)
 
 
 def _case(case, log, loaded, ideal, card, firm, settings):
+    if case in {"no_coverage", "required_any", "echo"}:
+        return contract_case(case,log,loaded,firm,settings)
     pages, number = loaded.pages, loaded.number
     recordings = recordings_for(FIXTURE)
     mode = case if case in {'prompt_too_long', 'cut_prompt', 'truncated', 'cut_answer',
@@ -292,8 +296,8 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         later = gates.ask(card, pages, client=client, rules=firm, log=log, matter=number)
         assert later.ok and later.attempts == 2
         opened = gates.open_items(log, number, job="gates")
-        assert set(opened) == {('defense-report/001', 'bench_extract')}, f'open_items={len(opened)} expected=1'
-        assert opened[('defense-report/001', 'bench_extract')] == (
+        assert set(opened) == {('defense-report/001', 'medical_memo')}, f'open_items={len(opened)} expected=1'
+        assert opened[('defense-report/001', 'medical_memo')] == (
             'uncited', 'no fact or flag cites defense-report/001', later.run_id)
         assert len(rows(log, 'coverage', later.run_id)) == 14
 
@@ -576,3 +580,34 @@ def test_fix2_reference_place_and_quote_preview(fix_probe):
     outcome, log, _ = fix_probe(fix_pages(), obj)
     assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == [
         f'gate.quotes: {detail}; {step}' for step in ('retried once', 'not retried: the one retry was used')], 'M3: quote location or preview differs'
+
+
+def contract_case(case, log, loaded, firm, settings):
+    from casefile import cards
+    from fakemodel.bench import recording_for
+
+    pages=loaded.pages[:2]
+    if case == 'echo':
+        card=cards.card('07-ANON')
+        answer=dict(pages_seen=[p.page_id for p in pages],people=[],organizations=[],places=[],anchor_dates=[])
+    else:
+        card=cards.card('02-C-DEFDOC')
+        answer=dict(section='primary',questions=[dict(text='The report records pain, correct?',cite='MED0001',quote='Pain 7/10 in the low back, no radiation.',note='')],points_for_our_expert=[])
+    def invoke(answer,card=card):
+        fake=FakeModel(recordings=[recording_for(card,pages,loaded.number,answer)])
+        return gates.ask(card,pages,client=model.ModelClient(settings,FakeTransport(fake)),rules=firm,
+                         log=log,matter=loaded.number)
+    outcome=invoke(answer)
+    assert outcome.ok, f'{case}: valid answer refused: {outcome.verdicts[-1].message}'
+    if case == 'no_coverage':
+        assert not outcome.read and not outcome.uncited and not outcome.failed, 'no_coverage: page dispositions written'
+        assert not log.connection.execute('SELECT * FROM coverage').fetchall(), 'no_coverage: coverage rows written'
+    elif case == 'required_any':
+        outcome=invoke(answer,replace(card,optional_blank=()))
+        assert not outcome.ok and outcome.verdicts[-1].gate == 'gate.coverage', 'optional_blank: blank note accepted without exception'
+        blank=dict(answer,questions=[])
+        assert not invoke(blank).ok, 'required_any: empty questions accepted'
+    else:
+        for ids in ([pages[0].page_id], [pages[0].page_id,'wrong/002']):
+            bad=invoke(dict(answer,pages_seen=ids))
+            assert not bad.ok and bad.verdicts[-1].gate == 'gate.coverage', 'echo: wrong ids accepted'

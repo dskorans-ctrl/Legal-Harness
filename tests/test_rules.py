@@ -169,3 +169,53 @@ def test_benefit_payment_prose_clean(text):
 ])
 def test_hyphenated_exam_labels_refused(text):
     assert {f.rule_id for f in load(RULES_PATH).check(text, unit="text")} == {"no-dme-ime"}
+
+
+def test_round6_rule5_forms():
+    from pathlib import Path
+    from casefile.rules import load
+    firm = load(Path(__file__).resolve().parents[1] / 'playbook/rules.toml')
+    bad = ('What is your fee for this deposition?', 'Is there a fee for your testimony today?',
+           'How often does the carrier retain you?', 'How many times has the carrier retained you this year?')
+    good = ('When were you hired by Quarry Ridge Logistics LLC?',
+            'You were hired by Quarry Ridge Logistics in August 2021, correct?',
+            'Who hired you at the warehouse?', 'Quarry Ridge hired you as a forklift operator, correct?',
+            'You have been engaged in warehouse work since 2021, correct?',
+            'How many times did your supervisor refer you to the clinic?',
+            'How much time did you spend face to face with the claimant?',
+            'Do you currently treat patients with low back injuries?',
+            'What share of your practice is treating patients?',
+            'How often do you see patients with disc protrusions?',
+            'Were you paid for the day you missed work?', 'Did the employer hire a replacement while you were out?',
+            'You retained a copy of the incident report, correct?', 'How often did you attend physical therapy?')
+    hits = [bool(firm.check(text,unit='question')) == want for text,want in
+            [*((v,True) for v in bad), *((v,False) for v in good)]]
+    print(f'rule5_forms={sum(hits)} of 18')
+    assert all(hits), f'rule5_forms={sum(hits)} of 18; failed={[t for t,ok in zip((*bad,*good),hits) if not ok]}'
+
+
+def test_round6_bills_forms():
+    from pathlib import Path
+    from casefile.rules import load
+    firm = load(Path(__file__).resolve().parents[1] / 'playbook/rules.toml')
+    providers = ('Ridgeline Physical Therapy','Lakeshore Orthopedic Associates')
+    bills = ('And separately, Doctor, as to the bills themselves, the charges from {providers}, do you have an '
+             'opinion whether those bills are reasonable and causally related to that same work incident?')
+    every = ('Fennimore County Hospital','Brightwater Family Medicine','Ridgeline Physical Therapy',
+             'Lakeshore Imaging','Lakeshore Orthopedic Associates')
+    cases = [(bills.format(providers=', '.join(providers)),providers,False),
+             (bills.format(providers=', '.join(every)),every,False),
+             ('What treatment did you receive at Ridgeline Physical Therapy?',providers,False),
+             ('What treatment did you receive and what bills followed?',(),True),
+             ('Doctor, what were you paid for the examination?',(),True),
+             ('Doctor, you were provided a bill memo listing charges from Ridgeline Physical Therapy. '
+              'Do you have an opinion, within a reasonable degree of medical probability, whether all of the '
+              'treatment reflected in those records was reasonable, necessary, and causally related to the '
+              '03/11/2025 work incident?',providers,True),
+             ('Doctor, what did you charge for the report?',(),True)]
+    hits = [bool(firm.check(t,unit='question',providers=p)) == want for t,p,want in cases]
+    print(f'bills_forms={sum(hits)} of 7')
+    assert all(hits), f'bills_forms={sum(hits)} of 7'
+    assert {f.rule_id for f in firm.check('What bills followed at IME Clinic?',unit='question',providers=('IME Clinic',))} == {'no-dme-ime'}, 'provider mask hid IME'
+    assert firm.check('The doctor billed the carrier for the report.',unit='text'), 'text pairing lost'
+    assert not firm.check('What bills followed at RIDGELINE\nPHYSICAL THERAPY?',unit='question',providers=providers)

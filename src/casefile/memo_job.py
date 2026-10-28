@@ -4,7 +4,7 @@ import fcntl
 import os
 import sqlite3
 
-from casefile import extract, facts, memo, pages, pipeline, playbook, status
+from casefile import extract, facts, memo, pages, pipeline, playbook, rules, status
 from casefile.model import ModelClient, ModelError
 from casefile.matter import Page
 from casefile.runlog import open_db
@@ -29,7 +29,7 @@ def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, 
     if casefile.torn:
         print(status.torn_message(casefile), file=err)
     before = casefile.last_seq
-    card = extract.card()
+    card = extract.card(book)
     client = ModelClient(config.model, opener=opener)
     with open_db(config.paths.state / "runlog.sqlite") as log:
         start = log.connection.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
@@ -84,6 +84,7 @@ def run(config, number, *, out, err, opener=None) -> int:
         loaded = pages.load(config.paths.matters, number, config.ocr.stamp_pattern)
         if not loaded.pages and not loaded.open_pages:
             raise pages.PagesError(f"no pages to read in {number}")
+        rules.check_stamps(loaded.pages, book.rules)
         memo.check_binders(loaded.pages, book.rules)
         # Open intake pages still contribute headings and labels to the memo.
         open_pages = tuple(Page(page_id.rsplit("/", 1)[0], int(page_id.rsplit("/", 1)[1]), "", stamps)
@@ -96,9 +97,9 @@ def run(config, number, *, out, err, opener=None) -> int:
             return _run_locked(config, number, folder, path, book, loaded, open_pages,
                                out=out, err=err, opener=opener)
     except ModelError as exc:
-        print(f"memo: cannot run: no reply from the model server at {config.model.host}: {exc}", file=err)
+        print(f"memo: cannot run: {exc}; the pages of this run stay open until a later run reads them", file=err)
         return 2
-    except (playbook.PlaybookError, pages.PagesError, facts.CaseFileError, memo.MemoError,
+    except (rules.RulesError, playbook.PlaybookError, pages.PagesError, facts.CaseFileError, memo.MemoError,
             OSError, sqlite3.Error) as exc:
         print(f"memo: cannot run: {exc}", file=err)
         return 2

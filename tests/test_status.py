@@ -1,7 +1,6 @@
 """Memo and status integration uses invented benchmark pages and in-process replies."""
 
 from io import StringIO
-from dataclasses import replace
 import json
 import os
 import shutil
@@ -12,7 +11,7 @@ import pytest
 
 from casefile import cli, config, extract, facts, matter, memo, memo_job, model, pages, pipeline, playbook, status
 from casefile.runlog import open_db
-from conftest import ROOT, write_config
+from conftest import split_card, ROOT, write_config
 from fakemodel import FakeModel, FakeTransport
 from fakemodel.bench import recording_for, recordings_for
 
@@ -167,7 +166,7 @@ def test_no_unread_pages_calls_no_model_and_exits_zero(tmp_path):
     loaded = matter.load(folder)
     answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
     answer["facts"].append(dict(cite="DEF0001", quote="The examinee reports lifting a tote of about 60 pounds.",
-                                text="The examinee reports lifting a tote of about 60 pounds."))
+                                text="The examinee reports lifting a tote of about 60 pounds.", date="06/20/2025", category="patient_statement", provider="Dr. Theodore Marchetti"))
     transport = FakeTransport(FakeModel(recordings=[recording_for(extract.card(), loaded.pages, "9001.001", answer)]))
     assert invoke(settings, transport)[0] == 0
     before = len(transport.requests)
@@ -181,8 +180,8 @@ def test_no_unread_pages_calls_no_model_and_exits_zero(tmp_path):
 
 def test_later_no_reply_preserves_passing_chunk(tmp_path, monkeypatch):
     _, settings, folder = setup_matter(tmp_path)
-    card = replace(extract.card(), max_answer_tokens=65536 - 16384)
-    monkeypatch.setattr(extract, "card", lambda: card)
+    card = split_card(extract.card())
+    monkeypatch.setattr(extract, "card", lambda book=None: card)
     loaded = matter.load(folder)
     chunks, _ = pipeline.chunk(card, loaded.pages, settings.model.num_ctx, loaded.number)
     ideal = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
@@ -200,7 +199,7 @@ def test_later_no_reply_preserves_passing_chunk(tmp_path, monkeypatch):
     transport.open = open_request
     code, line, error = invoke(settings, transport)
     assert code == 2 and line == ""
-    assert "no reply from the model server at http://127.0.0.1:9" in error
+    assert "invented no reply; the pages of this run stay open until a later run reads them" in error
     stored = facts.load(folder / "casefile.jsonl")
     assert len(stored.facts) == len(answer["facts"]), "passing chunk lost on later no reply"
     assert len(stored.runs) == 1 and stored.runs[0]["ok"]

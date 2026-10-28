@@ -1,0 +1,43 @@
+[[entry]]
+id = "header-block"
+kind = "hearing"
+rule = "Deliver Word documents. Head each with Attorney Work Product | Privileged & Confidential, caption, IAB hearing number, date of accident, deposition date and time where applicable, and hearing date and time. No em or en dashes."
+why = "Firm practice controls the preparation step."
+good = "Attorney Work Product | Privileged & Confidential"
+bad = "Omit the hearing number and date."
+learned = "firm skill deposition-prep section 4"
+sample = false
+added = 2026-10-28
+
+[[entry]]
+id = "billing-memo-first"
+kind = "checklist"
+rule = "The first pre-hearing checklist item is: ★ GIVE THE BILLING MEMO TO THE HEARING OFFICER. Hand it up at the outset with the exhibits. When known, itemize provider, date range, balance and grand total so the memo matches the relief sought. Do not rely on the exhibit binder alone."
+why = "Firm practice controls the preparation step."
+good = "★ GIVE THE BILLING MEMO TO THE HEARING OFFICER."
+bad = "Leave the billing memo in the exhibit binder."
+learned = "firm skill workers-comp-hearing-prep section 1"
+sample = false
+added = 2026-10-28
+
+[[entry]]
+id = "transcript-cites-page-line"
+kind = "hearing"
+rule = "Every factual assertion from a transcript carries a page:line citation; every assertion from medical records carries a Bates cite."
+why = "Firm practice controls the preparation step."
+good = "Transcript p. 4:12; record [cite ABC0001]."
+bad = "A transcript assertion without page and line."
+learned = "firm skill deposition-prep section 4"
+sample = false
+added = 2026-10-28
+
+[[entry]]
+id = "verbatim-marked-apart"
+kind = "hearing"
+rule = "Mark passages to be read verbatim distinctly from passages merely designated."
+why = "Firm practice controls the preparation step."
+good = "Read verbatim: the marked passage."
+bad = "Mix verbatim and designated passages without labels."
+learned = "firm skill workers-comp-hearing-prep section 2"
+sample = false
+added = 2026-10-28

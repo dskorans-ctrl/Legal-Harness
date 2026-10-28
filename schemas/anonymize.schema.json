@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "anonymize",
+  "type": "object",
+  "properties": {
+    "pages_seen": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "people": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "claimant",
+              "doctor",
+              "attorney",
+              "person"
+            ]
+          },
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "quote",
+          "cite"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "organizations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "employer",
+              "insurer",
+              "provider",
+              "other"
+            ]
+          },
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "quote",
+          "cite"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "places": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "quote",
+          "cite"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "anchor_dates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "quote",
+          "cite"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "pages_seen",
+    "people",
+    "organizations",
+    "places",
+    "anchor_dates"
+  ],
+  "additionalProperties": false
+}

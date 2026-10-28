@@ -69,8 +69,11 @@ def _entries(document, source):
             error("field deponent: expected nonempty str")
         if entry["kind"] not in KINDS:
             error(f"field kind: expected one of {', '.join(sorted(KINDS))}")
-        if entry["sample"] is not True or not entry["rule"].startswith("SAMPLE:"):
-            error("field sample: round 1 requires sample = true and rule starting SAMPLE:")
+        if entry["sample"]:
+            if not entry["rule"].startswith("SAMPLE:"):
+                error("field sample: sample = true requires rule starting SAMPLE:")
+        elif entry["rule"].startswith("SAMPLE:") or not entry["learned"].startswith("firm skill "):
+            error("field sample: practice requires an unmarked rule and learned starting firm skill ")
         # The missing-field guard above is the refusal boundary for all six fields.
         values = {field: entry.get(field) for field in REQUIRED}
         result.append(Entry(**values, deponent=entry.get("deponent"), source=source))

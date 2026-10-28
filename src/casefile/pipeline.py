@@ -89,9 +89,10 @@ def bench_run(matter, config, log, playbook_version, opener=None) -> RunResult:
     """Score every page through the gates and merge passing chunks without writing the matter."""
     from casefile import facts
 
-    card = extract.card()
+    book = playbook.load(config.paths.playbook)
+    card = extract.card(book)
     client = ModelClient(config.model, opener)
-    rules = playbook.load(config.paths.playbook).rules
+    rules = book.rules
     try:
         result = run(matter.pages, card=card, client=client, rules=rules, log=log,
                      matter=matter.number, playbook_version=playbook_version, job="bench",
@@ -104,8 +105,8 @@ def bench_run(matter, config, log, playbook_version, opener=None) -> RunResult:
         if outcome.ok:
             casefile.extend(facts.merge(casefile, outcome.answer, part, outcome.run_id))
     candidate = Candidate(
-        tuple(CandidateFact(cite, fact.quote, fact.readings[0])
-              for fact in casefile.facts for cite in fact.cites),
+        tuple(CandidateFact(cite, fact.quote, fact.readings[0], fact.dates[index], fact.category, fact.providers[index])
+              for fact in casefile.facts for index, cite in enumerate(fact.cites)),
         tuple(CandidateFlag(flag.kind, tuple(flag.cites), flag.abouts[0])
               for flag in casefile.flags))
     coverage = log.coverage(matter.number, job="bench")

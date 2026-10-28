@@ -65,7 +65,7 @@ def _probe(card):
     )
     answer = {"facts": [
         {"cite": page.page_id, "quote": page.text,
-         "text": "The report notes a normal gait." if page.number == 2 else page.text}
+         "text": "The report notes a normal gait." if page.number == 2 else page.text, "date": "", "category": "other", "provider": ""}
         for page in pages], "flags": []}
     row = {
         "name": "stage4-invented-unstamped-probe",
@@ -122,7 +122,7 @@ def _check_case(name, attempts, failing, result, ideal, probe_answer):
         assert {row["page_id"] for row in coverage if row["status"] == "uncited"} == set(expected_uncited)
         assert all(row["reason"] == ("no fact or flag cites defense-report/001" if row["status"] == "uncited" else "")
                    for row in coverage), f"{name}: coverage reasons"
-        assert result["open"] == ({("defense-report/001", "bench_extract")} if name != "probe" else set()), (
+        assert result["open"] == ({("defense-report/001", "medical_memo")} if name != "probe" else set()), (
             f"{name}: open_items={len(result['open'])} expected={0 if name == 'probe' else 1}")
     else:
         assert outcome.answer is None, f"{name}: failed answer saved"
@@ -134,7 +134,7 @@ def _check_case(name, attempts, failing, result, ideal, probe_answer):
         reason = f"{last['gate']}: {detail}; the page stays open until a later run reads it"
         assert dict(outcome.failed) == dict.fromkeys(expected_ids, reason), f"{name}: failed page reasons"
         assert all(row["status"] == "failed" and row["reason"] == reason for row in coverage)
-        assert result["open"] == {(page_id, "bench_extract") for page_id in expected_ids}
+        assert result["open"] == {(page_id, "medical_memo") for page_id in expected_ids}
     failed_rows = [row for row in checked if row["verdict"] == "fail"]
     assert [(row["gate"], row["message"]) for row in result["failures"]] == [
         (row["gate"], row["message"]) for row in failed_rows], f"{name}: failure log differs"

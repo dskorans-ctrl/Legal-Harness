@@ -9,8 +9,8 @@ import pytest
 from casefile.schema import SchemaError, check_schema, load, validate
 
 ROOT = Path(__file__).resolve().parents[1]
-EXTRACT = ROOT / "schemas" / "bench_extract.schema.json"
-ANSWER = {"facts": [{"cite": "MED0001", "quote": "Pain 7/10.", "text": "Pain was 7/10."}],
+EXTRACT = ROOT / "schemas" / "medical_memo.schema.json"
+ANSWER = {"facts": [{"cite": "MED0001", "quote": "Pain 7/10.", "text": "Pain was 7/10.", "date": "", "category": "other", "provider": ""}],
           "flags": [{"kind": "gap", "cites": ["MED0001"], "about": "An invented record is missing."}]}
 
 
@@ -37,7 +37,7 @@ def case_type():
 
 def case_properties():
     node = load(EXTRACT)
-    assert node["title"] == "bench_extract"
+    assert node["title"] == "medical_memo"
     assert validate(ANSWER, node) == []
     bad = deepcopy(ANSWER)
     bad["facts"][0]["text"] = 7
@@ -143,8 +143,8 @@ def test_all_schemas_load(capsys):
         except SchemaError as exc:
             failures.append((path.name, str(exc)))
     with capsys.disabled():
-        print(f"schemas_loaded={len(paths) - len(failures)} of 20")
-    assert len(paths) == 20
+        print(f"schemas_loaded={len(paths) - len(failures)} of 11")
+    assert len(paths) == 11
     assert not failures, failures
 
 

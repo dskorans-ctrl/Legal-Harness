@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "medical_memo",
+  "type": "object",
+  "properties": {
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cite": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "mechanism_of_injury",
+              "chief_complaint",
+              "pain_score",
+              "prior_history",
+              "family_history",
+              "comorbidity_social",
+              "exam_finding",
+              "imaging_result",
+              "diagnostic_test",
+              "diagnosis",
+              "treatment_rendered",
+              "medication",
+              "procedure",
+              "order_or_referral",
+              "work_status",
+              "mmi_statement",
+              "causation_statement",
+              "impairment_rating",
+              "future_treatment",
+              "patient_statement",
+              "compliance",
+              "records_referenced",
+              "employment",
+              "other"
+            ]
+          },
+          "provider": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cite",
+          "quote",
+          "text",
+          "date",
+          "category",
+          "provider"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "conflict",
+              "gap"
+            ]
+          },
+          "cites": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "about": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "cites",
+          "about"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "facts",
+    "flags"
+  ],
+  "additionalProperties": false
+}

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
-from casefile import jsonrepair, matter, stamps
+from casefile import jsonrepair, matter, matterinfo, stamps
 from casefile.intake import BINDER_PATTERN
 from casefile.pathguard import classify
 
@@ -85,9 +85,16 @@ def load(matters_root, number, stamp_pattern) -> PageSet:
     for name in ("casefile.jsonl", "matter.toml"):
         _plain(folder / name, folder=False)
     metadata, intake = folder / "matter.toml", folder / "pages"
-    if metadata.exists() and intake.exists():
+    try:
+        info_data = matterinfo.document(folder)
+        matterinfo.load(folder)
+        if metadata.exists() and info_data.get("number") != number:
+            raise PagesError(f"{metadata}: number differs from matter folder {number}")
+    except matterinfo.MatterInfoError as exc:
+        raise PagesError(str(exc)) from exc
+    if "binders" in info_data and intake.exists():
         raise PagesError(f"{folder}: ambiguous layout: both matter.toml and pages exist")
-    if metadata.exists():
+    if metadata.exists() and not intake.exists():
         try:
             for binder in (folder / "records").iterdir():
                 if binder.name.startswith("."):

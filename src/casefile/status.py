@@ -2,7 +2,7 @@
 
 import sqlite3
 
-from casefile import extract, facts, memo, pages
+from casefile import extract, facts, memo, pages, playbook
 from casefile.runlog import open_db
 
 
@@ -19,11 +19,11 @@ def committed_coverage(casefile, coverage):
             for key, row in coverage.items()}
 
 
-def snapshot(loaded, casefile, coverage):
+def snapshot(loaded, casefile, coverage, book=None):
     """Keep page IDs as keys and every stamp in the attorney's label."""
     coverage = committed_coverage(casefile, coverage)
     dispositions = {}
-    card_name = extract.card().name
+    card_name = extract.card(book).name
     binders = list(dict.fromkeys(page.binder for page in loaded.pages))
     for page in loaded.pages:
         state, reason, *_ = coverage.get((page.page_id, card_name),
@@ -59,7 +59,7 @@ def matter_status(config, number) -> dict:
     if database.exists():
         with open_db(database) as log:
             coverage = log.coverage(number, job="memo")
-    return snapshot(loaded, casefile, coverage)
+    return snapshot(loaded, casefile, coverage, playbook.load(config.paths.playbook))
 
 
 def print_open(items, out):

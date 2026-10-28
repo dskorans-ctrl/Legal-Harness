@@ -1,2 +1,19 @@
 number = "9001.001"
 binders = ["medical", "employer", "defense-report"]
+
+[header]
+matter_type = "workers-comp"
+client_name = "Morgan Ashby-Vale"
+date_of_accident = "03/11/2025"
+treating_physician = "Dr. Priya Okonkwo-Lind"
+iab_hearing_number = "1234567"
+hearing_date = "01/15/2026 9:00 AM"
+plaintiffs = 1
+
+[hearing]
+issues = ["permanency", "termination"]
+standard = ""
+relief = ""
+
+[roles]
+defense-report = "defense"

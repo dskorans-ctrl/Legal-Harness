@@ -205,3 +205,37 @@ def test_http_roundtrip(capsys):
         server.shutdown()
         thread.join(timeout=5)
         server.server_close()
+
+
+def test_body_recording_and_output_faults(tmp_path):
+    from casefile import cards, config, gates, matter, model
+    from conftest import write_config
+    from fakemodel.bench import recording_for
+
+    card=cards.card('02-C-DEFDOC')
+    pages=(matter.Page('probe',1,'Pain 7/10.',('MED0001',)),)
+    answer=dict(section='primary',questions=[dict(text='Pain was recorded, correct?',quote='Pain 7/10.',cite='MED0001',note='')],points_for_our_expert=[])
+    body='Matter 9001.001\nFacts:\n[F1] MED0001: Pain 7/10.\n'
+    row=recording_for(card,pages,'9001.001',answer,body=body)
+    fake=FakeModel(recordings=[]);fake.record(row)
+    client=model.ModelClient(config.load(write_config(tmp_path)).model,FakeTransport(fake))
+    msgs=gates.messages(card,pages,'0123456789abcdef',matter='9001.001',body=body)
+    try:
+        reply=json.loads(client.chat(msgs,truncate=False).content)
+    except model.ModelError:
+        reply=None
+    ok=int(reply == dict(prompt_id='0123456789abcdef',**answer,end_id='0123456789abcdef'))
+    print(f'recording_body_ok={ok}')
+    assert ok == 1, 'recording_body_ok=0'
+    passed=[]
+    for mode in ('bad_schema','forbidden_json','empty_answer'):
+        fake.mode=mode
+        obj=json.loads(client.chat(msgs,truncate=False).content)
+        if mode == 'bad_schema':
+            assert 'text' not in obj['questions'][0]
+        elif mode == 'forbidden_json':
+            assert obj['questions'][0]['text'] == 'The IME found no injury.'
+        else:
+            assert obj['questions'] == obj['points_for_our_expert'] == []
+        passed.append(mode)
+    print(f'fault_branches={len(passed)} of 3')

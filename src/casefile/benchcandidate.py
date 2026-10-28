@@ -16,6 +16,9 @@ class CandidateFact:
     cite: str
     quote: str
     text: str
+    date: str = ""
+    category: str = ""
+    provider: str = ""
 
 
 @dataclass(frozen=True)
@@ -43,13 +46,14 @@ def parse(data) -> Candidate:
 
     facts = []
     for n, item in enumerate(data["facts"], start=1):
-        if not isinstance(item, dict) or set(item) != {"cite", "quote", "text"}:
+        if (not isinstance(item, dict) or not {"cite", "quote", "text"} <= item.keys()
+                or item.keys() - {"cite", "quote", "text", "date", "category", "provider"}):
             raise CandidateError(f"fact {n}: expected keys cite, quote, text (strings)")
 
-        if not all(isinstance(item[k], str) for k in ["cite", "quote", "text"]):
+        if not all(isinstance(item[k], str) for k in item):
             raise CandidateError(f"fact {n}: expected keys cite, quote, text (strings)")
 
-        facts.append(CandidateFact(item["cite"], item["quote"], item["text"]))
+        facts.append(CandidateFact(**item))
 
     flags = []
     for n, item in enumerate(data["flags"], start=1):

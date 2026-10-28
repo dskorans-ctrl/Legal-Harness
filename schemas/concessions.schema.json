@@ -1,117 +1,113 @@
 {
- "type": "object",
- "properties": {
-  "concessions": {
-   "type": "array",
-   "items": {
-    "type": "object",
-    "properties": {
-     "type": {
-      "type": "string",
-      "enum": [
-       "causally_related_diagnosis",
-       "treatment_reasonable",
-       "bills_reasonable",
-       "impairment_rating",
-       "restrictions",
-       "recommended_treatment",
-       "positive_finding",
-       "consistent_or_credible",
-       "other"
-      ]
-     },
-     "quote": {
-      "type": "string"
-     },
-     "cite": {
-      "type": "string"
-     }
-    },
-    "required": [
-     "type",
-     "quote",
-     "cite"
-    ],
-    "additionalProperties": false
-   }
-  },
-  "undefined_labels": {
-   "type": "array",
-   "items": {
-    "type": "object",
-    "properties": {
-     "label": {
-      "type": "string"
-     },
-     "cite": {
-      "type": "string"
-     },
-     "supporting_findings": {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "concessions",
+  "type": "object",
+  "properties": {
+    "concessions": {
       "type": "array",
       "items": {
-       "type": "object",
-       "properties": {
-        "quote": {
-         "type": "string"
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "causally_related_diagnosis",
+              "treatment_reasonable",
+              "bills_reasonable",
+              "impairment_rating",
+              "restrictions",
+              "recommended_treatment",
+              "positive_finding",
+              "consistent_or_credible",
+              "other"
+            ]
+          },
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          }
         },
-        "cite": {
-         "type": "string"
-        }
-       },
-       "required": [
-        "quote",
-        "cite"
-       ],
-       "additionalProperties": false
+        "required": [
+          "type",
+          "quote",
+          "cite"
+        ],
+        "additionalProperties": false
       }
-     },
-     "none_stated_pages": {
-      "type": "string"
-     }
     },
-    "required": [
-     "label",
-     "cite",
-     "supporting_findings",
-     "none_stated_pages"
-    ],
-    "additionalProperties": false
-   }
-  },
-  "danger_zone": {
-   "type": "array",
-   "items": {
-    "type": "object",
-    "properties": {
-     "fact": {
-      "type": "string"
-     },
-     "cite": {
-      "type": "string"
-     },
-     "why_not_to_open": {
-      "type": "string"
-     }
+    "undefined_labels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          },
+          "supporting_findings": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "quote": {
+                  "type": "string"
+                },
+                "cite": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "quote",
+                "cite"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "label",
+          "quote",
+          "cite",
+          "supporting_findings"
+        ],
+        "additionalProperties": false
+      }
     },
-    "required": [
-     "fact",
-     "cite",
-     "why_not_to_open"
-    ],
-    "additionalProperties": false
-   }
+    "danger_zone": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "quote": {
+            "type": "string"
+          },
+          "cite": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "quote",
+          "cite",
+          "why"
+        ],
+        "additionalProperties": false
+      }
+    }
   },
-  "coverage": {
-   "type": "string"
-  }
- },
- "required": [
-  "concessions",
-  "undefined_labels",
-  "danger_zone",
-  "coverage"
- ],
- "additionalProperties": false,
- "$schema": "https://json-schema.org/draft/2020-12/schema",
- "title": "concessions"
+  "required": [
+    "concessions",
+    "undefined_labels",
+    "danger_zone"
+  ],
+  "additionalProperties": false
 }

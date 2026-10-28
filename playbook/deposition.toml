@@ -1,0 +1,105 @@
+[[entry]]
+id = "our-doctor-treatment-and-bills"
+kind = "depo-goal"
+rule = "Ask separately whether all treatment was reasonable, necessary and causally related, and whether all bills were reasonable and causally related. Anchor the bills question on the bill memo by name and walk every provider."
+why = "Firm practice controls the preparation step."
+good = "Separate treatment and bills questions with separate answers."
+bad = "One compound question about treatment and bills."
+learned = "firm skill deposition-prep section 1"
+sample = false
+deponent = "our-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "defense-doctor-two-concessions"
+kind = "depo-goal"
+rule = "Seek available concessions on treatment and bills as two separate questions, anchored to the report's own words."
+why = "Firm practice controls the preparation step."
+good = "Lock in each concession separately."
+bad = "Combine treatment and bills in one question."
+learned = "firm skill deposition-prep section 1"
+sample = false
+deponent = "defense-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "defense-doctor-documents-not-medicine"
+kind = "depo-goal"
+rule = "Cross on documents, his own words and his process, never medicine. Apply nine tests: 1. Cut or rewrite a question he could answer with it depends or yes, but. 2. Never ask why, how or what causes a medical mechanism; stop at the finding. 3. Cut general medical principles with exceptions. 4. Do not open a finding with an obvious alternative explanation in the chart. 5. Use only language clear on its face for a concession, never a disputed reading of layout. 6. Do not feature patient reports, declined tests or provoked symptoms as proof of injury. 7. Put findings that cut both ways in the danger zone. 8. Know the answer from a document in hand, except the allowed clinical-practice and exam-time questions. 9. Do not read defense-friendly rationale to him; use only its scope, author, date and citations."
+why = "Firm practice controls the preparation step."
+good = "Your report records this finding, correct?"
+bad = "Explain how that test proves the injury."
+learned = "firm skill deposition-prep section 2"
+sample = false
+deponent = "defense-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "defense-doctor-no-defense-work"
+kind = "depo-goal"
+rule = "Never ask about defense work: who hired or retained him, how often, exam counts, practice share, employer versus claimant requests, or fees for examination, report or deposition. Never make the point that he is a paid defense examiner."
+why = "Firm practice controls the preparation step."
+good = "Use the words of the report."
+bad = "What percentage of your practice is defense examinations?"
+learned = "firm skill deposition-prep section 2"
+sample = false
+deponent = "defense-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "defense-doctor-practice-allowed"
+kind = "depo-goal"
+rule = "Current clinical treating practice and face-to-face time with the claimant are allowed. Keep questions short and leading where possible, framed around treating rather than defense work."
+why = "Firm practice controls the preparation step."
+good = "Do you currently treat patients with low back injuries?"
+bad = "How often does the carrier retain you?"
+learned = "firm skill deposition-prep section 2"
+sample = false
+deponent = "defense-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "defense-doctor-use-instead"
+kind = "topic-order"
+rule = "Use his exact concessions without upgrading qualifiers; align findings with diagnoses and ratings he already gave, then stop; contrast his own reports without asking reconciliation; ask what records he had, not what they mean; confirm full accurate quotations; ask what specific findings support undefined labels, never why; use process omissions shown on the face of the report."
+why = "Firm practice controls the preparation step."
+good = "Your report lists these records, correct?"
+bad = "Please reconcile these opinions for us."
+learned = "firm skill deposition-prep section 2"
+sample = false
+deponent = "defense-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "question-form"
+kind = "question"
+rule = "Use short, leading questions, one fact each, tied to a Bates cite or the report. Stop when the point is made. If he volunteers an alternative explanation, note it for our expert and move on."
+why = "Firm practice controls the preparation step."
+good = "Your report says that, correct? [cite ABC0001]"
+bad = "Why is that finding important and how does it work?"
+learned = "firm skill deposition-prep section 2"
+sample = false
+deponent = "defense-doctor"
+added = 2026-10-28
+
+[[entry]]
+id = "points-for-our-expert"
+kind = "depo-goal"
+rule = "Move favorable medical explanations to Points for our expert; get medical support from our treating physician or expert."
+why = "Firm practice controls the preparation step."
+good = "Points for our expert: address this medical issue."
+bad = "Argue a medical principle with the defense doctor."
+learned = "firm skill deposition-prep section 2"
+sample = false
+added = 2026-10-28
+
+[[entry]]
+id = "danger-zone"
+kind = "depo-goal"
+rule = "Include a clearly marked danger-zone section for findings that cut both ways, validity concerns, pre-existing conditions and likely defense explanations."
+why = "Firm practice controls the preparation step."
+good = "Danger zone: the finding cuts both ways."
+bad = "Open every abnormal finding on cross."
+learned = "firm skill deposition-prep section 2"
+sample = false
+added = 2026-10-28

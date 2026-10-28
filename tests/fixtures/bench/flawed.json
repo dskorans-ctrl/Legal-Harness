@@ -3,152 +3,242 @@
     {
       "cite": "MED0001",
       "quote": "Date of service: 03/11/2025",
-      "text": "The date of service was 03/11/2025."
+      "text": "The date of service was 03/11/2025.",
+      "date": "03/11/2025",
+      "category": "other",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0001",
       "quote": "Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
-      "text": "The patient stated he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back."
+      "text": "The patient stated he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
+      "date": "03/11/2025",
+      "category": "mechanism_of_injury",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0001",
       "quote": "Pain 7/10 in the low back, no radiation.",
-      "text": "Pain was 7/10 in the low back with no radiation."
+      "text": "Pain was 7/10 in the low back with no radiation.",
+      "date": "03/11/2025",
+      "category": "pain_score",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0002",
       "quote": "Straight leg raise negative bilaterally.",
-      "text": "The straight leg raise was negative bilaterally."
+      "text": "The straight leg raise was negative bilaterally.",
+      "date": "03/11/2025",
+      "category": "exam_finding",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0002",
       "quote": "Lumbar spine x-ray, three views, ordered; report to follow.",
-      "text": "Lumbar spine x-ray, three views, was ordered with the report to follow."
+      "text": "Lumbar spine x-ray, three views, was ordered with the report to follow.",
+      "date": "03/11/2025",
+      "category": "order_or_referral",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0002",
       "quote": "Diagnosis: acute lumbar strain.",
-      "text": "The diagnosis was acute lumbar strain."
+      "text": "The diagnosis was acute lumbar strain.",
+      "date": "03/11/2025",
+      "category": "diagnosis",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0002",
       "quote": "Off work for 3 days, then return as tolerated.",
-      "text": "The ER record took the patient off work for 3 days, then return as tolerated."
+      "text": "The ER record took the patient off work for 3 days, then return as tolerated.",
+      "date": "03/11/2025",
+      "category": "work_status",
+      "provider": "Fennimore County Hospital"
     },
     {
       "cite": "MED0003",
       "quote": "Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.",
-      "text": "The patient reported a lumbar strain in 2019 after moving furniture, which resolved with rest."
+      "text": "The patient reported a lumbar strain in 2019 after moving furniture, which resolved with rest.",
+      "date": "03/14/2025",
+      "category": "prior_history",
+      "provider": "Brightwater Family Medicine"
     },
     {
       "cite": "MED0003",
       "quote": "Restrictions: no lifting over 10 pounds and no repetitive bending through 04/11/2025.",
-      "text": "Restrictions were no lifting over 10 pounds and no repetitive bending through 04/11/2025."
+      "text": "Restrictions were no lifting over 10 pounds and no repetitive bending through 04/11/2025.",
+      "date": "03/14/2025",
+      "category": "work_status",
+      "provider": "Brightwater Family Medicine"
     },
     {
       "cite": "MED0003",
       "quote": "Referred to physical therapy, two visits per week for six weeks.",
-      "text": "The patient was referred to physical therapy for two visits per week for six weeks."
+      "text": "The patient was referred to physical therapy for two visits per week for six weeks.",
+      "date": "03/14/2025",
+      "category": "order_or_referral",
+      "provider": "Brightwater Family Medicine"
     },
     {
       "cite": "MED0004",
       "quote": "Lumbar flexion 40 degrees, extension 10 degrees.",
-      "text": "Lumbar flexion was 40 degrees and extension was 10 degrees."
+      "text": "Lumbar flexion was 40 degrees and extension was 10 degrees.",
+      "date": "03/24/2025",
+      "category": "exam_finding",
+      "provider": "Ridgeline Physical Therapy"
     },
     {
       "cite": "MED0005",
       "quote": "Patient reports new numbness into the left calf since approximately 04/10/2025.",
-      "text": "The patient reported new numbness into the left calf since approximately 04/10/2025."
+      "text": "The patient reported new numbness into the left calf since approximately 04/10/2025.",
+      "date": "04/14/2025",
+      "category": "patient_statement",
+      "provider": "Ridgeline Physical Therapy"
     },
     {
       "cite": "MED0005",
       "quote": "Recommend MRI of the lumbar spine before further progression.",
-      "text": "It was recommended to have an MRI of the lumbar spine before further progression."
+      "text": "It was recommended to have an MRI of the lumbar spine before further progression.",
+      "date": "04/14/2025",
+      "category": "order_or_referral",
+      "provider": "Ridgeline Physical Therapy"
     },
     {
       "cite": "MED0006",
       "quote": "L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.",
-      "text": "The MRI showed L4-L5 had a 4 mm posterior central disc protrusion contacting the thecal sac."
+      "text": "The MRI showed L4-L5 had a 4 mm posterior central disc protrusion contacting the thecal sac.",
+      "date": "04/18/2025",
+      "category": "imaging_result",
+      "provider": "Lakeshore Imaging"
     },
     {
       "cite": "MED0007",
       "quote": "Positive straight leg raise on the left at 45 degrees.",
-      "text": "There was a positive straight leg raise on the left at 45 degrees."
+      "text": "There was a positive straight leg raise on the left at 45 degrees.",
+      "date": "05/09/2025",
+      "category": "exam_finding",
+      "provider": "Dr. Priya Okonkwo-Lind"
     },
     {
       "cite": "MED0007",
       "quote": "Impression: L4-L5 disc protrusion with left L5 radiculopathy.",
-      "text": "The impression was L4-L5 disc protrusion with left L5 radiculopathy."
+      "text": "The impression was L4-L5 disc protrusion with left L5 radiculopathy.",
+      "date": "05/09/2025",
+      "category": "diagnosis",
+      "provider": "Dr. Priya Okonkwo-Lind"
     },
     {
       "cite": "MED0008",
       "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
-      "text": "The plan was a left L4-L5 transforaminal epidural steroid injection."
+      "text": "The plan was a left L4-L5 transforaminal epidural steroid injection.",
+      "date": "05/09/2025",
+      "category": "future_treatment",
+      "provider": "Dr. Priya Okonkwo-Lind"
     },
     {
       "cite": "MED0008",
       "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
-      "text": "Dr. Okonkwo-Lind gave the opinion that the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025."
+      "text": "Dr. Okonkwo-Lind gave the opinion that the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025.",
+      "date": "05/09/2025",
+      "category": "causation_statement",
+      "provider": "Dr. Priya Okonkwo-Lind"
     },
     {
       "cite": "MED0008",
       "quote": "The patient has not reached maximum medical improvement.",
-      "text": "The patient has not reached maximum medical improvement."
+      "text": "The patient has not reached maximum medical improvement.",
+      "date": "05/09/2025",
+      "category": "mmi_statement",
+      "provider": "Dr. Priya Okonkwo-Lind"
     },
     {
       "cite": "EMP0001",
       "quote": "Employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
-      "text": "The employee reported lifting a tote weighing approximately 40 pounds from a floor pallet."
+      "text": "The employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
+      "date": "03/11/2025",
+      "category": "mechanism_of_injury",
+      "provider": ""
     },
     {
       "cite": "EMP0003",
       "quote": "Average weekly wage: $912.40",
-      "text": "The average weekly wage was $912.40."
+      "text": "The average weekly wage was $912.40.",
+      "date": "03/15/2025",
+      "category": "employment",
+      "provider": ""
     },
     {
       "cite": "DEF0003",
       "quote": "The examinee is at maximum medical improvement as of today's examination.",
-      "text": "Dr. Marchetti's report states the examinee is at maximum medical improvement."
+      "text": "Dr. Marchetti's report states the examinee is at maximum medical improvement.",
+      "date": "06/20/2025",
+      "category": "mmi_statement",
+      "provider": "Dr. Theodore Marchetti"
     },
     {
       "cite": "DEF0003",
       "quote": "No work restrictions are indicated.",
-      "text": "The IME found no work restrictions."
+      "text": "The IME found no work restrictions.",
+      "date": "06/20/2025",
+      "category": "work_status",
+      "provider": "Dr. Theodore Marchetti"
     },
     {
       "cite": "MED0008",
       "quote": "Restrictions: sedentary duty, no lifting over 15 pounds, until re-evaluation on 06/20/2025.",
-      "text": "Dr. Okonkwo-Lind restricted the patient to sedentary duty with no lifting over 15 pounds until re-evaluation on 06/20/2025."
+      "text": "Dr. Okonkwo-Lind restricted the patient to sedentary duty with no lifting over 15 pounds until re-evaluation on 06/20/2025.",
+      "date": "05/09/2025",
+      "category": "work_status",
+      "provider": "Dr. Priya Okonkwo-Lind"
     },
     {
       "cite": "DEF0003",
       "quote": "No further treatment is medically necessary.",
-      "text": "The report states no further treatment is medically necessary."
+      "text": "The report states no further treatment is medically necessary.",
+      "date": "06/20/2025",
+      "category": "future_treatment",
+      "provider": "Dr. Theodore Marchetti"
     },
     {
       "cite": "MED0003",
       "quote": "Lumbar strain, likely work related.",
-      "text": "The family medicine record assessed a lumbar strain, likely work related."
+      "text": "The family medicine record assessed a lumbar strain, likely work related.",
+      "date": "03/14/2025",
+      "category": "diagnosis",
+      "provider": "Brightwater Family Medicine"
     },
     {
       "cite": "EMP0001",
       "quote": "Date of hire: 08/02/2021",
-      "text": "The incident report gives a hire date of 08/02/2021."
+      "text": "The incident report gives a hire date of 08/02/2021.",
+      "date": "03/11/2025",
+      "category": "employment",
+      "provider": ""
     },
     {
       "cite": "EMP0002",
       "quote": "Lift up to 50 pounds repeatedly during the shift.",
-      "text": "The job description requires lifting up to 50 pounds repeatedly."
+      "text": "The job description requires lifting up to 50 pounds repeatedly.",
+      "date": "03/11/2025",
+      "category": "employment",
+      "provider": ""
     },
     {
       "cite": "MED0003",
       "quote": "Patient was lifting 80 pounds.",
-      "text": "The patient was lifting 80 pounds."
+      "text": "The patient was lifting 80 pounds.",
+      "date": "03/14/2025",
+      "category": "other",
+      "provider": "Brightwater Family Medicine"
     },
     {
       "cite": "MED0099",
       "quote": "Date of service: 03/11/2025",
-      "text": "A date of service of 03/11/2025."
+      "text": "A date of service of 03/11/2025.",
+      "date": "",
+      "category": "other",
+      "provider": ""
     }
   ],
   "flags": [

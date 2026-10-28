@@ -23,7 +23,8 @@ ANSWER = {"facts": [{"cite": "MED0001", "quote": QUOTE, "text": "He reported no 
 
 def fact_event(quote="The record was received."):
     return facts.Event("fact", {"id": "F1", "cite": "MED0001", "page_id": "medical/001",
-                                "quote": quote, "text": "The record was received.", "run_id": 1},
+                                "quote": quote, "text": "The record was received.", "run_id": 1,
+                                "date": "", "category": "other", "provider": ""},
                        at=FIXED_AT)
 
 
@@ -36,7 +37,7 @@ def output_event(seq):
 def three_events(path):
     facts.append(path, [fact_event()])
     prefix = path.read_bytes()
-    run = facts.Event("run", {"run_id": 1, "job": "memo", "card": "bench_extract",
+    run = facts.Event("run", {"run_id": 1, "job": "memo", "card": "medical_memo",
                               "card_version": "invented", "pages": ["medical/001"],
                               "ok": True, "read": ["medical/001"], "uncited": [], "failed": []},
                       at=FIXED_AT)
@@ -158,7 +159,7 @@ def new_cite(path):
     answer["facts"][0]["cite"] = "MED 0002"
     events = facts.merge(stored, answer, PAGES, 2)
     assert [event.kind for event in events] == ["cite", "reading"], "new page lost its cite or reading source"
-    assert events[0].payload == {"fact": "F1", "cite": "MED0002", "page_id": "medical/002", "run_id": 2}
+    assert events[0].payload == {"fact": "F1", "cite": "MED0002", "page_id": "medical/002", "run_id": 2, "date": "", "provider": ""}
     assert events[1].payload == {"fact": "F1", "text": answer["facts"][0]["text"],
                                  "page_id": "medical/002", "run_id": 2}
     stored = facts.append(path, events)
@@ -232,7 +233,57 @@ CASES = (round_trip, edited_line, removed_middle, cut_middle, torn_tail, missing
 
 
 def test_casefile(tmp_path):
-    assert len(CASES) == 14
+    assert len(CASES) == 17
     for case in CASES:
         case(tmp_path / f"{case.__name__}.jsonl")
-    print("casefile_ok=14 of 14")
+    print("casefile_ok=17 of 17")
+
+
+def legacy_bytes(events):
+    result=[];previous=''
+    for index,event in enumerate(events,1):
+        data={k:v for k,v in event.payload.items() if k in facts.FIELDS_V1[event.kind]}
+        obj=dict(seq=index,at=FIXED_AT,prev=previous,kind=event.kind,payload=data)
+        raw=json.dumps(obj,ensure_ascii=False,separators=(',',':')).encode('utf-8')
+        result.append(raw+b'\n');previous=hashlib.sha256(raw).hexdigest()
+    return b''.join(result)
+
+
+def upgrade(path):
+    raw=legacy_bytes([fact_event(),facts.Event('cite',dict(fact='F1',cite='MED0002',page_id='medical/002',run_id=2))])
+    path.write_bytes(raw)
+    loaded=facts.load(path)
+    assert loaded.upgraded == 2 and path.read_bytes() == raw
+    fact=loaded.facts[0]
+    assert fact.dates == ['',''] and fact.category == 'other' and fact.providers == ['','']
+    event=fact_event('A new record.');event=facts.Event('fact',{**event.payload,'id':'F3'})
+    updated=facts.append(path,[event])
+    assert updated.upgraded == 2 and updated.last_seq == 3 and path.read_bytes().startswith(raw)
+    assert set(updated.events[-1].payload) == facts.FIELDS['fact']
+    path.write_bytes(raw+b'{"seq":3')
+    assert facts.load(path).torn and facts.load(path).upgraded == 2
+    assert facts.append(path,[event]).last_seq == 3
+
+
+def legacy_corrupt(path):
+    # Rehash the next line to isolate the shape guard from the chain guard.
+    events=[fact_event(),output_event(1)]
+    raw=legacy_bytes(events);lines=raw.splitlines();obj=json.loads(lines[0]);del obj['payload']['text']
+    lines[0]=json.dumps(obj,separators=(',',':')).encode()
+    second=json.loads(lines[1]);second['prev']=hashlib.sha256(lines[0]).hexdigest()
+    lines[1]=json.dumps(second,separators=(',',':')).encode()
+    path.write_bytes(b'\n'.join(lines)+b'\n')
+    refusal(path,1,'W1(f2): old key subset accepted')
+
+
+def cite_dates(path):
+    answer=copy.deepcopy(ANSWER);answer['facts'][0].update(date='03/11/2025',category='patient_statement',provider='Invented Clinic')
+    stored=facts.append(path,facts.merge(facts.CaseFile(),answer,PAGES,1))
+    answer['facts'][0].update(cite='MED0002',date='03/12/2025',provider='Other Invented Clinic')
+    stored=facts.append(path,facts.merge(stored,answer,PAGES,2))
+    assert stored.facts[0].dates == ['03/11/2025','03/12/2025']
+    assert stored.facts[0].providers == ['Invented Clinic','Other Invented Clinic']
+    assert stored.facts[0].category == 'patient_statement'
+
+
+CASES = (*CASES,upgrade,legacy_corrupt,cite_dates)

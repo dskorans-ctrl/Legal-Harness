@@ -217,3 +217,10 @@ def alias_table(base, root, firmlink=True):
 def ocr_expected_fail() -> bool:
     """The doctor's OCR check runs a real smoke page (stage 3); no check is expected to fail."""
     return False
+
+
+def split_card(card):
+    from dataclasses import replace
+
+    system = f"prompt_id: {'0' * 16}\n{card.text}"
+    return replace(card, max_answer_tokens=65536 - (7164 + 64 + 8192 + len(system.encode('utf-8')) + 16))

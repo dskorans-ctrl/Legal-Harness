@@ -16,12 +16,11 @@ MATTER = ROOT / "tests/fixtures/matters/9001.001"
 def test_extract_card():
     card = extract.card()
     print(f"card_version={card.version} card_name={card.name} docx_import={int(docx.__name__ == 'docx')}")
-    assert card.version == "4ab2bdb30535", f"card_version={card.version}"
-    assert card.name == extract.CARD_NAME == "bench_extract"
-    assert card.text is extract.TEXT
-    assert extraction_card().text is extract.TEXT, "extraction_card().text is not extract.TEXT"
-    assert extract.TEXT == extract.CARD_TEXT + extract.ID_SENTENCE
-    assert len(extract.TEXT.encode("utf-8")) == 920
+    assert card.version == "ed0e58680bc9", f"card_version={card.version}"
+    assert card.name == extract.CARD_NAME == "medical_memo"
+    assert extraction_card().text == card.text
+    assert card.text.endswith(extract.ID_SENTENCE)
+    assert 'date of service' in card.text
     assert docx.__name__ == "docx"
 
 
@@ -47,3 +46,27 @@ def test_recording_for(tmp_path):
         card, loaded.pages, "__PROMPT_ID__", matter=loaded.number)
     assert json.loads(row["answer"]) == {
         "prompt_id": "__PROMPT_ID__", **ideal, "end_id": "__PROMPT_ID__"}
+
+
+def test_no_reply_forms(tmp_path):
+    from io import StringIO
+    from urllib.error import URLError
+    from casefile import bench, doctor
+    from test_doctor import passing_smoke
+    from test_status import setup_matter, invoke
+
+    class Offline:
+        def open(self,*args,**kwargs):
+            raise URLError(ConnectionRefusedError())
+    path,settings,_=setup_matter(tmp_path)
+    reason='no reply from the model server at http://127.0.0.1:9 (connection refused)'
+    out=StringIO()
+    doctor.run(settings,out=out,opener=Offline(),ocr_smoke=passing_smoke)
+    checks=[f'doctor ollama_loopback FAIL {reason} | do: start the Ollama app' in out.getvalue()]
+    code,_,error=invoke(settings,Offline())
+    checks.append(code == 2 and error == f'memo: cannot run: {reason}; the pages of this run stay open until a later run reads them\n')
+    out,err=StringIO(),StringIO()
+    code=bench.main(MATTER.parent,path,out=out,err=err,opener=Offline())
+    checks.append(code == 2 and err.getvalue() == f'bench: cannot run: {reason}\n')
+    print(f'no_reply_forms={sum(checks)} of 3')
+    assert all(checks), f'no_reply_forms={sum(checks)} of 3'

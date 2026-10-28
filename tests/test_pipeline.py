@@ -7,7 +7,7 @@ import pytest
 
 from casefile import config, extract, gates, matter, model, pipeline, rules
 from casefile.runlog import open_db
-from conftest import ROOT, write_config
+from conftest import split_card, ROOT, write_config
 from fakemodel import FakeModel, FakeTransport
 from fakemodel.bench import recording_for, recordings_for
 
@@ -27,8 +27,9 @@ def totals():
     print(f'chunks_ok={len(passed["chunks"])} of 8 pipeline_ok={len(passed["pipeline"])} of 5', flush=True)
 
 
-def split_card():
-    return replace(extract.card(), max_answer_tokens=65536 - 16384)
+def split_card(card=None):
+    from conftest import split_card as shared_split
+    return shared_split(extract.card() if card is None else card)
 
 
 def ids(chunks):
@@ -57,12 +58,12 @@ def client_for(tmp_path, card, *, mode="replay", chunks=None):
 
 
 def seed_read(log, pages, job):
-    run_id = log.start_run(job=job, matter="9001.001", card="bench_extract", card_version="invented",
+    run_id = log.start_run(job=job, matter="9001.001", card="medical_memo", card_version="invented",
                            playbook_version="invented", model="invented", pages_in=len(pages),
                            prompt_sha256="a" * 64)
     for page in pages:
         if page.page_id != "defense-report/001":
-            log.record_coverage(run_id, matter="9001.001", page_id=page.page_id, card="bench_extract",
+            log.record_coverage(run_id, matter="9001.001", page_id=page.page_id, card="medical_memo",
                                 status="read", reason="")
 
 

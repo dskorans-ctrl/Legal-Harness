@@ -24,6 +24,7 @@ NUMBER = "9001.001"
 ONE_PAGE = {"facts": [{
     "cite": "DEF0001", "quote": "The examinee reports lifting a tote of about 60 pounds.",
     "text": "The examinee reported lifting a tote of about 60 pounds.",
+    "date": "06/20/2025", "category": "patient_statement", "provider": "Dr. Theodore Marchetti",
 }], "flags": []}
 EXPECTED = (
     "stage5 run=1 mode=replay exit=1 chunks=1 runs=+1 read=13 open=1 facts=31 conflicts=5 gaps=4 new_facts=31 new_flags=9",

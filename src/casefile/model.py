@@ -37,7 +37,7 @@ def reply_error(status, payload):
     return f"status={status}: {detail}"
 
 
-def no_reply_reason(exc):
+def no_reply_reason(exc, host):
     """Describe transport failures without exposing exception representations."""
     cause = exc.reason if isinstance(exc, error.URLError) else exc
     if isinstance(cause, ConnectionRefusedError):
@@ -54,8 +54,7 @@ def no_reply_reason(exc):
         detail = "no complete reply"
     else:
         detail = "server could not be reached"
-    return (f"no reply from the model server ({detail}); "
-            "the page stays open until a later run reads it")
+    return f"no reply from the model server at {host} ({detail})"
 
 
 class ModelError(RuntimeError):
@@ -128,10 +127,10 @@ class ModelClient:
                              received=True) from exc
         except http.client.IncompleteRead as exc:
             partial = exc.partial.decode("utf-8", errors="replace")
-            message = reply_error(status, exc.partial) if received else no_reply_reason(exc)
+            message = reply_error(status, exc.partial) if received else no_reply_reason(exc, self.config.host)
             raise ModelError(message, partial, received=received) from exc
         except (OSError, error.URLError, http.client.HTTPException) as exc:
-            message = (str(exc) or type(exc).__name__) if received else no_reply_reason(exc)
+            message = (str(exc) or type(exc).__name__) if received else no_reply_reason(exc, self.config.host)
             raise ModelError(message, received=received) from exc
         if status != 200:
             raise ModelError(reply_error(status, payload), payload.decode("utf-8", errors="replace"),

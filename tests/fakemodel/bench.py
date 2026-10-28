@@ -11,9 +11,9 @@ def extraction_card():
     return extract.card()
 
 
-def recording_for(card, pages, number, answer) -> dict:
+def recording_for(card, pages, number, answer, *, body=None) -> dict:
     return {"name": f"gates-{number}",
-            "messages": gates.messages(card, pages, "__PROMPT_ID__", matter=number),
+            "messages": gates.messages(card, pages, "__PROMPT_ID__", matter=number, body=body),
             "answer": json.dumps({"prompt_id": "__PROMPT_ID__", **answer,
                                   "end_id": "__PROMPT_ID__"}, ensure_ascii=False)}
 

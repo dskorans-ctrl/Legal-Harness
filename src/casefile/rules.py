@@ -7,7 +7,7 @@ import re
 import tomllib
 
 
-RULE_IDS = frozenset({"no-dme-ime", "no-hired-paid-retained", "treatment-and-bills-apart", "bates-cites"})
+RULE_IDS = ("no-dme-ime", "no-hired-paid-retained", "treatment-and-bills-apart", "bates-cites")
 ENTRY_FIELDS = ("rule", "why", "good", "bad", "added", "learned")
 COMMON_FIELDS = frozenset((*ENTRY_FIELDS, "id", "kind", "severity", "unit"))
 KIND_FIELDS = {"forbid": {"patterns"}, "conjunction": {"all_of"},
@@ -45,6 +45,7 @@ class Rule:
     added: date
     learned: str
     patterns: tuple[str, ...] = ()
+    patterns_text_only: tuple[str, ...] = ()
     all_of: tuple[tuple[str, ...], ...] = ()
     cite_pattern: str | None = None
     bates_pattern: str | None = None
@@ -55,7 +56,7 @@ class Rules:
     version: int
     rules: tuple[Rule, ...]
 
-    def check(self, text, *, unit, stamped=True):
+    def check(self, text, *, unit, stamped=True, providers=()):
         if not isinstance(text, str):
             raise TypeError("output text must be str")
         if unit not in {"text", "question"}:
@@ -68,11 +69,18 @@ class Rules:
             spans = set()
             severity = rule.severity
             if rule.kind == "forbid":
-                for pattern in rule.patterns:
+                for pattern in (*rule.patterns, *(rule.patterns_text_only if unit == "text" else ())):
                     spans.update(m.span() for m in re.finditer(pattern, text, flags))
             elif rule.kind == "conjunction":
-                groups = [[m for pattern in group for m in re.finditer(pattern, text, flags)]
-                          for group in rule.all_of]
+                masked = text
+                if rule.id == "treatment-and-bills-apart":
+                    for provider in sorted(providers, key=len, reverse=True):
+                        parts = provider.split()
+                        if parts:
+                            pattern = r"\s+".join(re.escape(part) for part in parts)
+                            masked = re.sub(pattern, lambda m: " " * len(m[0]), masked, flags=flags)
+                groups = [[m for pattern in group for m in re.finditer(pattern, masked if index == 0 else text, flags)]
+                          for index, group in enumerate(rule.all_of)]
                 if all(groups):
                     matches = [min(group, key=lambda m: m.start()) for group in groups]
                     spans.add((min(m.start() for m in matches), max(m.end() for m in matches)))
@@ -120,7 +128,7 @@ def _from_document(document, source):
             error(rule_id, "severity", "expected error or warning")
         if entry["unit"] not in {"text", "question"}:
             error(rule_id, "unit", "expected text or question")
-        unknown = entry.keys() - COMMON_FIELDS - KIND_FIELDS[kind]
+        unknown = entry.keys() - COMMON_FIELDS - KIND_FIELDS[kind] - ({"patterns_text_only"} if kind == "forbid" else set())
         if unknown:
             error(rule_id, sorted(unknown)[0], "unknown field")
         for field in KIND_FIELDS[kind]:
@@ -145,6 +153,12 @@ def _from_document(document, source):
             for index, value in enumerate(values, 1):
                 pattern(value, f"pattern {index}", True)
             fields["patterns"] = tuple(values)
+            extra = entry.get("patterns_text_only", [])
+            if not isinstance(extra, list):
+                error(rule_id, "patterns_text_only", "expected array")
+            for index, value in enumerate(extra, 1):
+                pattern(value, f"patterns_text_only {index}", True)
+            fields["patterns_text_only"] = tuple(extra)
         elif kind == "conjunction":
             groups = entry["all_of"]
             if not isinstance(groups, list) or not groups:
@@ -162,8 +176,8 @@ def _from_document(document, source):
             pattern(entry["bates_pattern"], "bates_pattern", False)
             fields.update(cite_pattern=entry["cite_pattern"], bates_pattern=entry["bates_pattern"])
         result.append(Rule(**fields))
-    if seen != RULE_IDS:
-        error("<document>", "id", f"missing rule ids: {', '.join(sorted(RULE_IDS - seen))}")
+    if seen != set(RULE_IDS):
+        error("<document>", "id", f"missing rule ids: {', '.join(sorted(set(RULE_IDS) - seen))}")
     return Rules(1, tuple(result))
 
 
@@ -173,3 +187,14 @@ def load(path):
         return _from_document(tomllib.loads(path.read_text(encoding="utf-8")), path)
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
         raise RulesError(f"{path}: {exc}") from exc
+
+
+def check_stamps(pages, rules):
+    """Refuse a stamp the output playbook cannot cite before opening the run log."""
+    rule = next(rule for rule in rules.rules if rule.id == "bates-cites")
+    for page in pages:
+        for stamp in page.stamps:
+            if re.fullmatch(rule.bates_pattern, stamp) is None:
+                raise RulesError(f"stamp {stamp} on page {page.page_id} does not match the playbook's "
+                                 "bates-cites pattern; align [ocr].stamp_pattern with rules.toml "
+                                 "bates_pattern before running")

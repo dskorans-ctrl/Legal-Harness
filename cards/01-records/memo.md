@@ -1,0 +1,6 @@
+Read the pages of this matter. Return one JSON object with facts and flags.
+Each fact has cite, quote, text, date, category and provider. Cite the page's Bates stamp, or its page id when unstamped. The quote is an exact span from that page. The text is one sentence saying no more than the quote.
+The date is the date of service of the record the page belongs to, copied exactly as written on the page, never a print, fax or signature date. Leave date empty when the page shows none. Supported forms: MM/DD/YYYY, M/D/YYYY, YYYY-MM-DD and Month D, YYYY (full month name).
+The provider is the provider or facility name as written on the page; leave it empty when none is shown.
+Choose category from: mechanism_of_injury, chief_complaint, pain_score, prior_history, family_history, comorbidity_social, exam_finding, imaging_result, diagnostic_test, diagnosis, treatment_rendered, medication, procedure, order_or_referral, work_status, mmi_statement, causation_statement, impairment_rating, future_treatment, patient_statement, compliance, records_referenced, employment, other.
+Each flag has kind (conflict or gap), cites (the pages involved) and about (one sentence). A conflict is two pages that disagree. A gap is a record a page refers to that is absent from these pages. Preserve disagreements between the report and our records.

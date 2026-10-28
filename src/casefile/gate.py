@@ -42,9 +42,14 @@ def playbook_row(root):
         book = playbook.load(root / "playbook")
     except playbook.PlaybookError as exc:
         return False, f"invalid=1 unmarked=0 version=unavailable {exc}"
-    unmarked = sum(not entry.sample or not entry.rule.startswith("SAMPLE:")
-                   for entry in book.entries if isinstance(entry, playbook.Entry))
-    return unmarked == 0, f"invalid=0 unmarked={unmarked} version={book.version}"
+    entries = [entry for entry in book.entries if isinstance(entry, playbook.Entry)]
+    unmarked = sum((not entry.rule.startswith("SAMPLE:")) if entry.sample else
+                   (entry.rule.startswith("SAMPLE:") or not entry.learned.startswith("firm skill "))
+                   for entry in entries)
+    practice = sum(not entry.sample for entry in entries)
+    samples = sum(entry.sample for entry in entries)
+    return unmarked == 0, (f"invalid=0 unmarked={unmarked} practice={practice} samples={samples} "
+                           f"version={book.version}")
 
 
 def prose_row(root):

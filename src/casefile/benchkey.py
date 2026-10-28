@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from casefile import jsonrepair
+from casefile import dates, jsonrepair
 from casefile.matter import Matter
 from casefile.quotes import found_in, fold
 from casefile.stamps import normalize as normalize_stamp
@@ -21,6 +21,7 @@ class Fact:
     cite: str
     quote: str
     text: str
+    date: str = ""
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,7 @@ def load(path, matter: Matter) -> Key:
     fact_ids_seen = set()
     fact_pairs_seen = {}
     for n, item in enumerate(facts_data, start=1):
-        required_keys = {"id", "cite", "quote", "text"}
+        required_keys = {"id", "cite", "quote", "text", "date"}
         if not isinstance(item, dict) or set(item.keys()) != required_keys:
             raise BenchKeyError(f"{path}: fact {n}: expected keys id, cite, quote, text (nonempty strings)")
 
@@ -73,7 +74,7 @@ def load(path, matter: Matter) -> Key:
             raise BenchKeyError(f"{path}: fact {fid}: duplicate id")
         fact_ids_seen.add(fid)
 
-        if not all(isinstance(item[k], str) and item[k].strip() for k in required_keys):
+        if not all(isinstance(item[k], str) and (k == "date" or item[k].strip()) for k in required_keys):
             raise BenchKeyError(f"{path}: fact {n}: expected keys id, cite, quote, text (nonempty strings)")
 
         cite = normalize_stamp(item["cite"])
@@ -84,12 +85,14 @@ def load(path, matter: Matter) -> Key:
         if not found_in(item["quote"], page.text):
             raise BenchKeyError(f"{path}: fact {fid}: quote not found on page {cite}")
 
+        if item["date"] and (dates.parse(item["date"]) is None or not found_in(item["date"], page.text)):
+            raise BenchKeyError(f"{path}: fact {fid}: date not written on page {cite} or not recognised")
         pair = (cite, fold(item["quote"]))
         if pair in fact_pairs_seen:
             raise BenchKeyError(f"{path}: fact {fid}: same cite and quote as fact {fact_pairs_seen[pair]}")
         fact_pairs_seen[pair] = fid
 
-        facts.append(Fact(fid, cite, item["quote"], item["text"]))
+        facts.append(Fact(fid, cite, item["quote"], item["text"], item["date"]))
 
     flags = []
     flag_ids_seen = set()

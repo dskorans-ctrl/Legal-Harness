@@ -12,7 +12,7 @@ from urllib.error import HTTPError
 import pytest
 
 from casefile import bench, benchkey, benchscore, config, extract, matter, pipeline, playbook, runlog
-from conftest import ROOT, write_config
+from conftest import split_card, ROOT, write_config
 from fakemodel.bench import recording_for, recordings_for
 from fakemodel.core import FakeModel, FakeTransport
 
@@ -85,9 +85,9 @@ def test_bench_modes(mode, exit_code, gate, statuses, tmp_path, monkeypatch, tot
             assert err.getvalue() == ""
         else:
             assert err.getvalue().startswith(
-                f"bench: cannot run: no reply from the model server at {cfg.model.host}: "), err.getvalue()
-            assert lines == ["bench 9001.001 failure gate.model: no reply from the model server "
-                             "(connection refused); the page stays open until a later run reads it"]
+                f"bench: cannot run: no reply from the model server at {cfg.model.host} "), err.getvalue()
+            assert lines == [f"bench 9001.001 failure gate.model: no reply from the model server at {cfg.model.host} "
+                             "(connection refused)"]
     if mode == "replay":
         request = json.loads(fake.requests[0]["body"])
         assert request["options"] == {"num_ctx": 65536, "temperature": 0.1, "num_predict": 8192}
@@ -199,8 +199,8 @@ def test_reply_rows(case, tmp_path, totals):
 
 def split_setup(monkeypatch, *, repeated=False, duplicate=False):
     loaded = matter.load(MATTER)
-    card = replace(extract.card(), max_answer_tokens=65536 - 16384)
-    monkeypatch.setattr(pipeline.extract, "card", lambda: card)
+    card = split_card(extract.card())
+    monkeypatch.setattr(pipeline.extract, "card", lambda book=None: card)
     ideal = json.loads((MATTER / "ideal.json").read_text(encoding="utf-8"))
     quote = ideal["facts"][0]["quote"]
     if repeated:
@@ -208,7 +208,7 @@ def split_setup(monkeypatch, *, repeated=False, duplicate=False):
         pages[5] = replace(pages[5], text=pages[5].text + "\n" + quote)
         loaded = replace(loaded, pages=tuple(pages))
         ideal["facts"].append({"cite": "MED0006", "quote": quote,
-                               "text": "The report records the service date."})
+                               "text": "The report records the service date.", "date": "", "category": "other", "provider": ""})
         if duplicate:
             ideal["facts"].append(dict(ideal["facts"][-1]))
     chunks, refused = pipeline.chunk(card, loaded.pages, 65536, loaded.number)

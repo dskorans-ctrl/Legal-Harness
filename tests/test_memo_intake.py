@@ -24,7 +24,7 @@ def test_memo_intake(tmp_path, scanned_intake):
     loaded = pages.load(settings.paths.matters, "9002.001", settings.ocr.stamp_pattern)
     expected = json.loads((ROOT / "tests/fixtures/scanned/scanned.json").read_text(encoding="utf-8"))
     spans = {item["page"]: item["must_contain"][0] for item in expected["pages"] if item["must_contain"]}
-    answer = {"facts": [{"cite": page.stamps[0], "quote": spans[page.number], "text": spans[page.number]}
+    answer = {"facts": [{"cite": page.stamps[0], "quote": spans[page.number], "text": spans[page.number], "date": "", "category": "other", "provider": ""}
                          for page in loaded.pages],
               "flags": [{"kind": "gap", "cites": ["KMR2345"],
                          "about": "The therapy completion record has not been provided."}]}

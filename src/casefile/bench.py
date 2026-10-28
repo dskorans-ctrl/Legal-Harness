@@ -4,7 +4,7 @@ from pathlib import Path
 import sqlite3
 import sys
 
-from casefile import benchkey, benchscore, matter as matters, pipeline, playbook, runlog
+from casefile import benchkey, benchscore, matter as matters, pipeline, playbook, rules, runlog
 from casefile.benchcandidate import CandidateError, parse_text
 from casefile.config import ConfigError, load
 
@@ -50,7 +50,8 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
         try:
             matter = matters.load(root)
             key = benchkey.load(root / "key.json", matter)
-        except (matters.MatterError, benchkey.BenchKeyError) as exc:
+            rules.check_stamps(matter.pages, book.rules)
+        except (rules.RulesError, matters.MatterError, benchkey.BenchKeyError) as exc:
             print(f"{type(exc).__name__}: {one_line(exc)}", file=err)
             return 2
 
@@ -99,8 +100,7 @@ def main(matters_dir, config_path=None, candidate_path=None, *, out=None, err=No
                 if result.failure:
                     print(f"bench {matter.number} failure {result.failure}", file=out)
                     if not result.reply_received:
-                        print(f"bench: cannot run: no reply from the model server at "
-                              f"{config.model.host}: {result.failure.removeprefix('bench.model: ')}", file=err)
+                        print(f"bench: cannot run: {result.failure.removeprefix('gate.model: ')}", file=err)
                         return 2
 
             s = benchscore.score(key, candidate, matter, book.rules, pages_failed)

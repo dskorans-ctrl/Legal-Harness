@@ -18,8 +18,8 @@ FLAWED = ("bench 9001.001 model=candidate found=26 of 29 missed=3 invented=2 ext
 
 PAGES = {"medical": [("Pain 7/10 in the low back.\nOther real line.", "MED0001"),
                      ("Diagnosis: acute lumbar strain.\nThe exam-\nination was normal.", "MED0002")]}
-KEY = {"facts": [{"id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
-                 {"id": "F2", "cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.\nThe exam-\nination was normal.", "text": "A lumbar strain."}],
+KEY = {"facts": [{"date": "", "id": "F1", "cite": "MED0001", "quote": "Pain 7/10 in the low back.", "text": "Pain was 7/10."},
+                 {"date": "", "id": "F2", "cite": "MED0002", "quote": "Diagnosis: acute lumbar strain.\nThe exam-\nination was normal.", "text": "A lumbar strain."}],
        "flags": [{"id": "G1", "kind": "conflict", "cites": ["MED0001", "MED0002"], "about": "The pages differ."}]}
 GOOD = {"facts": [{"cite": f["cite"], "quote": f["quote"], "text": f["text"]} for f in KEY["facts"]],
         "flags": [{"kind": "conflict", "cites": ["MED0002", "MED0001"], "about": "The pages differ."}]}

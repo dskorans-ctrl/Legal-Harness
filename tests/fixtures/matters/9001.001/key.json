@@ -4,175 +4,204 @@
       "id": "F01",
       "cite": "MED0001",
       "quote": "Date of service: 03/11/2025",
-      "text": "The date of service was 03/11/2025."
+      "text": "The date of service was 03/11/2025.",
+      "date": "03/11/2025"
     },
     {
       "id": "F02",
       "cite": "MED0001",
       "quote": "Patient states he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
-      "text": "The patient stated he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back."
+      "text": "The patient stated he was lifting a tote he estimated at 60 pounds when he felt a sharp pain in his low back.",
+      "date": "03/11/2025"
     },
     {
       "id": "F03",
       "cite": "MED0001",
       "quote": "Pain 7/10 in the low back, no radiation.",
-      "text": "Pain was 7/10 in the low back with no radiation."
+      "text": "Pain was 7/10 in the low back with no radiation.",
+      "date": "03/11/2025"
     },
     {
       "id": "F04",
       "cite": "MED0001",
       "quote": "Patient denies any prior back injury or back pain.",
-      "text": "The patient denied any prior back injury or back pain."
+      "text": "The patient denied any prior back injury or back pain.",
+      "date": "03/11/2025"
     },
     {
       "id": "F05",
       "cite": "MED0002",
       "quote": "Straight leg raise negative bilaterally.",
-      "text": "The straight leg raise was negative bilaterally."
+      "text": "The straight leg raise was negative bilaterally.",
+      "date": "03/11/2025"
     },
     {
       "id": "F06",
       "cite": "MED0002",
       "quote": "Lumbar spine x-ray, three views, ordered; report to follow.",
-      "text": "Lumbar spine x-ray, three views, was ordered with the report to follow."
+      "text": "Lumbar spine x-ray, three views, was ordered with the report to follow.",
+      "date": "03/11/2025"
     },
     {
       "id": "F07",
       "cite": "MED0002",
       "quote": "Diagnosis: acute lumbar strain.",
-      "text": "The diagnosis was acute lumbar strain."
+      "text": "The diagnosis was acute lumbar strain.",
+      "date": "03/11/2025"
     },
     {
       "id": "F08",
       "cite": "MED0002",
       "quote": "Off work for 3 days, then return as tolerated.",
-      "text": "The ER record took the patient off work for 3 days, then return as tolerated."
+      "text": "The ER record took the patient off work for 3 days, then return as tolerated.",
+      "date": "03/11/2025"
     },
     {
       "id": "F09",
       "cite": "MED0003",
       "quote": "Patient reports a lumbar strain in 2019 after moving furniture, resolved with rest.",
-      "text": "The patient reported a lumbar strain in 2019 after moving furniture, which resolved with rest."
+      "text": "The patient reported a lumbar strain in 2019 after moving furniture, which resolved with rest.",
+      "date": "03/14/2025"
     },
     {
       "id": "F10",
       "cite": "MED0003",
       "quote": "Restrictions: no lifting over 10 pounds and no repetitive bending through 04/11/2025.",
-      "text": "Restrictions were no lifting over 10 pounds and no repetitive bending through 04/11/2025."
+      "text": "Restrictions were no lifting over 10 pounds and no repetitive bending through 04/11/2025.",
+      "date": "03/14/2025"
     },
     {
       "id": "F11",
       "cite": "MED0003",
       "quote": "Referred to physical therapy, two visits per week for six weeks.",
-      "text": "The patient was referred to physical therapy for two visits per week for six weeks."
+      "text": "The patient was referred to physical therapy for two visits per week for six weeks.",
+      "date": "03/14/2025"
     },
     {
       "id": "F12",
       "cite": "MED0004",
       "quote": "Lumbar flexion 40 degrees, extension 10 degrees.",
-      "text": "Lumbar flexion was 40 degrees and extension was 10 degrees."
+      "text": "Lumbar flexion was 40 degrees and extension was 10 degrees.",
+      "date": "03/24/2025"
     },
     {
       "id": "F13",
       "cite": "MED0005",
       "quote": "Patient reports new numbness into the left calf since approximately 04/10/2025.",
-      "text": "The patient reported new numbness into the left calf since approximately 04/10/2025."
+      "text": "The patient reported new numbness into the left calf since approximately 04/10/2025.",
+      "date": "04/14/2025"
     },
     {
       "id": "F14",
       "cite": "MED0005",
       "quote": "Recommend MRI of the lumbar spine before further progression.",
-      "text": "It was recommended to have an MRI of the lumbar spine before further progression."
+      "text": "It was recommended to have an MRI of the lumbar spine before further progression.",
+      "date": "04/14/2025"
     },
     {
       "id": "F15",
       "cite": "MED0005",
       "quote": "Discharge summary to follow at visit 12.",
-      "text": "The discharge summary was to follow at visit 12."
+      "text": "The discharge summary was to follow at visit 12.",
+      "date": "04/14/2025"
     },
     {
       "id": "F16",
       "cite": "MED0006",
       "quote": "L4-L5: 4 mm posterior central disc protrusion contacting the thecal sac.",
-      "text": "The MRI showed L4-L5 had a 4 mm posterior central disc protrusion contacting the thecal sac."
+      "text": "The MRI showed L4-L5 had a 4 mm posterior central disc protrusion contacting the thecal sac.",
+      "date": "04/18/2025"
     },
     {
       "id": "F17",
       "cite": "MED0007",
       "quote": "Positive straight leg raise on the left at 45 degrees.",
-      "text": "There was a positive straight leg raise on the left at 45 degrees."
+      "text": "There was a positive straight leg raise on the left at 45 degrees.",
+      "date": "05/09/2025"
     },
     {
       "id": "F18",
       "cite": "MED0007",
       "quote": "Impression: L4-L5 disc protrusion with left L5 radiculopathy.",
-      "text": "The impression was L4-L5 disc protrusion with left L5 radiculopathy."
+      "text": "The impression was L4-L5 disc protrusion with left L5 radiculopathy.",
+      "date": "05/09/2025"
     },
     {
       "id": "F19",
       "cite": "MED0008",
       "quote": "Plan: left L4-L5 transforaminal epidural steroid injection.",
-      "text": "The plan was a left L4-L5 transforaminal epidural steroid injection."
+      "text": "The plan was a left L4-L5 transforaminal epidural steroid injection.",
+      "date": "05/09/2025"
     },
     {
       "id": "F20",
       "cite": "MED0008",
       "quote": "In my opinion the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025 described by the patient, within a reasonable degree of medical probability.",
-      "text": "Dr. Okonkwo-Lind gave the opinion that the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025."
+      "text": "Dr. Okonkwo-Lind gave the opinion that the L4-L5 disc protrusion is causally related to the lifting injury of 03/11/2025.",
+      "date": "05/09/2025"
     },
     {
       "id": "F21",
       "cite": "MED0008",
       "quote": "The patient has not reached maximum medical improvement.",
-      "text": "The patient has not reached maximum medical improvement."
+      "text": "The patient has not reached maximum medical improvement.",
+      "date": "05/09/2025"
     },
     {
       "id": "F22",
       "cite": "EMP0001",
       "quote": "Employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
-      "text": "The employee reported lifting a tote weighing approximately 40 pounds from a floor pallet."
+      "text": "The employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.",
+      "date": "03/11/2025"
     },
     {
       "id": "F23",
       "cite": "EMP0003",
       "quote": "Average weekly wage: $912.40",
-      "text": "The average weekly wage was $912.40."
+      "text": "The average weekly wage was $912.40.",
+      "date": "03/15/2025"
     },
     {
       "id": "F24",
       "cite": "DEF0003",
       "quote": "The L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.",
-      "text": "Dr. Marchetti's report states the L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025."
+      "text": "Dr. Marchetti's report states the L4-L5 findings are degenerative and pre-existing, not causally related to the work incident of 03/11/2025.",
+      "date": "06/20/2025"
     },
     {
       "id": "F25",
       "cite": "DEF0003",
       "quote": "The examinee is at maximum medical improvement as of today's examination.",
-      "text": "Dr. Marchetti's report states the examinee is at maximum medical improvement."
+      "text": "Dr. Marchetti's report states the examinee is at maximum medical improvement.",
+      "date": "06/20/2025"
     },
     {
       "id": "F26",
       "cite": "DEF0003",
       "quote": "No work restrictions are indicated.",
-      "text": "Dr. Marchetti's report states no work restrictions are indicated."
+      "text": "Dr. Marchetti's report states no work restrictions are indicated.",
+      "date": "06/20/2025"
     },
     {
       "id": "F27",
       "cite": "MED0008",
       "quote": "Restrictions: sedentary duty, no lifting over 15 pounds, until re-evaluation on 06/20/2025.",
-      "text": "Dr. Okonkwo-Lind restricted the patient to sedentary duty with no lifting over 15 pounds until re-evaluation on 06/20/2025."
+      "text": "Dr. Okonkwo-Lind restricted the patient to sedentary duty with no lifting over 15 pounds until re-evaluation on 06/20/2025.",
+      "date": "05/09/2025"
     },
     {
       "id": "F28",
       "cite": "DEF0003",
       "quote": "No further treatment is medically necessary.",
-      "text": "The report states no further treatment is medically necessary."
+      "text": "The report states no further treatment is medically necessary.",
+      "date": "06/20/2025"
     },
     {
       "id": "F29",
       "cite": "MED0003",
       "quote": "Lumbar strain, likely work related.",
-      "text": "The family medicine record assessed a lumbar strain, likely work related."
+      "text": "The family medicine record assessed a lumbar strain, likely work related.",
+      "date": "03/14/2025"
     }
   ],
   "flags": [

@@ -43,7 +43,7 @@ def case_file():
     ])
     # Two runs read pages; a third run contributes no read coverage rows.
     for run_id, read in [(1, ["medical/001", "probe/001"]), (2, ["medical/002"]), (3, [])]:
-        stored.extend([facts.Event("run", {"run_id": run_id, "job": "memo", "card": "bench_extract",
+        stored.extend([facts.Event("run", {"run_id": run_id, "job": "memo", "card": "medical_memo",
                                            "card_version": "invented", "pages": read or ["probe/002"],
                                            "ok": bool(read), "read": read,
                                            "uncited": [], "failed": [] if read else ["probe/002"]})])

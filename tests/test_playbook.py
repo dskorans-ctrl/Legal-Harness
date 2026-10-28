@@ -63,7 +63,10 @@ def test_version_moves(tmp_path, capsys):
 def test_rules_file_entries_not_sample():
     playbook = load(SOURCE)
     firm = [entry for entry in playbook.entries if not isinstance(entry, Entry)]
-    samples = [entry for entry in playbook.entries if isinstance(entry, Entry)]
+    entries = [entry for entry in playbook.entries if isinstance(entry, Entry)]
+    samples = [entry for entry in entries if entry.sample]
+    assert sum(not entry.sample for entry in entries) == 13
+    print("playbook_entries practice=13 samples=3")
     assert {entry.id for entry in firm} == {
         "no-dme-ime", "no-hired-paid-retained", "treatment-and-bills-apart", "bates-cites"}
     assert all(not hasattr(entry, "sample") for entry in firm)
@@ -96,7 +99,7 @@ def test_no_stale_result_after_failure(tmp_path):
     shutil.copyfile(FIXTURES / "bad-date.toml", directory / "bad.toml")
     with pytest.raises(PlaybookError, match="added"):
         load(directory)
-    assert len(first.entries) == 7
+    assert len(first.entries) == 20
     with pytest.raises(FrozenInstanceError):
         first.version = "pb-stale"
     (directory / "bad.toml").unlink()
@@ -120,3 +123,16 @@ def test_missing_and_bad_documents(tmp_path):
         bad.write_bytes(data)
         with pytest.raises(PlaybookError, match="bad.toml"):
             load(directory)
+
+
+def test_practice_marking_both_ways(tmp_path):
+    directory = copy_playbook(tmp_path)
+    path = directory / 'deposition.toml'
+    original = path.read_text(encoding='utf-8')
+    for changed in (original.replace('rule = "', 'rule = "SAMPLE:',1),
+                    original.replace('learned = "firm skill ', 'learned = "unknown ',1)):
+        path.write_text(changed,encoding='utf-8')
+        with pytest.raises(PlaybookError,match='sample'):
+            load(directory)
+    path.write_text(original,encoding='utf-8')
+    assert len(load(directory).entries) == 20

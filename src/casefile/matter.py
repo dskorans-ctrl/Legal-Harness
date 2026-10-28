@@ -57,8 +57,14 @@ def load(root) -> Matter:
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise MatterError(f"{meta}: {exc}") from exc
 
-    if set(data) != {"number", "binders"}:
+    if not {"number", "binders"} <= data.keys() or data.keys() - {"number", "binders", "header", "hearing", "roles"}:
         raise MatterError(f"{meta}: expected keys number and binders")
+
+    from casefile import matterinfo
+    try:
+        matterinfo.load(root)
+    except matterinfo.MatterInfoError as exc:
+        raise MatterError(str(exc)) from exc
 
     number = data["number"]
     if not isinstance(number, str) or not re.fullmatch(NUMBER_PATTERN, number):

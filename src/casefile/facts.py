@@ -39,6 +39,9 @@ class Fact:
     page_ids: list[str]
     readings: list[str]
     reading_pages: list[str]
+    dates: list[str] = field(default_factory=list)
+    category: str = "other"
+    providers: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -51,7 +54,7 @@ class Flag:
 
 
 CHANGE_KINDS = ("fact", "cite", "reading", "flag", "about")
-FIELDS = {
+FIELDS_V1 = {
     "fact": {"id", "cite", "page_id", "quote", "text", "run_id"},
     "cite": {"fact", "cite", "page_id", "run_id"},
     "reading": {"fact", "text", "page_id", "run_id"},
@@ -60,6 +63,9 @@ FIELDS = {
     "run": {"run_id", "job", "card", "card_version", "pages", "ok", "read", "uncited", "failed"},
     "output": {"name", "path", "built_from_seq", "facts", "conflicts", "gaps", "open"},
 }
+
+FIELDS = {**FIELDS_V1, "fact": FIELDS_V1["fact"] | {"date", "category", "provider"},
+          "cite": FIELDS_V1["cite"] | {"date", "provider"}}
 
 
 def _bytes(event):
@@ -74,6 +80,7 @@ class CaseFile:
 
     events: list[Event] = field(default_factory=list)
     torn: int = 0
+    upgraded: int = 0
 
     @property
     def last_seq(self):
@@ -94,11 +101,15 @@ class CaseFile:
             data = event.payload
             if event.kind == "fact":
                 found[data["id"]] = Fact(data["id"], data["quote"], [data["cite"]],
-                                         [data["page_id"]], [data["text"]], [data["page_id"]])
+                                         [data["page_id"]], [data["text"]], [data["page_id"]],
+                                         [data.get("date", "")], data.get("category", "other"),
+                                         [data.get("provider", "")])
             elif event.kind == "cite":
                 fact = found[data["fact"]]
                 fact.cites.append(data["cite"])
                 fact.page_ids.append(data["page_id"])
+                fact.dates.append(data.get("date", ""))
+                fact.providers.append(data.get("provider", ""))
             elif event.kind == "reading":
                 found[data["fact"]].readings.append(data["text"])
                 found[data["fact"]].reading_pages.append(data["page_id"])
@@ -174,8 +185,12 @@ def _decode(raw):
                     or obj["prev"] != previous or not isinstance(obj["at"], str)
                     or not isinstance(obj["kind"], str) or obj["kind"] not in FIELDS
                     or not isinstance(obj["payload"], dict)
-                    or set(obj["payload"]) != FIELDS[obj["kind"]]):
+                    or (set(obj["payload"]) != FIELDS[obj["kind"]]
+                        and not (obj["kind"] in ("fact", "cite")
+                                 and set(obj["payload"]) == FIELDS_V1[obj["kind"]]))):
                 raise _broken(index)
+            if obj["kind"] in ("fact", "cite") and set(obj["payload"]) == FIELDS_V1[obj["kind"]]:
+                casefile.upgraded += 1
             if obj["kind"] in ids:
                 ident = obj["payload"]["id"]
                 if not isinstance(ident, str) or ident in ids[obj["kind"]]:
@@ -257,13 +272,19 @@ def merge(casefile: CaseFile, answer: dict, pages: Sequence[Page], run_id) -> li
         fact = facts.get(identity)
         if fact is None:
             ident = emit("fact", cite=cite, page_id=page.page_id, quote=item["quote"],
-                         text=item["text"], run_id=run_id)
-            facts[identity] = Fact(ident, item["quote"], [cite], [page.page_id], [item["text"]], [page.page_id])
+                         text=item["text"], run_id=run_id, date=item.get("date", ""),
+                         category=item.get("category", "other"), provider=item.get("provider", ""))
+            facts[identity] = Fact(ident, item["quote"], [cite], [page.page_id], [item["text"]], [page.page_id],
+                                   [item.get("date", "")], item.get("category", "other"),
+                                   [item.get("provider", "")])
             continue
         if page.page_id not in fact.page_ids:
-            emit("cite", fact=fact.id, cite=cite, page_id=page.page_id, run_id=run_id)
+            emit("cite", fact=fact.id, cite=cite, page_id=page.page_id, run_id=run_id,
+                 date=item.get("date", ""), provider=item.get("provider", ""))
             fact.cites.append(cite)
             fact.page_ids.append(page.page_id)
+            fact.dates.append(item.get("date", ""))
+            fact.providers.append(item.get("provider", ""))
         if (item["text"], page.page_id) not in zip(fact.readings, fact.reading_pages):
             emit("reading", fact=fact.id, text=item["text"], page_id=page.page_id, run_id=run_id)
             fact.readings.append(item["text"])

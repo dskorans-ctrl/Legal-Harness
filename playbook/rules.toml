@@ -21,13 +21,17 @@ unit = "text"
 patterns = [
     '\b(?:(?:hired|hires|hiring|retained|retains|retaining|fees?)\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:hired|hires|hiring|retained|retains|retaining|fees?)\b)',
     '\b(?:(?:paid|pays|paying|payment|compensat(?:ed|ion))\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:paid|pays|paying|payment|compensat(?:ed|ion))\b)',
-    '(?:\b(?:(?:charges?|charged|rate|billed|bill|engaged\s+by)\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:charges?|charged|rate|billed|bill|engaged\s+by)\b)|\bat\s+whose\s+request\b[^.;:?!\r\n]{0,60}\b(?:(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|examin(?:e|ed|ing)\b))',
+    '(?:\b(?:(?:rate|engaged\s+by)\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:rate|engaged\s+by)\b)|\bat\s+whose\s+request\b[^.;:?!\r\n]{0,60}\b(?:(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|examin(?:e|ed|ing)\b))',
+    '\bfees?\b[^.;:?!\r\n]{0,60}\b(?:deposition|testimony|testif(?:y|ied|ying)|appearance)\b',
+    '\b(?:deposition|testimony|testif(?:y|ied|ying)|appearance)\b[^.;:?!\r\n]{0,60}\bfees?\b',
+    '\bhow\s+(?:often|frequently|many\s+times)\b[^.;:?!\r\n]{0,60}\bretain(?:s|ed|ing)?\b',
     '\bwho\s+referred\b',
     '\breferred (by|to) (the )?(defense|employer|insurer|carrier)\b',
-    '\b(?:fees?\b[^.;:?!\r\n]{0,60}\breport\b|report\b[^.;:?!\r\n]{0,60}\bfees?\b)',
+    '\b(?:(?:fees?|charges?|charged)\b[^.;:?!\r\n]{0,60}\breport\b|report\b[^.;:?!\r\n]{0,60}\b(?:fees?|charges?|charged)\b)',
     '\bhow many (of these )?(exams|examinations|reports)\b',
     '\b(exams?|examinations?|reports?) (per|a|each) (year|month|week)\b',
 ]
+patterns_text_only = ['(?:\b(?:(?:charges?|charged|rate|billed|bill|engaged\s+by)\b[^.;:?!\r\n]{0,60}\b(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)[^.;:?!\r\n]{0,60}\b(?:charges?|charged|rate|billed|bill|engaged\s+by)\b)|\bat\s+whose\s+request\b[^.;:?!\r\n]{0,60}\b(?:(?:dr\b\.?|(?:doctor|physician|examiner|exam|examination|evaluator)\b)|examin(?:e|ed|ing)\b))']
 rule = "Never ask or write who hired, paid or retained the doctor, the fees, or the exam volume."
 why = "Address the report's reasoning and medical support."
 good = "Which finding supports your conclusion?"
