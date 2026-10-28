@@ -413,3 +413,25 @@ injury, treatment, records reviewed, opinion, and reasonable, necessary and caus
 each issue, the rest once under "Other facts"; 87 skip (usual case only). 83 to 86 carried to the round 7 brief.
 ANSWERED 2026-10-28 (owner, ledger Q61): 74 the IAB hearing number and the claim number are replaced; the carrier, the
 adjuster and treating facilities are not.
+
+## Held 2026-10-28 (round 7 brief, `.workflow/scratch/round07-build-brief.md` §7; interim rulings by the architect, pending veto)
+
+88. The defense examiner's company (the fixture's invented evaluation vendor): numbered `[ORG-n]` like other organizations
+    (interim), or kept unreplaced like a treating facility?
+89. The date of birth: converted to a day offset from the injury like every other date (interim, the convention), or its
+    own placeholder `[DOB]` so the package carries no exact age arithmetic?
+90. Conflict excerpts for Claude (your Q41): the full anonymized text of both conflicting pages goes in the package
+    (interim), or a fixed number of lines around each quoted line?
+91. The review list (capitalised words that survive anonymization and are not placeholders, stamps, keep entries or
+    dictionary words): printed in `check.txt` and on the status line only (interim), or a block until you clear each word?
+92. Should the matter number and the Bates stamps stay in the package (interim: yes, they are the shared language of
+    spec §8b), or be replaced too?
+93. Package contents: the facts, the conflict pages and the gaps (interim), or every anonymized page of the matter as
+    well (a `--pages all` flag), given that Claude reads the whole matter at a stage 7b task run?
+94. `brief-in` input: a Markdown or plain-text draft with `"quote" [cite MED0003]` cites (interim), or a Word file?
+95. People of kind `person` (a shift lead, a coworker, a wage clerk): replaced as `[PERSON-n]` (interim), and an adjuster
+    is kept only when you add the name to `[anon].keep` (interim, per your Q61 "adjuster not replaced"): confirm, or
+    should the entity card gain an `adjuster` kind that is kept automatically?
+ANSWERED 2026-10-28 (owner, ledger Q62): 88 defense examiner's company kept unreplaced; 89 `[DOB]` placeholder; 90 both
+full pages; 91 print only; 92 matter number and stamps stay; 93 facts, conflicts, gaps plus a `--pages all` flag; 94
+`brief-in` takes a Word file; 95 `[PERSON-n]`, and an `adjuster` entity kind kept automatically.

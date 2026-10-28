@@ -995,6 +995,14 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   `~/local-worker/anonymize.py`: port the code's logic only; fixtures are written fresh from the repo's invented matter;
   nothing from `~/local-worker` data or `fixtures/anon-matter/` enters the repo. Additional instructions: none.
   Owner asked to compact the session before the round 7 brief starts.
+- Q62: round 7 brief questions 88 to 95 (owner, 2026-10-28, asked while the plan review ran) -> 88 the defense
+  examiner's company is KEPT unreplaced, like a treating facility (interim was [ORG-n]); 89 the date of birth gets its own
+  `[DOB]` placeholder, not a day offset (interim was the offset); 90 both full conflicting pages go in the package
+  (interim kept); 91 the review list is printed only, never a block (interim kept); 92 the matter number and the Bates
+  stamps stay in the package (interim kept); 93 the package is facts, conflict pages and gaps, plus a `--pages all` flag
+  that adds every anonymized page (interim was without the flag); 94 `brief-in` takes a Word file (.docx) draft (interim
+  was Markdown or text); 95 people of kind `person` become `[PERSON-n]`, and the entity card gains an `adjuster` kind
+  that is kept automatically (interim was keep-list only).
 
 ## Round 7: stage 7 brief package and anonymizer (opened 2026-10-28 on `loop/round-07` at 85675dc, same session, owner Q60)
 Tiers: Q46. Owner check-in held at the open (Q61). Exit test (spec §7 stage 7): the identifier check passes on the test
@@ -1007,3 +1015,8 @@ matter; re-import fact-checks a draft. All records are invented fixtures.
 - [ ] R7-3. Fact identity (round 6 critic 2 M1): wording plus date plus provider; old case files upgraded in place.
 - [ ] R7-4. Binder role edge cases asked of the attorney (Q61); round 6 verifier test gaps S1, S3, S4.
 - [ ] V. Fresh blind verification: every non-deferred R7 item `[x]` with the verifier's own evidence.
+- Chair rulings on the brief (2026-10-28): plan review (fresh Fable) 3 high, 10 med, 8 low, all 21 ACCEPTED in the
+  revision; chair reproduced H1, H2, M1 and measured the key: 1 pair collides under the folded quote (`straight leg raise
+  negative bilaterally`, MED0002 03/11/2025 vs DEF0002 06/20/2025), 0 under quote plus date plus provider. H2 ruling: the
+  run log and `anon/` sit inside the matter boundary; leak checks cover what leaves (brief §1.15). D63 to D67 entered in
+  the spec, pending owner veto. Build order W1, W1b (main), then lane A W2, W3 and lane B W4 (worktree), merge, W5.
