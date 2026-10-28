@@ -139,3 +139,5 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 12 | W3b builder (bench CLI pins, plain no-reply, memo chunk sentence) | codex gpt-6.1-sol | 2.3 min | 163 k | done; 609 passed; controls red then green; chair seed on pipeline.chunk red (56 failed); c22f7b8 |
 | 13 | W7 builder (casefile memo, casefile status, intake memo) | codex gpt-6.1-sol | 16.9 min | 155 k | done; status_ok=6 of 6 binder_refused=1, memo_intake exit=1, 12 controls red |
 | 14 | W8 builder (stage 5 exit test) | codex gpt-6.1-sol | 13.2 min | 128 k | done; stage5 exit=0 runs=4 of 4 memos=3 of 3, 8 controls red; chair read the produced memo |
+| 15 | 8a code review (fresh agent, Q46) | fable | 10.4 min | 232 k | done; 11 findings (2 high, 4 med, 5 low); chair ran the reviewer's probe: 9 reproduced |
+| 16 | Fix cycle 1 (8a H1, H2, M1, M2, M3, L1, L2, L5, CH-1) | codex gpt-6.1-sol | about 25 min | 171 k | done; 16 seeds red then green; adjacent: duplicate flag ids, reading source identity; 633 passed; baselines unchanged; chair re-ran the reviewer's probe |

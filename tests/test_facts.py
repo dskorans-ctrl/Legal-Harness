@@ -157,8 +157,10 @@ def new_cite(path):
     answer = copy.deepcopy(ANSWER)
     answer["facts"][0]["cite"] = "MED 0002"
     events = facts.merge(stored, answer, PAGES, 2)
-    assert len(events) == 1 and events[0].kind == "cite", "new page did not add exactly one cite"
+    assert [event.kind for event in events] == ["cite", "reading"], "new page lost its cite or reading source"
     assert events[0].payload == {"fact": "F1", "cite": "MED0002", "page_id": "medical/002", "run_id": 2}
+    assert events[1].payload == {"fact": "F1", "text": answer["facts"][0]["text"],
+                                 "page_id": "medical/002", "run_id": 2}
     stored = facts.append(path, events)
     assert stored.facts[0].page_ids == ["medical/001", "medical/002"]
     assert stored.facts[0].cites == ["MED0001", "MED0002"]

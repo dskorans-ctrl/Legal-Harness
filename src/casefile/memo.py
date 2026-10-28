@@ -60,6 +60,24 @@ def _paragraph(text):
     return Paragraph([Run(text)])
 
 
+def _fact_paragraphs(fact, primary, heading_page):
+    paragraphs = [Paragraph([
+        Run(f'"{fact.quote}"', exempt="quote"),
+        Run(" " + _cite(fact.cites[primary], fact.page_ids[primary]))])]
+    others = [(cite, page_id) for index, (cite, page_id) in
+              enumerate(zip(fact.cites, fact.page_ids)) if index != primary]
+    if others:
+        paragraphs.append(_paragraph("Also cited: " + " and ".join(
+            _cite(cite, page_id) for cite, page_id in others)))
+    for reading, page_id in zip(fact.readings, fact.reading_pages):
+        prefix = "Model's reading"
+        if page_id != heading_page:
+            cite = fact.cites[fact.page_ids.index(page_id)]
+            prefix += " of " + _cite(cite, page_id)
+        paragraphs.append(_paragraph(f"{prefix}: {reading}"))
+    return paragraphs
+
+
 def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Memo:
     pages = tuple(pages)
     previous = next((event for event in reversed(casefile.events)
@@ -95,23 +113,27 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model) -> Me
     if unstamped:
         verified.paragraphs.append(Paragraph([], warning_pages=unstamped))
     records = casefile.facts
+    present = {page.page_id for page in pages}
+    placement = {fact.id: next((index for index, page_id in enumerate(fact.page_ids)
+                               if page_id in present), None) for fact in records}
     for page in pages:
         verified.paragraphs.append(Paragraph([Run(f'{page.binder} page {label(page)}')], level=2))
         for fact in records:
-            if fact.page_ids[0] != page.page_id:
+            primary = placement[fact.id]
+            if primary is None or fact.page_ids[primary] != page.page_id:
                 continue
-            verified.paragraphs.append(Paragraph([
-                Run(f'"{fact.quote}"', exempt="quote"),
-                Run(" " + _cite(fact.cites[0], fact.page_ids[0]))]))
-            if len(fact.cites) > 1:
-                verified.paragraphs.append(_paragraph("Also cited: " + " and ".join(
-                    _cite(cite, page_id) for cite, page_id in zip(fact.cites[1:], fact.page_ids[1:]))))
-            for reading in fact.readings:
-                verified.paragraphs.append(_paragraph(f"Model's reading: {reading}"))
+            verified.paragraphs.extend(_fact_paragraphs(fact, primary, page.page_id))
+    sections = [changes, stale, opened, conflicts, gaps, verified]
+    absent = [fact for fact in records if placement[fact.id] is None]
+    if absent:
+        missing = Section("Facts on pages not in this matter")
+        for fact in absent:
+            missing.paragraphs.extend(_fact_paragraphs(fact, 0, None))
+        sections.append(missing)
     built = (f'built {datetime.now(timezone.utc).date().isoformat()} from case file entry '
              f'{casefile.last_seq}; playbook {playbook_version}; model {model}')
     return Memo(f'Medical memo: matter {matter}', built,
-                [changes, stale, opened, conflicts, gaps, verified], pages)
+                sections, pages)
 
 
 def _runs(paragraph, rules):
@@ -133,16 +155,18 @@ def check_binders(pages, rules):
 
 def check(memo, rules: Rules) -> list[Finding]:
     findings = []
-    texts = [memo.title, memo.built]
+    texts = [(memo.title, "title"), (memo.built, "build line")]
     for section in memo.sections:
-        texts.append(section.title)
+        texts.append((section.title, section.title))
         for paragraph in section.paragraphs:
-            texts.append("".join(run.text if not run.exempt else "\n"
-                                 for run in _runs(paragraph, rules)))
-    for text in texts:
+            texts.append(("".join(run.text if not run.exempt else "\n"
+                                  for run in _runs(paragraph, rules)), section.title))
+    for text, section in texts:
         for finding in rules.check(text, unit="text", stamped=all(page.stamps for page in memo.pages)):
+            excerpt = " ".join(finding.excerpt.split())
+            location = " ".join(section.split())
             findings.append(Finding(finding.rule_id, finding.severity, finding.start,
-                                    finding.end, f'{text}: {finding.excerpt}'))
+                                    finding.end, f'{excerpt} (in {location})'))
     return findings
 
 
@@ -151,7 +175,7 @@ def render(memo, path, *, rules: Rules):
     findings = check(memo, rules)
     errors = [finding for finding in findings if finding.severity == "error"]
     if errors:
-        raise MemoError("; ".join(f'{finding.rule_id}: {finding.excerpt}' for finding in errors))
+        raise MemoError("\n".join(f'{finding.rule_id}: {finding.excerpt}' for finding in errors))
     path = Path(path)
     # Only the output directory may be created; an absent matter is a refusal.
     if not path.parent.is_dir() and (path.parent.name != "outputs" or not path.parent.parent.is_dir()):

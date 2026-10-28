@@ -11,8 +11,17 @@ def torn_message(casefile):
             "the event was never completed")
 
 
+def committed_coverage(casefile, coverage):
+    """A read is durable only after its memo run also reached the case file."""
+    committed = {run["run_id"] for run in casefile.runs if run["job"] == "memo"}
+    return {key: (("unread", "the reading was not saved in the case file; run casefile memo again", row[2])
+                  if row[0] == "read" and row[2] not in committed else row)
+            for key, row in coverage.items()}
+
+
 def snapshot(loaded, casefile, coverage):
     """Keep page IDs as keys and every stamp in the attorney's label."""
+    coverage = committed_coverage(casefile, coverage)
     dispositions = {}
     card_name = extract.card().name
     binders = list(dict.fromkeys(page.binder for page in loaded.pages))

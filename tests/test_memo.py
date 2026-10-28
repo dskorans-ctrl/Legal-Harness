@@ -28,7 +28,7 @@ def case_file():
         facts.Event("fact", {"id": "F1", "cite": "MED0001", "page_id": "medical/001",
                               "quote": QUOTE, "text": READINGS[0], "run_id": 1}),
         facts.Event("cite", {"fact": "F1", "cite": "MED0002", "page_id": "medical/002", "run_id": 2}),
-        facts.Event("reading", {"fact": "F1", "text": READINGS[1], "run_id": 2}),
+        facts.Event("reading", {"fact": "F1", "text": READINGS[1], "page_id": "medical/002", "run_id": 2}),
         facts.Event("fact", {"id": "F4", "cite": "probe/001", "page_id": "probe/001",
                               "quote": "Therapy continued.", "text": "Therapy is recorded.", "run_id": 1}),
         facts.Event("fact", {"id": "F5", "cite": "MED0001", "page_id": "medical/001",
@@ -107,7 +107,8 @@ def test_memo(tmp_path):
         [p.text for p in gaps] == ["Gap at [cite MED0002].", *[f"Model's reading: {s}" for s in GAP_ABOUTS]],
         fact.text == f'"{QUOTE}" [cite MED0001]' and [run.text for run in fact.runs] == [f'"{QUOTE}"', " [cite MED0001]"],
         verified[fact_index + 1].text == "Also cited: [cite MED0002]",
-        [p.text for p in verified[fact_index + 2:fact_index + 4]] == [f"Model's reading: {s}" for s in READINGS],
+        [p.text for p in verified[fact_index + 2:fact_index + 4]] == [
+            f"Model's reading: {READINGS[0]}", f"Model's reading of [cite MED0002]: {READINGS[1]}"],
         heading_texts[0] == "medical page MED0001 (medical/001)",
         verified[0].text == f'{warning} Unstamped pages: probe/001.' and
         '"Therapy continued." [page probe/001]' in [p.text for p in verified],

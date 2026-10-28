@@ -38,6 +38,7 @@ class Fact:
     cites: list[str]
     page_ids: list[str]
     readings: list[str]
+    reading_pages: list[str]
 
 
 @dataclass
@@ -53,7 +54,7 @@ CHANGE_KINDS = ("fact", "cite", "reading", "flag", "about")
 FIELDS = {
     "fact": {"id", "cite", "page_id", "quote", "text", "run_id"},
     "cite": {"fact", "cite", "page_id", "run_id"},
-    "reading": {"fact", "text", "run_id"},
+    "reading": {"fact", "text", "page_id", "run_id"},
     "flag": {"id", "kind", "cites", "page_ids", "about", "run_id"},
     "about": {"flag", "about", "run_id"},
     "run": {"run_id", "job", "card", "card_version", "pages", "ok", "read", "uncited", "failed"},
@@ -93,13 +94,14 @@ class CaseFile:
             data = event.payload
             if event.kind == "fact":
                 found[data["id"]] = Fact(data["id"], data["quote"], [data["cite"]],
-                                         [data["page_id"]], [data["text"]])
+                                         [data["page_id"]], [data["text"]], [data["page_id"]])
             elif event.kind == "cite":
                 fact = found[data["fact"]]
                 fact.cites.append(data["cite"])
                 fact.page_ids.append(data["page_id"])
             elif event.kind == "reading":
                 found[data["fact"]].readings.append(data["text"])
+                found[data["fact"]].reading_pages.append(data["page_id"])
         return list(found.values())
 
     @property
@@ -149,6 +151,7 @@ def _read(path):
 def _decode(raw):
     casefile = CaseFile()
     previous = ""
+    ids = {"fact": set(), "flag": set()}
     lines = raw.split(b"\n")
     for index, line in enumerate(lines, start=1):
         if index == len(lines) and not line:
@@ -173,6 +176,11 @@ def _decode(raw):
                     or not isinstance(obj["payload"], dict)
                     or set(obj["payload"]) != FIELDS[obj["kind"]]):
                 raise _broken(index)
+            if obj["kind"] in ids:
+                ident = obj["payload"]["id"]
+                if not isinstance(ident, str) or ident in ids[obj["kind"]]:
+                    raise _broken(index)
+                ids[obj["kind"]].add(ident)
             casefile.events.append(Event(obj["kind"], obj["payload"], obj["seq"], obj["at"], obj["prev"]))
         except (jsonrepair.RepairError, UnicodeDecodeError) as exc:
             raise _broken(index) from exc
@@ -187,7 +195,7 @@ def load(path) -> CaseFile:
 def append(path, events) -> CaseFile:
     """Validate the existing chain, recover an incomplete tail, and fsync appended events.
 
-    The caller must serialize writers to this matter; the CLI lock belongs to stage 8.
+    The caller must serialize writers to this matter; memo_job holds the matter lock.
     """
     path = Path(path)
     raw = _read(path)
@@ -243,24 +251,27 @@ def merge(casefile: CaseFile, answer: dict, pages: Sequence[Page], run_id) -> li
 
     for item in answer["facts"]:
         page = _page(item["cite"], pages)
-        cite = stamps.normalize(item["cite"]) if stamps.normalize(item["cite"]) in page.stamps else page.page_id
+        cite = (stamps.normalize(item["cite"]) if stamps.normalize(item["cite"]) in page.stamps
+                else page.stamps[0] if page.stamps else page.page_id)
         identity = quotes.fold(item["quote"])
         fact = facts.get(identity)
         if fact is None:
             ident = emit("fact", cite=cite, page_id=page.page_id, quote=item["quote"],
                          text=item["text"], run_id=run_id)
-            facts[identity] = Fact(ident, item["quote"], [cite], [page.page_id], [item["text"]])
+            facts[identity] = Fact(ident, item["quote"], [cite], [page.page_id], [item["text"]], [page.page_id])
             continue
         if page.page_id not in fact.page_ids:
             emit("cite", fact=fact.id, cite=cite, page_id=page.page_id, run_id=run_id)
             fact.cites.append(cite)
             fact.page_ids.append(page.page_id)
-        if item["text"] not in fact.readings:
-            emit("reading", fact=fact.id, text=item["text"], run_id=run_id)
+        if (item["text"], page.page_id) not in zip(fact.readings, fact.reading_pages):
+            emit("reading", fact=fact.id, text=item["text"], page_id=page.page_id, run_id=run_id)
             fact.readings.append(item["text"])
+            fact.reading_pages.append(page.page_id)
     for item in answer["flags"]:
-        cited_pages = [_page(cite, pages) for cite in item["cites"]]
-        page_ids = list(dict.fromkeys(page.page_id for page in cited_pages))
+        cited_pages = list({page.page_id: page for page in
+                            (_page(cite, pages) for cite in item["cites"])}.values())
+        page_ids = [page.page_id for page in cited_pages]
         identity = (item["kind"], tuple(sorted(set(page_ids))))
         flag = flags.get(identity)
         if flag is None:

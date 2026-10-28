@@ -123,8 +123,13 @@ def _references(obj, pages, rules):
                                   f'(quote: "{item["quote"][:60]}")')
                 else:
                     rungs.append(hit.rung)
+        flag_pages = set()
         for index, cite in enumerate(item.get("cites", [])):
-            lookup(cite, f"{path}.cites[{index}]")
+            page = lookup(cite, f"{path}.cites[{index}]")
+            if page is not None:
+                flag_pages.add(page.page_id)
+        if item.get("kind") == "conflict" and len(flag_pages) < 2:
+            faults.append(f"{path}: a conflict must cite two different pages")
         for key in ("text", "about"):
             if isinstance(item.get(key), str):
                 location = f"{path}.{key}"
