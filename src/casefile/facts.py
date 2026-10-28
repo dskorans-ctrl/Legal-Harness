@@ -8,7 +8,7 @@ import json
 import os
 from pathlib import Path
 
-from casefile import jsonrepair, quotes, stamps
+from casefile import dates, jsonrepair, quotes, stamps
 from casefile.matter import Page
 
 
@@ -53,7 +53,7 @@ class Flag:
     abouts: list[str]
 
 
-CHANGE_KINDS = ("fact", "cite", "reading", "flag", "about")
+CHANGE_KINDS = ("fact", "cite", "reading", "flag", "about", "split")
 FIELDS_V1 = {
     "fact": {"id", "cite", "page_id", "quote", "text", "run_id"},
     "cite": {"fact", "cite", "page_id", "run_id"},
@@ -65,7 +65,12 @@ FIELDS_V1 = {
 }
 
 FIELDS = {**FIELDS_V1, "fact": FIELDS_V1["fact"] | {"date", "category", "provider"},
-          "cite": FIELDS_V1["cite"] | {"date", "provider"}}
+          "cite": FIELDS_V1["cite"] | {"date", "provider"},
+          "split": {"fact", "page_id", "to", "cite", "date", "provider", "text"}}
+
+
+def identity(quote, date, provider):
+    return quotes.fold(quote), dates.iso(date) or date, quotes.fold(provider)
 
 
 def _bytes(event):
@@ -113,7 +118,28 @@ class CaseFile:
             elif event.kind == "reading":
                 found[data["fact"]].readings.append(data["text"])
                 found[data["fact"]].reading_pages.append(data["page_id"])
+            elif event.kind == "split":
+                fact = found[data["fact"]]
+                index = fact.page_ids.index(data["page_id"])
+                moved = [text for text, page_id in zip(fact.readings, fact.reading_pages)
+                         if page_id == data["page_id"]]
+                kept = [(text, page_id) for text, page_id in zip(fact.readings, fact.reading_pages)
+                        if page_id != data["page_id"]]
+                fact.readings = [text for text, _ in kept]
+                fact.reading_pages = [page_id for _, page_id in kept]
+                for values in (fact.cites, fact.page_ids, fact.dates, fact.providers):
+                    values.pop(index)
+                readings = moved or [data["text"]]
+                found[data["to"]] = Fact(data["to"], fact.quote, [data["cite"]],
+                    [data["page_id"]], readings, [data["page_id"]] * len(readings),
+                    [data["date"]], fact.category, [data["provider"]])
         return list(found.values())
+
+    @property
+    def split_needed(self):
+        return sum(len({identity(fact.quote, date, provider)
+                        for date, provider in zip(fact.dates, fact.providers)}) > 1
+                   for fact in self.facts)
 
     @property
     def flags(self):
@@ -196,6 +222,15 @@ def _decode(raw):
                 if not isinstance(ident, str) or ident in ids[obj["kind"]]:
                     raise _broken(index)
                 ids[obj["kind"]].add(ident)
+            if obj["kind"] == "split":
+                data = obj["payload"]
+                if (not all(isinstance(value, str) for value in data.values())
+                        or data["fact"] not in ids["fact"] or data["to"] in ids["fact"]):
+                    raise _broken(index)
+                source = next(fact for fact in casefile.facts if fact.id == data["fact"])
+                if data["page_id"] not in source.page_ids or len(source.page_ids) < 2:
+                    raise _broken(index)
+                ids["fact"].add(data["to"])
             casefile.events.append(Event(obj["kind"], obj["payload"], obj["seq"], obj["at"], obj["prev"]))
         except (jsonrepair.RepairError, UnicodeDecodeError) as exc:
             raise _broken(index) from exc
@@ -250,9 +285,25 @@ def _page(cite, pages):
     return matches[0]
 
 
+def upgrade_events(casefile) -> list[Event]:
+    """Split later identities without changing any stored event or reading provenance."""
+    events = []
+    for fact in casefile.facts:
+        first = identity(fact.quote, fact.dates[0], fact.providers[0])
+        for cite, page_id, date, provider in zip(fact.cites, fact.page_ids, fact.dates, fact.providers):
+            if identity(fact.quote, date, provider) == first:
+                continue
+            text = next((text for text, source in zip(fact.readings, fact.reading_pages)
+                         if source == page_id), "")
+            events.append(Event("split", dict(fact=fact.id, page_id=page_id,
+                to=f"F{casefile.last_seq + len(events) + 1}", cite=cite, date=date,
+                provider=provider, text=text)))
+    return events
+
+
 def merge(casefile: CaseFile, answer: dict, pages: Sequence[Page], run_id) -> list[Event]:
     """Merge a passing answer only; do not mutate the supplied case file."""
-    facts = {quotes.fold(fact.quote): fact for fact in casefile.facts}
+    facts = {identity(fact.quote, fact.dates[0], fact.providers[0]): fact for fact in casefile.facts}
     flags = {(flag.kind, tuple(sorted(set(flag.page_ids)))): flag for flag in casefile.flags}
     events = []
 
@@ -268,13 +319,13 @@ def merge(casefile: CaseFile, answer: dict, pages: Sequence[Page], run_id) -> li
         page = _page(item["cite"], pages)
         cite = (stamps.normalize(item["cite"]) if stamps.normalize(item["cite"]) in page.stamps
                 else page.stamps[0] if page.stamps else page.page_id)
-        identity = quotes.fold(item["quote"])
-        fact = facts.get(identity)
+        key = identity(item["quote"], item.get("date", ""), item.get("provider", ""))
+        fact = facts.get(key)
         if fact is None:
             ident = emit("fact", cite=cite, page_id=page.page_id, quote=item["quote"],
                          text=item["text"], run_id=run_id, date=item.get("date", ""),
                          category=item.get("category", "other"), provider=item.get("provider", ""))
-            facts[identity] = Fact(ident, item["quote"], [cite], [page.page_id], [item["text"]], [page.page_id],
+            facts[key] = Fact(ident, item["quote"], [cite], [page.page_id], [item["text"]], [page.page_id],
                                    [item.get("date", "")], item.get("category", "other"),
                                    [item.get("provider", "")])
             continue
@@ -293,13 +344,13 @@ def merge(casefile: CaseFile, answer: dict, pages: Sequence[Page], run_id) -> li
         cited_pages = list({page.page_id: page for page in
                             (_page(cite, pages) for cite in item["cites"])}.values())
         page_ids = [page.page_id for page in cited_pages]
-        identity = (item["kind"], tuple(sorted(set(page_ids))))
-        flag = flags.get(identity)
+        key = (item["kind"], tuple(sorted(set(page_ids))))
+        flag = flags.get(key)
         if flag is None:
             cites = [page.stamps[0] if page.stamps else page.page_id for page in cited_pages]
             ident = emit("flag", **{"kind": item["kind"], "cites": cites, "page_ids": page_ids,
                                     "about": item["about"], "run_id": run_id})
-            flags[identity] = Flag(ident, item["kind"], cites, page_ids, [item["about"]])
+            flags[key] = Flag(ident, item["kind"], cites, page_ids, [item["about"]])
         elif item["about"] not in flag.abouts:
             emit("about", flag=flag.id, about=item["about"], run_id=run_id)
             flag.abouts.append(item["about"])

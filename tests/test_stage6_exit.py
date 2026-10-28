@@ -22,11 +22,11 @@ NUMBER = '9001.001'
 MATTER = ROOT / 'tests/fixtures/matters' / NUMBER
 ANSWERS = ROOT / 'tests/fixtures/outputs' / NUMBER
 EXPECTED = (
-    'stage6 memo sections=15 chronology=37 dated=37 of 37 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 rule_hits=0 exit=1',
+    'stage6 memo sections=15 chronology=38 dated=38 of 38 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 rule_hits=0 exit=1',
     'stage6 depo=defense-doctor-us outline_our=19 outline_defense=11 questions=8 rests_on_page=8 of 8 danger=6 points=1 forbidden_topics=0 rule_hits=0 header_ok=1 exit=1',
     'stage6 depo=our-doctor-us outline_our=19 outline_defense=11 questions=4 rests_on_page=4 of 4 danger=6 points=0 treatment_q=1 bills_q=1 compound=0 providers_named=5 of 5 rule_hits=0 header_ok=1 exit=1',
     'stage6 hearing checklist_first=1 starred=1 issues=2 standard_needed=2 client_direct=2 client_cross=2 elements=14 not_found=5 closing=2 relief_needed=2 rule_hits=0 header_ok=1 exit=1',
-    'stage6 report=defense-report concessions=1 labels=5 danger=1 conflicts=3 conflict_quotes_ok=1 audit_limit=1 rule_hits=0 header_ok=1 exit=1',
+    'stage6 report=defense-report concessions=1 labels=5 danger=1 conflicts=3 conflict_quotes_ok=1 audit_limit=1 m1_fixed=1 rule_hits=0 header_ok=1 exit=1',
     'stage6 report=okonkwo-lind elements=14 stated=9 partial=0 not_found=5 gaps_separate=1 rule_hits=0 header_ok=1 exit=1',
     'stage6 status outputs=memo:current,depo-defense-doctor-us:current,depo-our-doctor-us:current,hearing:current,report-defense-report:current,report-okonkwo-lind:current partial=0',
     'stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1',
@@ -234,10 +234,16 @@ def _report_line(doc, defense, code, cf, header_ok, rule_hits):
         topics = _texts(_section(doc, 'Candidate cross topics (document-based)'))
         limit = ('Records review audit: not performed. No records-referenced item was returned by the model '
                  'for the report pages; read the records list in the report.')
+        statements = _section(doc, 'What the report states')
+        finding = '06/20/2025: "Straight leg raise negative bilaterally." [cite DEF0002]'
+        locations = [i for i, paragraph in enumerate(statements) if paragraph.text == finding]
+        m1_fixed = int(len(locations) == 1 and not any('Also cited' in p.text for p in statements) and
+            next((p.text for p in reversed(statements[:locations[0]])
+                  if p.style.name.startswith('Heading')), '') == 'Examination findings')
         return (f'stage6 report=defense-report concessions={_outline(doc, "Concessions (the report\'s own words)")} '
             f'labels={_outline(doc, "Undefined labels")} danger={_outline(doc, "Danger zone")} '
             f'conflicts={sum(p.text.startswith("Conflict between ") for p in conflicts)} '
-            f'conflict_quotes_ok={_conflicts_ok(conflicts, cf)} audit_limit={int(limit in topics)} '
+            f'conflict_quotes_ok={_conflicts_ok(conflicts, cf)} audit_limit={int(limit in topics)} m1_fixed={m1_fixed} '
             f'rule_hits={rule_hits} header_ok={header_ok} exit={code}')
     elements = _texts(_section(doc, 'Elements'))
     gaps = _texts(_section(doc, 'Gaps'))
@@ -294,7 +300,7 @@ def test_stage6_exit(tmp_path, capsys):
         memo_hits = _saved_rules(Document(folder / 'outputs/memo.docx'), book.rules, outputs.providers(cf), loaded.pages)
         rule_hits += memo_hits
         lines.append('stage6 memo sections=' + metrics + f' rule_hits={memo_hits} exit=' + str(result.returncode))
-        if result.stderr or 'chunks=1 runs=+1 read=13 open=1 facts=37 conflicts=5 gaps=4' not in result.stdout:
+        if result.stderr or 'chunks=1 runs=+1 read=13 open=1 facts=38 conflicts=5 gaps=4' not in result.stdout:
             errors.append('memo CLI differs: ' + result.stdout + result.stderr)
         if result.returncode != 1:
             errors.append(f'memo exit={result.returncode}, expected 1')

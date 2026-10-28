@@ -95,10 +95,12 @@ def build(casefile, pages, open_items, *, matter, playbook_version, model, info=
     else:
         counts = casefile.changed_since(previous.seq)
         changed = ", ".join(_added(count, noun) for count, noun in (
-            (counts["fact"], "fact"), (counts["cite"], "cite"),
+            (counts["fact"] + counts["split"], "fact"), (counts["cite"], "cite"),
             (counts["fact"] + counts["reading"], "reading"), (counts["flag"], "flag")))
         if counts["about"]:
             changed += ", " + _added(counts["about"], "flag reading")
+        if counts["split"]:
+            changed += f', {counts["split"]} fact{"s" if counts["split"] != 1 else ""} split'
     changes = Section("What changed since the last memo", [_paragraph(changed)])
     stale = Section("Outputs out of date", [_paragraph(
         ", ".join(name for name in casefile.stale_outputs() if name != "memo") or "none")])

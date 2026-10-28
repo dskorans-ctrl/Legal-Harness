@@ -1,11 +1,20 @@
-"""Fourteen case file checks, including each W4 corruption and identity control."""
+"""Twenty-two case file checks, including identity and append-only split controls."""
 
 import copy
 import hashlib
+import fcntl
+from io import StringIO
+import shutil
+from unittest.mock import patch
+
+from docx import Document
 import json
 from pathlib import Path
 
-from casefile import facts, matter
+from casefile import config, extract, facts, matter, memo_job, outputs, status
+from casefile.runlog import open_db
+from conftest import ROOT, write_config
+from fakemodel import FakeModel, FakeTransport
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "matters" / "9001.001"
@@ -127,16 +136,16 @@ def ideal_merge(path):
     pages = matter.load(FIXTURE).pages
     answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
     events = facts.merge(facts.CaseFile(), answer, pages, 7)
-    assert sum(event.kind == "fact" for event in events) == 37
+    assert sum(event.kind == "fact" for event in events) == 38
     assert sum(event.kind == "flag" for event in events) == 9
     stored = facts.append(path, events)
-    assert len(stored.facts) == 37 and len(stored.flags) == 9 and stored.last_seq == 48
+    assert len(stored.facts) == 38 and len(stored.flags) == 9 and stored.last_seq == 47
     assert stored.flags[0].page_ids == ["medical/001", "employer/001"], "G1 pages were not resolved"
     known = {page.page_id for page in pages}
     assert all(set(record.page_ids) <= known for record in [*stored.facts, *stored.flags])
     assert all(event.payload["run_id"] == 7 for event in stored.events)
     assert [event.payload["id"] for event in events if event.kind in ("fact", "flag")] == [
-        *[f"F{seq}" for seq in range(1, 36)], "F38", "F39", *[f"G{seq}" for seq in range(40, 49)]]
+        *[f"F{seq}" for seq in range(1, 39)], *[f"G{seq}" for seq in range(39, 48)]]
 
 
 def repeat_merge(path):
@@ -211,7 +220,7 @@ def changed_since(path):
     answer["facts"][0]["text"] = "A second reading."
     answer["flags"][0]["about"] = "A second gap description."
     stored = facts.append(path, facts.merge(stored, answer, PAGES, 3))
-    assert stored.changed_since(before) == {"fact": 1, "cite": 1, "reading": 1, "flag": 1, "about": 1}
+    assert stored.changed_since(before) == {"fact": 1, "cite": 1, "reading": 1, "flag": 1, "about": 1, "split": 0}
     assert stored.changed_since(stored.last_seq) == dict.fromkeys(facts.CHANGE_KINDS, 0)
 
 
@@ -233,10 +242,10 @@ CASES = (round_trip, edited_line, removed_middle, cut_middle, torn_tail, missing
 
 
 def test_casefile(tmp_path):
-    assert len(CASES) == 17
+    assert len(CASES) == 22
     for case in CASES:
         case(tmp_path / f"{case.__name__}.jsonl")
-    print("casefile_ok=17 of 17")
+    print("casefile_ok=22 of 22")
 
 
 def legacy_bytes(events):
@@ -254,6 +263,7 @@ def upgrade(path):
     path.write_bytes(raw)
     loaded=facts.load(path)
     assert loaded.upgraded == 2 and path.read_bytes() == raw
+    assert loaded.split_needed == 0 and facts.upgrade_events(loaded) == []
     fact=loaded.facts[0]
     assert fact.dates == ['',''] and fact.category == 'other' and fact.providers == ['','']
     event=fact_event('A new record.');event=facts.Event('fact',{**event.payload,'id':'F3'})
@@ -281,9 +291,199 @@ def cite_dates(path):
     stored=facts.append(path,facts.merge(facts.CaseFile(),answer,PAGES,1))
     answer['facts'][0].update(cite='MED0002',date='03/12/2025',provider='Other Invented Clinic')
     stored=facts.append(path,facts.merge(stored,answer,PAGES,2))
-    assert stored.facts[0].dates == ['03/11/2025','03/12/2025']
-    assert stored.facts[0].providers == ['Invented Clinic','Other Invented Clinic']
+    assert [fact.dates for fact in stored.facts] == [['03/11/2025'], ['03/12/2025']]
+    assert [fact.providers for fact in stored.facts] == [['Invented Clinic'], ['Other Invented Clinic']]
     assert stored.facts[0].category == 'patient_statement'
 
 
 CASES = (*CASES,upgrade,legacy_corrupt,cite_dates)
+
+
+
+def merged_pair_events():
+    """The invented F05/F34 pair as stored by round 6, with both reading sources."""
+    answer = json.loads((FIXTURE / "ideal.json").read_text(encoding="utf-8"))
+    pair = [item for item in answer["facts"]
+            if item["quote"] == "Straight leg raise negative bilaterally."]
+    assert [item["cite"] for item in pair] == ["MED0002", "DEF0002"]
+    first, second = pair
+    return [facts.Event("fact", dict(id="F1", page_id="medical/002", run_id=1, **first)),
+            facts.Event("cite", dict(fact="F1", page_id="defense-report/002", run_id=1,
+                cite=second["cite"], date=second["date"], provider=second["provider"])),
+            facts.Event("reading", dict(fact="F1", page_id="defense-report/002", run_id=1,
+                text=second["text"])),
+            facts.Event("reading", dict(fact="F1", page_id="defense-report/002", run_id=2,
+                text="The later examination records the negative finding."))]
+
+
+def split_on_append(path):
+    stored = facts.append(path, merged_pair_events())
+    before = path.read_bytes()
+    assert stored.split_needed == 1 and facts.load(path).split_needed == 1
+    assert path.read_bytes() == before, "W1: load rewrote the case file"
+    events = facts.upgrade_events(stored)
+    assert len(events) == 1 and events[0].kind == "split"
+    assert events[0].payload == dict(fact="F1", page_id="defense-report/002", to="F5",
+        cite="DEF0002", date="06/20/2025", provider="Dr. Theodore Marchetti",
+        text=stored.facts[0].readings[1])
+    updated = facts.append(path, events)
+    assert len(updated.facts) == 2, "split_on_append: split view did not create two facts"
+    first, second = updated.facts
+    assert first.page_ids == ["medical/002"] and first.cites == ["MED0002"]
+    assert first.dates == ["03/11/2025"] and len(first.providers) == 1
+    assert first.reading_pages == ["medical/002"]
+    assert first.readings == stored.facts[0].readings[:1]
+    assert second.id == "F5" and second.page_ids == ["defense-report/002"]
+    assert second.cites == ["DEF0002"] and second.dates == ["06/20/2025"]
+    assert second.providers == ["Dr. Theodore Marchetti"]
+    assert second.reading_pages == ["defense-report/002"] * 2
+    assert second.readings == stored.facts[0].readings[1:]
+    assert second.quote == first.quote and second.category == first.category
+    assert updated.split_needed == 0 and facts.upgrade_events(updated) == []
+    assert path.read_bytes().startswith(before), "W1: split rewrote complete lines"
+    extra = facts.Event("reading", dict(fact=second.id, page_id="defense-report/002",
+        text="Another later reading.", run_id=3))
+    assert facts.append(path, [extra]).facts[1].readings[-1] == extra.payload["text"]
+    # Multiple later cites split in cite order, leaving the first identity group intact.
+    grouped = path.with_name("split-groups.jsonl")
+    source = merged_pair_events()
+    source.extend([
+        facts.Event("cite", dict(fact="F1", page_id="medical/003", run_id=2,
+            cite="MED0003", date="3/11/2025", provider=source[0].payload["provider"])),
+        facts.Event("cite", dict(fact="F1", page_id="defense-report/003", run_id=2,
+            cite="DEF0003", date="06/20/2025", provider="Dr. Theodore Marchetti")),
+        facts.Event("reading", dict(fact="F1", page_id="defense-report/003", run_id=2,
+            text="Another page of the later examination."))])
+    old = facts.append(grouped, source)
+    splits = facts.upgrade_events(old)
+    assert [event.payload["page_id"] for event in splits] == ["defense-report/002", "defense-report/003"]
+    new = facts.append(grouped, splits)
+    assert new.split_needed == 0 and len(new.facts) == 3
+    assert new.facts[0].page_ids == ["medical/002", "medical/003"]
+
+
+def same_identity_still_cites(path):
+    answer = copy.deepcopy(ANSWER)
+    answer["flags"] = []
+    answer["facts"][0].update(date="03/11/2025", provider="Invented Clinic")
+    stored = facts.append(path, facts.merge(facts.CaseFile(), answer, PAGES, 1))
+    answer["facts"][0].update(cite="MED0002", date="3/11/2025", provider="INVENTED CLINIC")
+    events = facts.merge(stored, answer, PAGES, 2)
+    assert [event.kind for event in events] == ["cite", "reading"], \
+        "same_identity_still_cites: parsed date or folded provider failed to merge"
+    updated = facts.append(path, events)
+    assert len(updated.facts) == 1 and updated.split_needed == 0
+    assert facts.upgrade_events(updated) == []
+
+
+def different_date_new_fact(path):
+    pages = matter.load(FIXTURE).pages
+    pair = merged_pair_events()
+    first, second = pair[0].payload, pair[1].payload
+    answer = {"facts": [{key: value for key, value in first.items()
+                         if key not in ("id", "run_id", "page_id")},
+                        dict(cite=second["cite"], quote=first["quote"], text=pair[2].payload["text"],
+                             date=second["date"], provider=second["provider"], category=first["category"])],
+              "flags": []}
+    events = facts.merge(facts.CaseFile(), answer, pages, 1)
+    assert [event.kind for event in events] == ["fact", "fact"], \
+        "different_date_new_fact: different dates merged"
+    assert len(facts.append(path, events).facts) == 2
+    # Isolate date and provider: either dimension alone must create a fact.
+    answer["facts"][1]["provider"] = first["provider"]
+    assert [event.kind for event in facts.merge(facts.CaseFile(), answer, pages, 1)] == ["fact", "fact"], \
+        "different_date_new_fact: date-only difference merged"
+    answer["facts"][1].update(date=first["date"], provider="Other Invented Clinic")
+    assert [event.kind for event in facts.merge(facts.CaseFile(), answer, pages, 1)] == ["fact", "fact"], \
+        "different_date_new_fact: provider-only difference merged"
+
+
+def split_refused(path):
+    source = facts.CaseFile()
+    source.extend(merged_pair_events())
+    event = facts.upgrade_events(source)[0]
+    for key, value, message in (
+            ("fact", "UNKNOWN", "split_refused: unknown origin accepted"),
+            ("to", "F1", "split_refused: reused to id accepted")):
+        bad = facts.CaseFile(list(source.events))
+        bad.extend([facts.Event("split", {**event.payload, key: value})])
+        # Encode the wire independently; the shape and chain are otherwise valid.
+        path.write_bytes(b"".join(json.dumps(dict(seq=e.seq, at=e.at, prev=e.prev,
+            kind=e.kind, payload=e.payload), ensure_ascii=False,
+            separators=(",", ":")).encode("utf-8") + b"\n" for e in bad.events))
+        refusal(path, 5, message)
+    facts.append(path.with_name("split-valid.jsonl"), [*merged_pair_events(), event])
+
+
+def split_through_start(path):
+    for job in ("report", "memo"):
+        root = path.parent / job
+        root.mkdir()
+        settings = config.load(write_config(root, playbook=ROOT / "playbook"))
+        folder = settings.paths.matters / "9001.001"
+        shutil.copytree(FIXTURE, folder)
+        target = folder / "casefile.jsonl"
+        loaded = matter.load(folder)
+        card = extract.card()
+        with open_db(settings.paths.state / "runlog.sqlite") as log:
+            run_id = log.start_run(job="memo", matter="9001.001", card=card.name,
+                card_version=card.version, playbook_version="invented", model="invented",
+                pages_in=len(loaded.pages), prompt_sha256="invented")
+            for page in loaded.pages:
+                log.record_coverage(run_id, matter="9001.001", page_id=page.page_id,
+                                    card=card.name, status="read", reason="")
+        run = facts.Event("run", dict(run_id=run_id, job="memo", card=card.name,
+            card_version=card.version, pages=[p.page_id for p in loaded.pages], ok=True,
+            read=[p.page_id for p in loaded.pages], uncited=[], failed=[]))
+        old = facts.append(target, [*merged_pair_events(), run, output_event(5)])
+        prefix = target.read_bytes()
+        assert facts.load(target).split_needed == 1
+        out, err = StringIO(), StringIO()
+        assert status.run(settings, "9001.001", out=out, err=err) == 0
+        assert "gaps=0 split_needed=1 outputs=memo:current" in out.getvalue()
+        assert target.read_bytes() == prefix, "W1: status wrote an upgrade"
+        out, err = StringIO(), StringIO()
+        transport = FakeTransport(FakeModel(recordings=[]))
+        append = facts.append
+        def locked_append(*args, **kwargs):
+            with (folder / "casefile.jsonl.lock").open("a") as competitor:
+                try:
+                    fcntl.flock(competitor, fcntl.LOCK_SH | fcntl.LOCK_NB)
+                except BlockingIOError:
+                    pass
+                else:
+                    raise AssertionError("W1: split append outside the matter lock")
+            return append(*args, **kwargs)
+        with patch.object(facts, "append", locked_append):
+            if job == "report":
+                with outputs.start(settings, "9001.001", job, opener=transport, out=out,
+                                   stdin=StringIO()) as started:
+                    assert started.casefile.split_needed == 0, \
+                        "split_through_start: split_needed=1 after outputs.start"
+                    assert [event.kind for event in started.casefile.events[len(old.events):]] == ["split"]
+                    assert started.casefile.stale_outputs() == ["memo"], \
+                        "split_through_start: split left memo current"
+                    assert started.casefile.changed_since(old.last_seq).get("split") == 1
+            else:
+                code = memo_job.run(settings, "9001.001", out=out, err=err, opener=transport)
+                assert code == 0 and not err.getvalue()
+                assert "chunks=0 runs=+0" in out.getvalue() and "split=1" in out.getvalue(), \
+                    "split_through_start: memo upgrade missing"
+                doc = Document(folder / "outputs/memo.docx")
+                index = next(i for i, p in enumerate(doc.paragraphs)
+                             if p.text == "What changed since the last memo")
+                assert doc.paragraphs[index + 1].text == (
+                    "1 fact added, 0 cites added, 0 readings added, 0 flags added, 1 fact split"), \
+                    "split_through_start: memo omitted split change"
+        updated = facts.load(target)
+        assert updated.split_needed == 0 and len(updated.facts) == 2
+        assert sum(event.kind == "split" for event in updated.events) == 1
+        assert target.read_bytes().startswith(prefix) and not transport.requests
+        assert out.getvalue().count("split=1") == 1
+        with outputs.start(settings, "9001.001", job, opener=transport, out=StringIO(),
+                           stdin=StringIO()) as started:
+            assert started.casefile.last_seq == updated.last_seq, "W1: upgrade repeated"
+
+
+CASES = (*CASES, split_on_append, same_identity_still_cites, different_date_new_fact,
+         split_refused, split_through_start)

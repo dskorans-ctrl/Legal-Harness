@@ -52,6 +52,7 @@ def snapshot(loaded, casefile, coverage, book=None, *, folder=None):
     return dict(pages=len(ordered), **counts, open=len(opened), facts=len(casefile.facts),
                 conflicts=sum(flag.kind == "conflict" for flag in casefile.flags),
                 gaps=sum(flag.kind == "gap" for flag in casefile.flags), outputs=outputs,
+                split_needed=casefile.split_needed,
                 open_items=opened)
 
 
@@ -79,7 +80,7 @@ def run(config, number, *, out, err) -> int:
             print(torn_message(casefile), file=err)
         fields = " ".join(f"{key}={result[key]}" for key in
                           ("pages", "read", "failed", "uncited", "empty", "open", "facts",
-                           "conflicts", "gaps", "outputs"))
+                           "conflicts", "gaps", "split_needed", "outputs"))
         print(f"status {number} {fields}", file=out)
         print_open(result["open_items"], out)
         return 0

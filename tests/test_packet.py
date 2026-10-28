@@ -14,7 +14,7 @@ def test_packet_contract(tmp_path,row,capsys):
     value=packet.build(cf,loaded.pages,matter=loaded.number,task='depo',
                        options={'deponent':'our-doctor','deponent_pages':['medical/007']},playbook_version=book.version)
     if row==0:
-        assert len(value.facts)==len(cf.facts)==37
+        assert len(value.facts)==len(cf.facts)==38
         for sent, stored in zip(value.facts,cf.facts):
             assert (sent.cite,sent.page_id,sent.quote)==(stored.cites[0],stored.page_ids[0],stored.quote)
         altered=replace(cf.events[0],payload={**cf.events[0].payload,'page_id':'absent/001','cite':'ABS0001'})
@@ -28,7 +28,7 @@ def test_packet_contract(tmp_path,row,capsys):
     elif row==2:
         body=value.body()
         assert body.startswith('Matter 9001.001\nTask: depo ')
-        assert sum(line.startswith('[F') for line in body.splitlines())==37
+        assert sum(line.startswith('[F') for line in body.splitlines())==38
         assert "[deponent's record]" in body
         assert all(extract.page_block(p) in body for p in value.pages), 'W5 packet page blocks omitted; packet_ok=5 of 6'
     elif row==3:

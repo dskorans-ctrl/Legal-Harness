@@ -91,10 +91,10 @@ def test_m3(tmp_path):
 
 def test_m4(tmp_path):
     _, _, _, loaded, cf, _ = setup_case(tmp_path)
-    with pytest.raises(outputs.OutputError, match='ambiguous provider.*Marchetti.*Okonkwo-Lind'):
+    with pytest.raises(outputs.OutputError, match=r'ambiguous provider:(?=.*Marchetti)(?=.*Okonkwo-Lind)'):
         outputs.provider_pages(cf, 'Dr', pages=loaded.pages)
     assert outputs.provider_pages(cf, 'archett', pages=loaded.pages) == (), 'M4: provider fragment matched'
-    assert outputs.provider_pages(cf, 'Marchetti') == ('defense-report/002', 'defense-report/003')
+    assert outputs.provider_pages(cf, 'Marchetti') == ('defense-report/003', 'defense-report/002')
     merged = facts.CaseFile(list(cf.events))
     merged.extend([facts.Event('cite', dict(fact=cf.facts[0].id, cite='MED0002', page_id='medical/002', run_id=2, date='', provider=cf.facts[0].providers[0].upper()))])
     try:

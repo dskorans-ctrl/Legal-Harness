@@ -305,6 +305,10 @@ def start(config, number, job, *, opener=None, stdin=None, out=None):
     with (folder / 'casefile.jsonl.lock').open('a') as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         casefile = facts.load(folder / 'casefile.jsonl')
+        upgrades = facts.upgrade_events(casefile)
+        if upgrades:
+            casefile = facts.append(folder / 'casefile.jsonl', upgrades)
+            print(f'split={len(upgrades)}', file=sys.stdout if out is None else out)
         if not casefile.facts:
             raise OutputError('run casefile memo first')
         rules.check_stamps(loaded.pages, book.rules)

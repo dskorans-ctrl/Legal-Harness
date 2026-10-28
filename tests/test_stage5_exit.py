@@ -27,15 +27,15 @@ ONE_PAGE = {"facts": [{
     "date": "", "category": "patient_statement", "provider": "Dr. Theodore Marchetti",
 }], "flags": []}
 EXPECTED = (
-    'stage5 run=1 mode=replay exit=1 chunks=1 runs=+1 read=13 open=1 facts=37 conflicts=5 gaps=4 new_facts=37 new_flags=9',
-    'stage5 run=2 mode=bad_schema exit=1 chunks=1 runs=+1 read=13 open=1 facts=37 conflicts=5 gaps=4 new_facts=0 new_flags=0',
-    'stage5 run=3 mode=replay exit=0 chunks=1 runs=+1 read=14 open=0 facts=38 conflicts=5 gaps=4 new_facts=1 new_flags=0',
-    'stage5 run=4 mode=replay exit=0 chunks=0 runs=+0 read=14 open=0 facts=38 conflicts=5 gaps=4 new_facts=0 new_flags=0',
-    'stage5 memo=1 sections=15 chronology=37 dated=37 of 37 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=118 readings=38 gaps=4 runs_seen=1 open=1 open_status=uncited rule_hits=0 changed=first',
-    'stage5 memo=2 sections=15 chronology=37 dated=37 of 37 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=118 readings=38 gaps=4 runs_seen=1 open=1 open_status=failed rule_hits=0 changed=0',
-    'stage5 memo=3 sections=15 chronology=37 dated=37 of 38 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=120 readings=38 gaps=4 runs_seen=2 open=0 open_status=none rule_hits=0 changed=1',
+    'stage5 run=1 mode=replay exit=1 chunks=1 runs=+1 read=13 open=1 facts=38 conflicts=5 gaps=4 new_facts=38 new_flags=9',
+    'stage5 run=2 mode=bad_schema exit=1 chunks=1 runs=+1 read=13 open=1 facts=38 conflicts=5 gaps=4 new_facts=0 new_flags=0',
+    'stage5 run=3 mode=replay exit=0 chunks=1 runs=+1 read=14 open=0 facts=39 conflicts=5 gaps=4 new_facts=1 new_flags=0',
+    'stage5 run=4 mode=replay exit=0 chunks=0 runs=+0 read=14 open=0 facts=39 conflicts=5 gaps=4 new_facts=0 new_flags=0',
+    'stage5 memo=1 sections=15 chronology=38 dated=38 of 38 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=117 readings=38 gaps=4 runs_seen=1 open=1 open_status=uncited rule_hits=0 changed=first',
+    'stage5 memo=2 sections=15 chronology=38 dated=38 of 38 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=117 readings=38 gaps=4 runs_seen=1 open=1 open_status=failed rule_hits=0 changed=0',
+    'stage5 memo=3 sections=15 chronology=38 dated=38 of 39 providers=6 conflicts=5 conflict_quotes_ok=1 defense_first=1 header_ok=1 cites=119 readings=38 gaps=4 runs_seen=2 open=0 open_status=none rule_hits=0 changed=1',
     'stage5 status read=13 then 14 open=1 then 0 outputs=memo:current',
-    'stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=56 chain_ok=1 server_stopped=1',
+    'stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=55 chain_ok=1 server_stopped=1',
 )
 BAD_REASON = ("gate.schema: the answer does not match the schema: facts[0].text: missing required key; "
               "the page stays open until a later run reads it")
@@ -227,7 +227,7 @@ def test_stage5_exit(tmp_path, capsys):
                     sent = re.findall(r"^=== PAGE (\S+) BATES ", body["messages"][1]["content"], re.MULTILINE)
                     if sent != expected_pages:
                         errors.append(f"run={number}: sent pages differ: {sent}")
-                expected_line_count = (50, 52, 55, 56)[number - 1]
+                expected_line_count = (49, 51, 54, 55)[number - 1]
                 if len(stored.events) != expected_line_count:
                     errors.append(f"run={number}: casefile_lines={len(stored.events)} expected={expected_line_count}")
                 memo_line = _read_memo(number, folder / "outputs/memo.docx", stored,
@@ -240,7 +240,7 @@ def test_stage5_exit(tmp_path, capsys):
                 statuses.append(fields)
                 expected_status = (f"status {NUMBER} pages=14 read={counts['read']} failed={counts['failed']} "
                                    f"uncited={counts['uncited']} empty=0 open={opened} facts={len(stored.facts)} "
-                                   "conflicts=5 gaps=4 outputs=memo:current")
+                                   "conflicts=5 gaps=4 split_needed=0 outputs=memo:current")
                 if status.returncode != 0 or status.stderr or status.stdout.splitlines() != [expected_status, *expected_open]:
                     errors.append(f"run={number}: status differs: {status.stdout!r} {status.stderr!r}")
                 previous_seq, previous_runs, previous_answers = stored.last_seq, runs, answers
@@ -256,7 +256,7 @@ def test_stage5_exit(tmp_path, capsys):
     lines = [*run_lines, *memo_lines, status_line]
     good_runs = sum(actual == expected for actual, expected in zip(run_lines, EXPECTED[:4]))
     good_memos = sum(actual == expected for actual, expected in zip(memo_lines, EXPECTED[4:7]))
-    failed = bool(errors or lines != list(EXPECTED[:8]) or answers != 4 or complete_lines != 56
+    failed = bool(errors or lines != list(EXPECTED[:8]) or answers != 4 or complete_lines != 55
                   or not chain_ok or not stopped)
     lines.append(f"stage5 exit={int(failed)} runs={good_runs} of 4 memos={good_memos} of 3 answers={answers:+d} "
                  f"casefile_lines={complete_lines} chain_ok={chain_ok} server_stopped={int(stopped)}")

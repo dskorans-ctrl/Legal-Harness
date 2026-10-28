@@ -22,15 +22,18 @@ def _run_event(run_id, card, part, outcome):
 
 
 def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, err, opener):
+    casefile = facts.load(path)
+    before = casefile.last_seq
+    if casefile.torn:
+        print(status.torn_message(casefile), file=err)
+    upgrades = facts.upgrade_events(casefile)
+    if upgrades:
+        casefile = facts.append(path, upgrades)
     try:
         with path.open("ab"):
             pass
     except OSError as exc:
         raise facts.CaseFileError(f"cannot append case file {path}: {exc}") from exc
-    casefile = facts.load(path)
-    if casefile.torn:
-        print(status.torn_message(casefile), file=err)
-    before = casefile.last_seq
     card = extract.card(book)
     client = ModelClient(config.model, opener=opener)
     with open_db(config.paths.state / "runlog.sqlite") as log:
@@ -88,6 +91,7 @@ def _run_locked(config, number, folder, path, book, loaded, open_pages, *, out, 
     print(f'memo {number} chunks={len(chunks)} runs=+{runs} read={counts["read"]} '
           f'open={counts["open"]} facts={counts["facts"]} conflicts={counts["conflicts"]} '
           f'gaps={counts["gaps"]} new_facts={changes["fact"]} new_flags={changes["flag"]} '
+          + (f'split={len(upgrades)} ' if upgrades else '') +
           f'memo={output}', file=out)
     status.print_open(counts["open_items"], out)
     return 1 if counts["open"] else 0

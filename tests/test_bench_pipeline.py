@@ -204,6 +204,7 @@ def split_setup(monkeypatch, *, repeated=False, duplicate=False):
     ideal = json.loads((MATTER / "ideal.json").read_text(encoding="utf-8"))
     quote = ideal["facts"][1]["quote"]
     if repeated:
+        ideal["facts"][1].update(date="", provider="")
         pages = list(loaded.pages)
         pages[5] = replace(pages[5], text=pages[5].text + "\n" + quote)
         loaded = replace(loaded, pages=tuple(pages))
