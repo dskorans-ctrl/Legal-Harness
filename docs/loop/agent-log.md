@@ -120,3 +120,11 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 22 | 8c blind verifier | opus | 27.7 min | 151 k | PASS; R4-1 to R4-4 and V. ticked; 10 fresh seeds, 9 red, 1 green test gap (L1); L2 design gap logged |
 | 23 | Librarian close | codex gpt-6.1-sol (medium) | 4.4 min | 138 k | done; 13 entries, 13 pre-flight bullets; R2-CX-2, round 3 gaps and lows closed; 4 open items added |
 | | **Round 4 session 2 total** | | **~2 h 25 min wall-clock (22:05 to 00:50) incl. one owner pause** | **Fable 204 k (revision); Codex gpt-6.1-sol about 1.84 M (builders 1.24 M, fixes 477 k, Librarian 138 k, probes); Codex gpt-6-astra 2 reviews (8a 136 k); Opus 253 k (critic 102 k, verifier 151 k); chair not counted** | PASS after two fix cycles; merged to local main |
+
+## Round 5 (stage 5 case file, merge, medical memo, opened 2026-10-28 on `loop/round-05`; same session as round 4, owner Q48)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 1 | Build brief | fable | 22.0 min | 377 k | done; 779 lines, 16 decisions, D39 to D43 pending, owner questions 50 to 55 held with interims |
+| 2 | Adversarial plan review (fresh agent, Q46) | fable | 13.6 min | 240 k | done; 20 findings (2 high, 8 med, 10 low; 9 confirmed); chair checked M6 in the Ollama request log: no suite run reached the local server |
+| 3 | Brief revision | fable | 13.2 min | 177 k | done; 18 accepted, 1 rejected, 2 owner (56, 57); 984 lines; D40 to D42 amended |

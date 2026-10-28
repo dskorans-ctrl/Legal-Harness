@@ -252,3 +252,46 @@ exempt, 44 stamp and "Page N of M" lines only, 45 verified with the rung logged,
 49. The firm rule ids (for example `no-dme-ime`) appear in what the bench and the open-items reasons print, next to
     the offending words. Should an output you read show the rule id, or only the rule's own message and the words it
     caught? (Round 4 output critic, L4; the playbook does not say.) Interim: the id stays, next to the rule's message.
+
+## Held 2026-10-28 (round 5 brief; owner offline, Q48; interim rulings by the chair, pending veto)
+
+50. The stage 5 memo lists verified facts by record page (binder, then page), each as the quoted record text with
+    its cite and the model's one-sentence reading labelled as such, then conflicts, gaps and open items. Spec §2
+    names a treatment chronology, providers, diagnoses, restrictions, history and the two sides' opinions as sections.
+    Do you want those sections (which needs a date and a category per fact from the stage 6 memo card), and in what
+    order should the memo run? Interim: by record page, in binder order, with the quote as the text; no chronology or
+    category sections until the memo card exists.
+51. Should the memo use a firm Word template (letterhead, styles, caption block)? If so, where does the template
+    live on the Studio (it cannot be committed to the repo)? Interim: python-docx default styles, no template.
+52. Cites in the memo follow the playbook's good example, `[cite MED0001]` after each quote. Is that the form you
+    want in a memo you read, or a footnote or parenthetical `(MED0001)`? Interim: the bracketed form.
+53. For a binder with no Bates stamps the memo cites the page id in brackets, `[page medical/001]`, and opens the
+    facts section with the rule's warning naming those pages. Acceptable until the binder is stamped? Interim: yes.
+54. A conflict entry shows the two cites and the model's sentence about the disagreement, labelled as the model's
+    reading; no quoted passage is attached, because the flag carries none. Should the memo also show the facts
+    quoted from those two pages beneath the conflict? And in what order should conflicts run: as found, or those
+    between a defense examination and our records first (your question 41 priority; the code can tell binders apart
+    only by the names you give them)? Interim: cites and the labelled sentence only, in the order found.
+55. A page that stays open (failed, or cited by nothing) is sent to the model again on every memo run, alone if
+    nothing else is unread. A cover sheet re-sent alone comes back with no facts and no flags, which the checks
+    treat as a failed answer and retry once, so it costs two model calls per run for the life of the matter, and
+    from then on it is listed as `failed` with the reason "the answer has no facts and no flags" rather than
+    "uncited". Acceptable, or should re-sending need your say-so per page? Interim: re-sent every run; nothing
+    else closes a page (question 47); the reason is shown verbatim.
+
+## Held 2026-10-28 (round 5 brief, revised after the plan review; owner offline, Q48; interim rulings by the chair, pending veto)
+
+56. When new records arrive after the first memo run, only the new pages are sent to the model, so a conflict
+    between a new page (say, a defense report) and a page already read (our medical records) can never be flagged:
+    the model only sees pages sent together. The plan reviewer proposes filling each run's prompt with already-read
+    pages up to the budget so the new record is read beside the old; that re-reads the old pages on every later run
+    (more time on the Studio per run, and a page the model fails to cite the second time would turn from read to
+    open) and on the test matter it re-sends the whole matter. Do you want the re-send, and how much (the whole
+    matter when it fits, or only the binder you name), or should cross-run conflicts wait for the stage 6 reconcile
+    card that compares one new fact with the case file? Interim: no re-send; the memo's conflicts section states
+    how many runs read pages and that conflicts between runs are not checked.
+57. The firm rule against "DME" and "IME" also catches a binder name you type at intake (`ime`,
+    `defense-medical-exam`) because the memo's headings and cites carry the binder name. Is a folder label "our
+    words" that the rule should govern, or should intake refuse such a name up front, or should the memo show it
+    as typed? Interim: the memo refuses to run and names the binder, the rule and the remedy (remove the binder
+    by hand and intake it under another name, question 34); intake does not check names this round.

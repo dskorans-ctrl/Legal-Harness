@@ -737,3 +737,20 @@ All answers are invented fixtures served by the stand-in model server (`tests/fa
   Verifier (2026-10-28, aa11799): PASS; R4-1 to R4-4 reproduced, R4-5 deferred; 10 seeds, 9 red, 1 test gap (low,
   mixed stamped and unstamped chunk); every seed restored, `cmp` identical. `docs/loop/round-04/round04-verify.md`.
 - Close (2026-10-28): verifier PASS (`docs/loop/round-04/round04-verify.md`). Carried to the round 5 brief: verifier L1 (no mixed stamped and unstamped chunk test; `gates.py:241` `all` to `any` stays green), verifier L2 (D38 digit check fails a summary holding a bracketed cite; rule with R1-20 before cited prose; T-19), critic M2 (open items by stamp) and L3 (bench invented kinds). Owner questions 47, 48, 49 held; D31 to D38 pending veto. Machine notes: Codex builders need `-c sandbox_workspace_write.network_access=true`; an `ollama` from the owner's local worker listens on 127.0.0.1:11434 here, so verifiers run the doctor in process against the stand-in.
+
+## Round 5: stage 5 case file, merge, medical memo (opened 2026-10-28 on `loop/round-05` at 4755170, same session, owner Q48)
+Tiers: Q46 (Fable brief and revision; a fresh Fable agent for the plan review and the code review, read-only; Opus
+orchestrator, output critic and blind verifier; Codex `gpt-6.1-sol` code and fixes). The owner is offline (Q48): no
+check-in; questions held in `docs/loop/questions-for-owner.md` with interim rulings by the pillars, pending veto.
+Exit test (spec §7 stage 5): the test matter produces a memo with cites, conflicts and open items. All model answers
+are invented fixtures served by the stand-in model server (`tests/fakemodel/`).
+- [ ] R5-1. Stage 5 work items (defined by the round 5 brief, ruled by the chair before any code): the case file,
+  merge into it, and the medical memo, built on the round 4 gate pipeline (`gates.ask`), with cites, conflicts and open
+  items, under owner interims for questions 47 (uncited pages stay open) and 48 (no summary used as verified).
+- [ ] R5-2. Carried: R1-20 (`bates-cites` sees only bracketed cites) and round 4 verifier L2 (the D38 digit check reads
+  digits inside a bracketed cite), both due now that a stage writes cited prose; round 4 verifier L1 (a mixed stamped
+  and unstamped chunk test).
+- [ ] R5-3. Carried: round 4 critic M2 (open items shown by stamp, not page id) and L3 (bench `invented:` lines separate
+  no-such-page from quote-not-on-page).
+- Plan review and rulings (2026-10-28): fresh Fable plan review, 20 findings (`docs/loop/round-05/round05-brief-review.md`); Fable revision accepted 18, rejected 1 (L6, `model.py:127-128` always sends num_ctx), owner 2 (questions 56, 57); brief 984 lines. Chair ruled D39 to D43 as written in brief §6, logged in spec §9 pending owner veto. Chair's flag for the check-in: question 56's interim (no re-send across runs; the memo states the limit) leaves a defense report read in a later run unchecked against earlier pages, the conflict class Q41 ranks first; acceptable only because the memo says so.
+- [ ] V. Fresh blind verification: every non-deferred R5 item `[x]` with the verifier's own evidence.
