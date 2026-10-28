@@ -2,6 +2,8 @@
 
 from casefile.quotes import fold, found_in, match, normalize, same
 
+import pytest
+
 CASES = [
     # (quote, page_text, expected)
     ("Pain 7/10 in the low back.", "Vitals stable.\nPain 7/10 in the low back.\nPlan: rest.", True),
@@ -83,3 +85,35 @@ def test_ocr_drops_only_whole_allowed_lines():
         assert result is not None and result.rung == "ocr", line
     assert match("Pain. MED0001 Rest.", "Pain.\nMED0002\nRest.") is None
     assert match(" \n\t", "Pain.") is None
+
+
+@pytest.mark.parametrize('quote,page', [
+    ('5 mg daily.', 'Take 15 mg daily.'), ('able to work', 'He is unable to work.'),
+    ('5 mg   daily.', 'Take 15 mg daily.'), ('ABLE TO WORK', 'He is unable to work.'),
+    ('finding', 'refinding'), ('pain', 'painless'), ('PAIN', 'Painless'),
+    ('examination', 'preexam-\nination'), ('examination', 'exam-\ninations'),
+    ('5', '15'), ('1', '15'), ('5 mg daily.', 'Take 15 mg daily.\nMED0001'),
+])
+def test_fix2_token_boundaries(quote, page):
+    assert match(quote, page) is None, 'R2: quote fragment accepted'
+    assert not found_in(quote, page), 'R2 adjacent: legacy substring accepted'
+    assert match(quote, page + ' ' + quote) is not None
+
+
+@pytest.mark.parametrize('source,quote', [
+    ('Dose 1-\n2 mg.', 'Dose 12 mg.'), ('Dose -\n2 mg.', 'Dose 2 mg.'),
+    ('Dose 1-\r\n 2 mg.', 'Dose 12 mg.'), ('Dose A-\n2 mg.', 'Dose A2 mg.'),
+    ('Dose 1-\nB mg.', 'Dose 1B mg.'),
+])
+def test_fix3_numeric_hyphens(source, quote):
+    assert match(quote, source) is None, 'R3: numeric hyphen erased'
+    assert not same(quote, source), 'R3 adjacent: same erases numeric hyphen'
+    assert '-' in fold(source)
+
+
+def test_fix2_legacy_token_boundary():
+    assert not found_in('5 mg daily.', 'Take 15 mg daily.'), 'R2 adjacent: legacy substring accepted'
+
+
+def test_fix3_same_preserves_numeric_hyphen():
+    assert not same('Dose 12 mg.', 'Dose 1-\n2 mg.'), 'R3 adjacent: same erases numeric hyphen'

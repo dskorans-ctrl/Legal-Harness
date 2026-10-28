@@ -1,9 +1,9 @@
 """Load a benchmark answer key and check it against the matter's pages (D25)."""
 
 from dataclasses import dataclass
-import json
 from pathlib import Path
 
+from casefile import jsonrepair
 from casefile.matter import Matter
 from casefile.quotes import found_in, fold
 from casefile.stamps import normalize as normalize_stamp
@@ -42,9 +42,9 @@ def load(path, matter: Matter) -> Key:
     Loads a benchmark answer key from path and validates it against matter.
     """
     try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise BenchKeyError(f"{path}: {exc}") from exc
+        data = jsonrepair.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, jsonrepair.RepairError) as exc:
+        raise BenchKeyError(f"{path}: {exc}") from (exc.__cause__ or exc)
 
     if not isinstance(data, dict) or set(data) != {"facts", "flags"}:
         raise BenchKeyError(f"{path}: expected object with keys facts and flags")

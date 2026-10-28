@@ -5,6 +5,8 @@ import http.client
 import json
 from urllib import error, request
 
+from casefile import jsonrepair
+
 
 TEMPLATE_TOKENS = 64
 
@@ -99,9 +101,9 @@ class ModelClient:
                              received=True)
         text = payload.decode("utf-8", errors="replace")
         try:
-            result = json.loads(payload)
+            result = jsonrepair.loads(payload)
         except (ValueError, UnicodeError) as exc:
-            raise ModelError(f"status={status} non-JSON: {payload[:200]!r}", text,
+            raise ModelError(f"status={status} non-JSON: {exc}: {payload[:200]!r}", text,
                              received=True) from exc
         if not isinstance(result, dict):
             raise ModelError(f"status={status} expected JSON object: {payload[:200]!r}", text, received=True)

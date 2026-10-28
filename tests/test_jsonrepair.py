@@ -88,3 +88,37 @@ def test_every_raw_control_is_replaced_but_escaped_controls_are_kept():
     result = repair(source, nonce=NONCE)
     assert result.text == '{"text": "' + " " * 32 + r'\n\r\t"}'
     assert result.repairs == ("control",)
+
+
+@pytest.mark.parametrize('loader', ['schema', 'candidate', 'key', 'model'])
+def test_fix7_adjacent_json_loaders(tmp_path, loader):
+    from io import BytesIO
+    from casefile import benchcandidate, benchkey, config, matter, model, schema
+    from conftest import ROOT, write_config
+
+    path = tmp_path / 'duplicate.json'
+    if loader == 'schema':
+        path.write_text('{"type":"integer", "type":"string"}', encoding='utf-8')
+        action, error, key = lambda: schema.load(path), schema.SchemaError, 'type'
+    elif loader == 'candidate':
+        source = '{"facts":[], "facts":[], "flags":[]}'
+        action, error, key = lambda: benchcandidate.parse_text(source), benchcandidate.CandidateError, 'facts'
+    elif loader == 'key':
+        root = ROOT / 'tests/fixtures/matters/9001.001'
+        path.write_text('{"facts":[], ' + (root / 'key.json').read_text(encoding='utf-8')[1:],
+                        encoding='utf-8')
+        action, error, key = lambda: benchkey.load(path, matter.load(root)), benchkey.BenchKeyError, 'facts'
+    else:
+        source = ('{"message":{"content":"READY"}, "done":false, "done":true, '
+                  '"done_reason":"stop", "prompt_eval_count":10, "eval_count":2}')
+        class Opener:
+            def open(self, request, timeout):
+                response = BytesIO(source.encode('utf-8'))
+                response.getcode = lambda: 200
+                return response
+        client = model.ModelClient(config.load(write_config(tmp_path)).model, Opener())
+        action, error, key = lambda: client.chat([]), model.ModelError, 'done'
+    with pytest.raises(error, match=f'duplicate key {key}') as caught:
+        action()
+    if loader == 'model':
+        assert caught.value.received and caught.value.raw == source

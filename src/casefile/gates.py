@@ -72,7 +72,7 @@ def _rules_strings(obj):
 
 
 def _page_id(page):
-    return page.stamps[0] if page.stamps else page.page_id
+    return page.page_id
 
 
 def _objects(obj):
@@ -90,18 +90,22 @@ def _references(obj, pages):
     searched = ", ".join(_page_id(page) for page in pages)
 
     def lookup(cite):
-        found = next((page for page in pages
-                      if stamps.normalize(cite) in page.stamps or cite == page.page_id), None)
-        if found is None:
+        matches = [page for page in pages
+                   if stamps.normalize(cite) in page.stamps or cite == page.page_id]
+        if len(matches) > 1:
+            faults.append(f"cite {cite} is ambiguous (pages "
+                          + ", ".join(page.page_id for page in matches) + ")")
+            return None
+        if not matches:
             faults.append(f"cite {cite} is not a page of this chunk (pages searched: {searched})")
-        else:
-            cited.add(_page_id(found))
-        return found
+            return None
+        cited.add(matches[0].page_id)
+        return matches[0]
 
     for item in _objects(obj):
         if "cite" in item:
             page = lookup(item["cite"])
-            if page is not None and "quote" in item:
+            if page is not None and item.get("quote", "").strip():
                 hit = quotes.match(item["quote"], page.text)
                 if hit is None:
                     faults.append(f"quote on {item['cite']} not found (pages searched: {searched})")
@@ -110,6 +114,8 @@ def _references(obj, pages):
         for cite in item.get("cites", []):
             lookup(cite)
     for fact in obj.get("facts", []):
+        if not fact["quote"].strip():
+            continue
         numbers = set(re.findall(r"\d+", fact["quote"]))
         for number in dict.fromkeys(re.findall(r"\d+", fact["text"])):
             if number not in numbers:
@@ -124,7 +130,7 @@ def _end_id(text, nonce):
     # Start on a real string token so a string containing a key imitation cannot pass.
     tokens = list(re.finditer(r'"(?:[^"\\]|\\.)*"', text, re.DOTALL))
     tail = text[tokens[-2].start():] if len(tokens) >= 2 else ""
-    return re.fullmatch(r'"end_id"\s*:\s*' + re.escape(json.dumps(nonce)) + r"[\s\]}]*", tail)
+    return re.fullmatch(r'"end_id"\s*:\s*' + re.escape(json.dumps(nonce)) + r"\s*,?[\s\]}]*", tail)
 
 
 def open_items(log, matter):
@@ -195,7 +201,7 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                 elif gate == "repair":
                     try:
                         repaired = jsonrepair.repair(answer.content, nonce=nonce)
-                        obj = json.loads(repaired.text)
+                        obj = jsonrepair.loads(repaired.text)
                         obj.pop("prompt_id", None)
                         obj.pop("end_id", None)
                     except jsonrepair.RepairError as exc:
@@ -222,6 +228,14 @@ def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
                 elif gate == "coverage":
                     if not obj.get("facts") and not obj.get("flags"):
                         message = "empty answer"
+                    else:
+                        blanks = [f"{group}[{index}].{key}" for group, keys in
+                                  (("facts", ("text", "quote")), ("flags", ("about", "cites")))
+                                  for index, item in enumerate(obj.get(group, []))
+                                  for key in keys if not (item[key].strip() if isinstance(item[key], str)
+                                                         else item[key])]
+                        if blanks:
+                            message = "; ".join(f"empty answer: {path} blank" for path in blanks)
                 if message:
                     break
                 detail = ""

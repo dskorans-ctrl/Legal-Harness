@@ -14,8 +14,9 @@ from fakemodel.bench import extraction_card, recordings_for
 
 FIXTURE = ROOT / 'tests/fixtures/matters/9001.001'
 NONCE = '0123456789abcdef'
-SEARCHED = ('MED0001, MED0002, MED0003, MED0004, MED0005, MED0006, MED0007, MED0008, '
-            'EMP0001, EMP0002, EMP0003, DEF0001, DEF0002, DEF0003')
+SEARCHED = ("medical/001, medical/002, medical/003, medical/004, medical/005, medical/006, "
+            "medical/007, medical/008, employer/001, employer/002, employer/003, "
+            "defense-report/001, defense-report/002, defense-report/003")
 BAD_QUOTE_FAULTS = (
     f'quote on MED0001 not found (pages searched: {SEARCHED})',
     f'cite MED0099 is not a page of this chunk (pages searched: {SEARCHED})',
@@ -167,7 +168,7 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         if case in {'quoted_ime', 'unstamped'}:
             assert len(outcome.read) == 3 and outcome.uncited == ()
         else:
-            assert len(outcome.read) == 13 and outcome.uncited == ('DEF0001',), (
+            assert len(outcome.read) == 13 and outcome.uncited == ('defense-report/001',), (
                 f'good read={len(outcome.read)} uncited={outcome.uncited}')
             assert outcome.answer == ideal
         if case == 'good':
@@ -248,7 +249,150 @@ def _case(case, log, loaded, ideal, card, firm, settings):
         later = gates.ask(card, pages, client=client, rules=firm, log=log, matter=number)
         assert later.ok and later.attempts == 2
         opened = gates.open_items(log, number)
-        assert set(opened) == {('DEF0001', 'bench_extract')}, f'open_items={len(opened)} expected=1'
-        assert opened[('DEF0001', 'bench_extract')] == (
-            'uncited', 'no fact or flag cites DEF0001', later.run_id)
+        assert set(opened) == {('defense-report/001', 'bench_extract')}, f'open_items={len(opened)} expected=1'
+        assert opened[('defense-report/001', 'bench_extract')] == (
+            'uncited', 'no fact or flag cites defense-report/001', later.run_id)
         assert len(rows(log, 'coverage', later.run_id)) == 14
+
+
+@pytest.fixture
+def fix_probe(tmp_path):
+    """Drive received invented answers through the real pipeline and durable log."""
+    card = extraction_card()
+    settings = config.load(write_config(tmp_path)).model
+    firm = rules.load(ROOT / 'playbook/rules.toml')
+    with open_db(tmp_path / 'fix.sqlite') as log:
+        def run(pages, obj, transform=lambda text: text):
+            def edit(reply):
+                reply['message']['content'] = transform(reply['message']['content'])
+            transport = FakeTransport(FakeModel(recordings=[
+                recording(card, pages, '9003.001', obj)]), edit=edit)
+            client = model.ModelClient(settings, transport)
+            outcome = gates.ask(card, pages, client=client, rules=firm, log=log,
+                                matter='9003.001', nonce=NONCE)
+            return outcome, log, transport
+        yield run
+
+
+def fix_pages():
+    return (matter.Page('probe', 1, 'Take 15 mg daily.', ('MED0001',)),
+            matter.Page('probe', 2, 'He is unable to work.', ('MED0002',)))
+
+
+def fix_answer(cite='MED0001', quote='Take 15 mg daily.', text='Take 15 mg daily.'):
+    return {'facts': [{'cite': cite, 'quote': quote, 'text': text}], 'flags': []}
+
+
+@pytest.mark.parametrize('reference', ['fact', 'flag'])
+def test_fix1_ambiguous_stamp(fix_probe, reference):
+    first, second = fix_pages()
+    pages = (first, replace(second, stamps=('MED0001', 'MED0002')))
+    obj = fix_answer(cite='MED 0001') if reference == 'fact' else {
+        'facts': [], 'flags': [{'kind': 'gap', 'cites': ['MED-0001'], 'about': 'Missing report.'}]}
+    outcome, log, transport = fix_probe(pages, obj)
+    assert not outcome.ok, 'R1: ambiguous stamp accepted'
+    cite = 'MED 0001' if reference == 'fact' else 'MED-0001'
+    assert all(f'cite {cite} is ambiguous (pages probe/001, probe/002)' in r['message']
+               for r in rows(log, 'failures', outcome.run_id))
+    assert len(transport.requests) == 2
+    assert {r['page_id']: r['status'] for r in rows(log, 'coverage', outcome.run_id)} == {
+        'probe/001': 'failed', 'probe/002': 'failed'}
+
+
+def test_fix1_coverage_uses_page_identity(fix_probe):
+    first, second = fix_pages()
+    pages = (first, replace(second, stamps=('MED0001', 'MED0002')))
+    outcome, log, _ = fix_probe(pages, fix_answer(cite=first.page_id))
+    assert outcome.read == ('probe/001',), 'R1: coverage uses first stamp'
+    assert outcome.uncited == ('probe/002',)
+    assert {r['page_id']: r['status'] for r in rows(log, 'coverage', outcome.run_id)} == {
+        'probe/001': 'read', 'probe/002': 'uncited'}
+
+
+@pytest.mark.parametrize('field', ['text', 'quote', 'about', 'cites'])
+@pytest.mark.parametrize('blank', ['', ' \t\n'], ids=['empty', 'whitespace'])
+def test_fix5_blank_records(fix_probe, field, blank):
+    if field in {'text', 'quote'}:
+        obj = fix_answer()
+        obj['facts'][0][field] = blank
+        if field == 'quote':
+            obj['facts'][0]['text'] = 'Dose recorded.'
+        path = f'facts[0].{field}'
+    else:
+        obj = {'facts': [], 'flags': [
+            {'kind': 'gap', 'cites': ['MED0001'], 'about': 'Missing report.'}]}
+        obj['flags'][0][field] = [] if field == 'cites' else blank
+        path = f'flags[0].{field}'
+    outcome, log, transport = fix_probe(fix_pages(), obj)
+    failures = rows(log, 'failures', outcome.run_id)
+    assert [(r['gate'], r['message']) for r in failures] == [
+        ('gate.coverage', f'empty answer: {path} blank')] * 2, f'R5: blank {path} bypasses gate 6'
+    assert not outcome.ok and outcome.answer is None and outcome.read == ()
+    assert len(transport.requests) == 2
+    assert [r['status'] for r in rows(log, 'answers', outcome.run_id)] == ['failed', 'failed']
+
+
+def test_fix6_tail_comma_reaches_repair(fix_probe):
+    outcome, log, transport = fix_probe(fix_pages(), fix_answer(), lambda text: text[:-1] + ',}')
+    assert outcome.ok, 'R6: trailing end_id comma rejected before repair'
+    assert len(transport.requests) == 1
+    assert [(r['gate'], r['message']) for r in rows(log, 'gates', outcome.run_id)
+            if r['verdict'] == 'repaired'] == [('gate.repair', 'trailing-comma')]
+    for suffix in (',,}', '},', ',},}', ',true}', ',"later":0}'):
+        assert not gates._end_id('{"end_id": "' + NONCE + '"' + suffix, NONCE)
+
+
+@pytest.mark.parametrize('nested', [False, True])
+def test_fix7_duplicate_keys(fix_probe, nested):
+    def duplicate(text):
+        return (text.replace('"text":', '"text":"Discarded", "text":', 1) if nested else
+                text.replace('"facts":', '"facts":[], "facts":', 1))
+    outcome, log, transport = fix_probe(fix_pages(), fix_answer(), duplicate)
+    name = 'text' if nested else 'facts'
+    assert not outcome.ok, f'R7: duplicate key {name} accepted'
+    assert [(r['gate'], r['message']) for r in rows(log, 'failures', outcome.run_id)] == [
+        ('gate.repair', f'duplicate key {name}')] * 2
+    assert len(transport.requests) == 2
+    contents = [json.loads(r['raw_answer'])['message']['content']
+                for r in rows(log, 'answers', outcome.run_id)]
+    assert all('Discarded' in text if nested else '"facts":[]' in text for text in contents)
+
+
+def test_fix7_second_parse_uses_same_hook(fix_probe, monkeypatch):
+    from casefile import jsonrepair
+
+    original = jsonrepair.repair
+    def bypass(text, *, nonce):
+        result = original(text, nonce=nonce)
+        return replace(result, text=result.text.replace('"facts":', '"facts":[], "facts":', 1))
+    monkeypatch.setattr(jsonrepair, 'repair', bypass)
+    outcome, log, _ = fix_probe(fix_pages(), fix_answer())
+    assert not outcome.ok, 'R7: second parse discards duplicate facts'
+    assert [r['message'] for r in rows(log, 'failures', outcome.run_id)] == ['duplicate key facts'] * 2
+
+
+@pytest.mark.parametrize('value', ['9' * 5000, '[' * 10000 + '0' + ']' * 10000],
+                         ids=['integer-limit', 'nesting-limit'])
+def test_fix8_decoder_failures_logged_and_retried(fix_probe, value):
+    def malformed(text):
+        return text.replace('"facts":', '"overflow":' + value + ', "facts":', 1)
+    try:
+        outcome, log, transport = fix_probe(fix_pages(), fix_answer(), malformed)
+    except (ValueError, RecursionError) as exc:
+        pytest.fail(f'R8: decoder exception escaped: {type(exc).__name__}')
+    assert not outcome.ok and outcome.answer is None
+    failures = rows(log, 'failures', outcome.run_id)
+    assert len(failures) == len(transport.requests) == 2
+    assert all(r['gate'] == 'gate.repair' and r['message'].startswith('not JSON:') for r in failures)
+    assert [r['status'] for r in rows(log, 'answers', outcome.run_id)] == ['failed', 'failed']
+    assert all(value in r['raw_answer'] for r in rows(log, 'answers', outcome.run_id))
+    assert {r['status'] for r in rows(log, 'coverage', outcome.run_id)} == {'failed'}
+
+
+def test_ch1_quote_must_be_on_cited_page(fix_probe):
+    outcome, log, _ = fix_probe(fix_pages(), fix_answer(
+        quote='He is unable to work.', text='He is unable to work.'))
+    assert not outcome.ok, 'CH-1: quote from another page accepted'
+    assert all('quote on MED0001 not found' in r['message']
+               for r in rows(log, 'failures', outcome.run_id))
+    assert outcome.answer is None and outcome.read == ()

@@ -35,8 +35,9 @@ CASES = (
     ("probe", 1, None),
 )
 TRUNCATED = ("truncated", "cut_answer", "cut_prompt", "prompt_too_long")
-SEARCHED = ("MED0001, MED0002, MED0003, MED0004, MED0005, MED0006, MED0007, MED0008, "
-            "EMP0001, EMP0002, EMP0003, DEF0001, DEF0002, DEF0003")
+SEARCHED = ("medical/001, medical/002, medical/003, medical/004, medical/005, medical/006, "
+            "medical/007, medical/008, employer/001, employer/002, employer/003, "
+            "defense-report/001, defense-report/002, defense-report/003")
 BAD_QUOTE_FAULTS = (
     f"quote on MED0001 not found (pages searched: {SEARCHED})",
     f"cite MED0099 is not a page of this chunk (pages searched: {SEARCHED})",
@@ -114,14 +115,14 @@ def _check_case(name, attempts, failing, result, ideal, probe_answer):
     if successful:
         assert outcome.answer == (probe_answer if name == "probe" else ideal), f"{name}: answer differs"
         assert not outcome.failed, f"{name}: successful pages failed"
-        expected_uncited = () if name == "probe" else ("DEF0001",)
+        expected_uncited = () if name == "probe" else ("defense-report/001",)
         assert outcome.uncited == expected_uncited, f"{name}: uncited={outcome.uncited}"
         assert set(outcome.read) == expected_ids - set(expected_uncited), f"{name}: read ids"
         assert {row["page_id"] for row in coverage if row["status"] == "read"} == set(outcome.read)
         assert {row["page_id"] for row in coverage if row["status"] == "uncited"} == set(expected_uncited)
-        assert all(row["reason"] == ("no fact or flag cites DEF0001" if row["status"] == "uncited" else "")
+        assert all(row["reason"] == ("no fact or flag cites defense-report/001" if row["status"] == "uncited" else "")
                    for row in coverage), f"{name}: coverage reasons"
-        assert result["open"] == ({("DEF0001", "bench_extract")} if name != "probe" else set()), (
+        assert result["open"] == ({("defense-report/001", "bench_extract")} if name != "probe" else set()), (
             f"{name}: open_items={len(result['open'])} expected={0 if name == 'probe' else 1}")
     else:
         assert outcome.answer is None, f"{name}: failed answer saved"
@@ -187,7 +188,7 @@ def test_stage4_exit(tmp_path, capsys):
                 result = {table: _rows(log, table, outcome.run_id)
                           for table in ("answers", "gates", "failures", "coverage")}
                 result.update(outcome=outcome, open=set(gates.open_items(log, number)),
-                              page_ids={p.stamps[0] for p in loaded.pages})
+                              page_ids={p.page_id for p in loaded.pages})
                 results[name] = result
                 try:
                     _check_case(name, attempts, failing, result, ideal, probe_answer)

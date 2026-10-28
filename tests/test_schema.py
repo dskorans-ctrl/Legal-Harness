@@ -172,3 +172,15 @@ def test_load_errors_are_schema_errors(tmp_path, contents):
     path.write_bytes(contents)
     with pytest.raises(SchemaError):
         load(path)
+
+
+@pytest.mark.parametrize('value,enum,node', [
+    ([1], [True], {'type': 'array', 'items': {'type': 'integer'}}),
+    ([True], [1], {'type': 'array', 'items': {'type': 'boolean'}}),
+    ({'n': [1]}, {'n': [True]}, object_schema({'n': {'type': 'array', 'items': {'type': 'integer'}}})),
+    ({'n': [False]}, {'n': [0]}, object_schema({'n': {'type': 'array', 'items': {'type': 'boolean'}}})),
+])
+def test_fix9_enum_json_types(value, enum, node):
+    assert validate(value, dict(node, enum=[enum])), 'R9: enum conflates nested boolean and number'
+    assert validate(value, dict(node, enum=[value])) == []
+    assert validate([1], {'type': 'array', 'items': {'type': 'integer'}, 'enum': [[1.0]]}) == []

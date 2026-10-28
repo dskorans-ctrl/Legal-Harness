@@ -1,8 +1,9 @@
 """Load and enforce the card schemas' explicitly supported JSON Schema subset."""
 
-import json
 import math
 from pathlib import Path
+
+from casefile import jsonrepair
 
 KEYWORDS = {"type", "properties", "required", "additionalProperties", "items", "enum", "title", "$schema"}
 TYPES = {"object", "array", "string", "integer", "number", "boolean", "null"}
@@ -49,7 +50,7 @@ def check_schema(schema):
 def load(path) -> dict:
     """Read UTF-8 JSON and refuse schemas outside the supported subset."""
     try:
-        schema = json.loads(Path(path).read_text(encoding="utf-8"))
+        schema = jsonrepair.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, UnicodeError, ValueError) as exc:
         raise SchemaError(f"cannot load schema {path}: {exc}") from exc
     check_schema(schema)
@@ -62,6 +63,19 @@ def _has_type(value, kind):
     return {"object": isinstance(value, dict), "array": isinstance(value, list),
             "string": isinstance(value, str), "integer": finite and value == int(value),
             "number": finite, "boolean": type(value) is bool, "null": value is None}[kind]
+
+
+def _json_equal(left, right):
+    """Compare composite JSON values without Python's bool and number coercion."""
+    if type(left) in (int, float) and type(right) in (int, float):
+        return left == right
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, list):
+        return len(left) == len(right) and all(_json_equal(a, b) for a, b in zip(left, right))
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(_json_equal(left[key], right[key]) for key in left)
+    return left == right
 
 
 def validate(instance, schema) -> list[str]:
@@ -77,7 +91,7 @@ def validate(instance, schema) -> list[str]:
         if not _has_type(value, kind):
             error(f"expected {kind}")
             return
-        if "enum" in node and not any(value == item and _has_type(item, kind) for item in node["enum"]):
+        if "enum" in node and not any(_json_equal(value, item) for item in node["enum"]):
             error("not one of " + ", ".join(str(item) for item in node["enum"]))
         if isinstance(value, dict):
             properties = node.get("properties", {})

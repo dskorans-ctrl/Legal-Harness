@@ -25,6 +25,26 @@ def _constant(value):
     raise RepairError(f"not JSON: {value}")
 
 
+def _unique_object(pairs):
+    obj = {}
+    for key, value in pairs:
+        if key in obj:
+            raise RepairError(f"duplicate key {key}")
+        obj[key] = value
+    return obj
+
+
+def loads(text):
+    """Parse JSON without silently replacing an earlier key at any depth."""
+    try:
+        return json.loads(text, parse_constant=_constant, object_pairs_hook=_unique_object)
+    except RepairError:
+        raise
+    except (ValueError, RecursionError) as exc:
+        message = exc.msg if isinstance(exc, json.JSONDecodeError) else str(exc)
+        raise RepairError(f"not JSON: {message}") from exc
+
+
 def repair(text: str, *, nonce: str) -> Repaired:
     """Check strings and nesting, repair punctuation, then require strict JSON."""
     inner = unfence(text)
@@ -72,9 +92,6 @@ def repair(text: str, *, nonce: str) -> Repaired:
             raise RepairError("closers missing and end_id not last")
         repaired += "".join(reversed(stack))
         kinds.add("closers")
-    try:
-        json.loads(repaired, parse_constant=_constant)
-    except json.JSONDecodeError as exc:
-        raise RepairError(f"not JSON: {exc.msg}") from exc
+    loads(repaired)
     return Repaired(repaired, tuple(kind for kind in
                     ("fence", "control", "trailing-comma", "closers") if kind in kinds))

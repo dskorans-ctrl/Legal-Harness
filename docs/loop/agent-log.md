@@ -109,3 +109,9 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 11 | W3 builder (run log v2) | codex gpt-6.1-sol | 10.0 min | 148 k | done; triggers=21 upgrade_v1=1 upgrade_atomic=1, 5 seeds red; fc46b32 with W1, W2 |
 | 12 | W5 builder, lane B (bench ladder, pre-pass, stamps) | codex gpt-6.1-sol | 10.7 min | 119 k | done; score_cases=14 of 14 key_refusals=13 of 13, 7 seeds red; both bench baselines unchanged |
 | 13 | W6 builder, lane B (S1, S2, S5, shared intake, suite_time.sh) | codex gpt-6.1-sol | 10.1 min | 140 k | done; ids_ok=6 of 6 intake_refusals=16 of 16, 7 seeds red; chair seed red; 583c788 |
+| 14 | W4 builder (gates.py, 17 stand-in modes) | codex gpt-6.1-sol | 7.4 min | 149 k | blocked at gate_cases=26 of 27 on the brief's bad_quote count; 12 seeds red; chair ruled faults=5 |
+| 15 | W7 builder (stage 4 exit test) | codex gpt-6.1-sol | 5.4 min | 113 k | blocked on the same count; no seeds run |
+| 16 | W4 and W7 finish (faults=5, W7 seeds) | codex gpt-6.1-sol | 8.1 min | 115 k | done; gate_cases=27 of 27, stage4 exit=0, 20 seeds (W7b green as required); chair seed R04-CH-1 green (test gap); 7384c63 |
+| 17 | Merge lane B and regression | chair | about 6 min | n/a | 8a2973b; 447 passed; gate 0; unused_imports=0; bench lines unchanged; stage 1 to 4 lines; suite_time 3 runs max=54.47 PASS |
+| 18 | 8a code review | codex gpt-6-astra (read-only, high) | 6.9 min | 136 k | done; 9 findings (3 high, 6 med); chair reproduced 8, 1 not reproduced |
+| 19 | Fix cycle 1 (R04-CX-1 to 3, 5 to 9, CH-1) | codex gpt-6.1-sol | 10.1 min | 290 k | done; 45 test cases, each red first; adjacent: bounded found_in, duplicate keys refused in four more loaders; 492 passed; baselines unchanged; chair probes all fail closed |

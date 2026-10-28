@@ -17,7 +17,18 @@ def normalize(text: str) -> str:
 
 def found_in(quote: str, page_text: str) -> bool:
     quote = normalize(quote)
-    return bool(quote) and quote in normalize(page_text)
+    return _bounded(quote, normalize(page_text))
+
+
+def _bounded(quote: str, page: str) -> bool:
+    """Require both edges of a hit to be outside letters and digits."""
+    start = 0
+    while quote and (index := page.find(quote, start)) >= 0:
+        end = index + len(quote)
+        if (index == 0 or not page[index - 1].isalnum()) and (end == len(page) or not page[end].isalnum()):
+            return True
+        start = index + 1
+    return False
 
 
 @dataclass(frozen=True)
@@ -28,7 +39,12 @@ class Match:
 
 def fold(text: str) -> str:
     """Fold a quote without dropping lines; no page context is available here."""
-    return normalize(re.sub(r"-[^\S\r\n]*(?:\r\n?|\n)[^\S\r\n]*", "", text))
+    def join_word(hit):
+        before = text[hit.start() - 1:hit.start()]
+        after = text[hit.end():hit.end() + 1]
+        return "" if before.isalpha() and after.isalpha() else hit[0]
+
+    return normalize(re.sub(r"-[^\S\r\n]*(?:\r\n?|\n)[^\S\r\n]*", join_word, text))
 
 
 def same(a: str, b: str) -> bool:
@@ -52,10 +68,10 @@ def match(quote: str, page_text: str) -> Match | None:
         ("whitespace", " ".join(quote.split()), " ".join(page_text.split())),
         ("curly", normalize(quote), normalize(page_text)),
     ):
-        if quoted in page:
+        if _bounded(quoted, page):
             return Match(rung, quoted)
     page = "\n".join(line for line in page_text.splitlines() if not _drop_line(line))
     quoted = fold(quote)
-    if quoted and quoted in fold(page):
+    if _bounded(quoted, fold(page)):
         return Match("ocr", quoted)
     return None

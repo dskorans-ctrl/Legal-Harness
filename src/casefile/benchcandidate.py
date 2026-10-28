@@ -1,7 +1,8 @@
 """Parse a bench run's answer into facts and flags; shape only, nothing is scored here (D25)."""
 
 from dataclasses import dataclass
-import json
+
+from casefile import jsonrepair
 
 FLAG_KINDS = ("conflict", "gap")
 
@@ -76,7 +77,7 @@ def parse(data) -> Candidate:
 def parse_text(text: str) -> Candidate:
     """Parse a JSON string into a Candidate object."""
     try:
-        data = json.loads(text)
-    except json.JSONDecodeError as exc:
-        raise CandidateError(f"not JSON: {exc}") from exc
+        data = jsonrepair.loads(text)
+    except jsonrepair.RepairError as exc:
+        raise CandidateError(str(exc)) from exc
     return parse(data)
