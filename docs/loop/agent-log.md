@@ -136,3 +136,6 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 9 | W1 builder (cites in text, mixed chunk, cite forms) | codex gpt-6.1-sol | about 7 min | 146 k | done; gate_cases=31 of 31 cite_forms=11 of 11, 8 seeds red |
 | 10 | W2 builder (pages.py, pipeline.py, coverage job) | codex gpt-6.1-sol | 9.2 min | 151 k | done; pages_ok=10 of 10 chunks_ok=8 of 8 pipeline_ok=5 of 5, 8 seeds red; 3 brief counts corrected by measurement |
 | 11 | W3 builder (bench on the pipeline, benchrun removed) | codex gpt-6.1-sol | 8.5 min | 157 k | blocked on sequencing (needs facts.py); 8 seeds; measured flags=5 of 9 across chunks |
+| 12 | W3b builder (bench CLI pins, plain no-reply, memo chunk sentence) | codex gpt-6.1-sol | 2.3 min | 163 k | done; 609 passed; controls red then green; chair seed on pipeline.chunk red (56 failed); c22f7b8 |
+| 13 | W7 builder (casefile memo, casefile status, intake memo) | codex gpt-6.1-sol | 16.9 min | 155 k | done; status_ok=6 of 6 binder_refused=1, memo_intake exit=1, 12 controls red |
+| 14 | W8 builder (stage 5 exit test) | codex gpt-6.1-sol | 13.2 min | 128 k | done; stage5 exit=0 runs=4 of 4 memos=3 of 3, 8 controls red; chair read the produced memo |

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 
-from casefile import __version__, bench, doctor, intake, playbook
+from casefile import __version__, bench, doctor, intake, memo_job, playbook, status
 from casefile.config import ConfigError, load
 
 
@@ -34,6 +34,10 @@ def main() -> int:
     intake_parser.add_argument("--binder", required=True)
     intake_parser.add_argument("file", type=Path)
     intake_parser.add_argument("--config", type=Path)
+    for command in ("memo", "status"):
+        command_parser = subcommands.add_parser(command)
+        command_parser.add_argument("--matter", required=True)
+        command_parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     if args.command == "version":
         print(f"casefile {__version__}")
@@ -56,6 +60,14 @@ def main() -> int:
             return 2
         return intake.intake(config, args.matter, args.binder, args.file,
                              out=sys.stdout, err=sys.stderr)
+    elif args.command in ("memo", "status"):
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"{args.command}: cannot run: {exc}", file=sys.stderr)
+            return 2
+        job = memo_job if args.command == "memo" else status
+        return job.run(config, args.matter, out=sys.stdout, err=sys.stderr)
     elif args.command == "bench":
         return bench.main(args.matters, args.config, args.candidate)
     elif args.command == "config":
