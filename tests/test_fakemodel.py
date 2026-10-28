@@ -10,6 +10,9 @@ import pytest
 from fakemodel import FakeModel, FakeTransport
 from fakemodel.__main__ import main
 from fakemodel.server import serve
+from fakemodel.core import MODES
+from fakemodel.bench import recordings_for
+from conftest import ROOT
 
 
 MESSAGES = [
@@ -139,6 +142,45 @@ def test_prompt_too_long(capsys):
         print(f"prompt_too_long_status={replies[0][0]}", flush=True)
     for status, answer in replies:
         assert status == 400 and answer == expected
+
+
+def test_pipeline_canonical_lookup_and_retry():
+    expected = ('replay', 'truncated', 'malformed', 'forbidden', 'short_context', 'empty', 'incomplete',
+                'prompt_too_long', 'cut_prompt', 'cut_answer', 'repairable', 'unrepairable',
+                'bad_schema', 'bad_quote', 'forbidden_json', 'empty_answer', 'retry_ok')
+    assert MODES == expected and len(MODES) == 17
+    recordings = recordings_for(ROOT / 'tests/fixtures/matters/9001.001')
+    assert [r['name'] for r in recordings] == ['bench-9001.001', 'gates-9001.001']
+    row = recordings[1]
+    first, last = list(json.loads(row['answer']))[::len(json.loads(row['answer'])) - 1]
+    assert (first, last) == ('prompt_id', 'end_id')
+    fake = FakeModel(mode='retry_ok', recordings=recordings)
+    for retry, nonce in ((False, '0123456789abcdef'), (True, 'fedcba9876543210')):
+        messages = [{**m, 'content': m['content'].replace('__PROMPT_ID__', nonce)} for m in row['messages']]
+        if retry:
+            header, body = messages[1]['content'].split('\n', 1)
+            messages[1]['content'] = header + '\nRetry: invented repair failure\n' + body
+        status, reply = chat(fake, messages=messages, truncate=False)
+        assert status == 200
+        content = reply['message']['content']
+        assert '__PROMPT_ID__' not in content
+        if retry:
+            obj = json.loads(content)
+            assert obj['prompt_id'] == obj['end_id'] == nonce
+            assert obj['facts'] == json.loads(row['answer'])['facts']
+        else:
+            assert content.startswith('{"prompt_id": "' + nonce + '"')
+            assert content.endswith('"end_id": "' + nonce + '"}')
+            with pytest.raises(json.JSONDecodeError):
+                json.loads(content)
+    # Only the first line is a nonce line, and only the user second line is a retry line.
+    preserved = [{'role': 'system', 'content': 'prompt_id: __PROMPT_ID__\n'
+                  'prompt_id: aaaaaaaaaaaaaaaa'},
+                 {'role': 'user', 'content': 'Matter 9003.001\nbody\nRetry: record text'}]
+    fake = FakeModel(recordings=[{'messages': preserved, 'answer': 'READY'}])
+    live = [{**m, 'content': m['content']} for m in preserved]
+    live[0]['content'] = live[0]['content'].replace('__PROMPT_ID__', 'bbbbbbbbbbbbbbbb')
+    assert chat(fake, messages=live)[1]['message']['content'] == 'READY'
 
 
 @pytest.mark.socket

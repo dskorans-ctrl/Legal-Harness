@@ -102,3 +102,10 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 4 | Adversarial plan review | codex gpt-6-astra (read-only, high) | 5.5 min | n/a | done; 16 findings (8 high, 8 med; 9 confirmed); `round04-brief-codex.md` |
 | 5 | Builder capability probes (two) | codex gpt-6.1-sol (workspace-write, low) | about 3 min | n/a | probe 1 gate `1` (loopback bind refused in the Codex sandbox); probe 2 with network_access on, gate `0`; no file changed |
 | 6 | Brief revision | fable | 19.6 min | 204 k | done; 16 accepted, 0 rejected, 0 owner-only; 892 lines; D31 to D36 amended, D38 new; owner questions 47, 48 |
+| 7 | W0 builder, first launch | codex gpt-6.1-sol (workspace-write, high) | under 2 min | n/a | stopped at the owner's pause; no file changed |
+| 8 | W0 builder (quote ladder, stand-in truncate key and prompt_too_long) | codex gpt-6.1-sol | 11.0 min | 131 k | done; ladder_ok=14 of 14, 4 seeds red; chair seed red; 2a54cea |
+| 9 | W1 builder (model client, byte budget) | codex gpt-6.1-sol | 4.9 min | 110 k | done; chat_body_keys=1 cached_count_read=1 benchrun_modes=8 of 8, 4 seeds red |
+| 10 | W2 builder (jsonrepair, schema) | codex gpt-6.1-sol | 9.0 min | 117 k | done; repair_ok=13 of 13 schema_ok=14 of 14 schemas_loaded=20 of 20, 5 seeds red; chair probes on escapes correct |
+| 11 | W3 builder (run log v2) | codex gpt-6.1-sol | 10.0 min | 148 k | done; triggers=21 upgrade_v1=1 upgrade_atomic=1, 5 seeds red; fc46b32 with W1, W2 |
+| 12 | W5 builder, lane B (bench ladder, pre-pass, stamps) | codex gpt-6.1-sol | 10.7 min | 119 k | done; score_cases=14 of 14 key_refusals=13 of 13, 7 seeds red; both bench baselines unchanged |
+| 13 | W6 builder, lane B (S1, S2, S5, shared intake, suite_time.sh) | codex gpt-6.1-sol | 10.1 min | 140 k | done; ids_ok=6 of 6 intake_refusals=16 of 16, 7 seeds red; chair seed red; 583c788 |

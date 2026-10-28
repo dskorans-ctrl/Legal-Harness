@@ -1,0 +1,266 @@
+"""Run the fixed six gates, retry once, and publish only final page dispositions."""
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+import hashlib
+import json
+import re
+import secrets
+
+from casefile import benchrun, jsonrepair, model, quotes, schema, stamps
+from casefile.matter import Page
+
+
+GATES = ("truncation", "repair", "schema", "quotes", "rules", "coverage")
+GATE_NAMES = {gate: f"gate.{gate}" for gate in GATES}
+_SKIP_RULES = {"quote", "cite", "cites", "prompt_id", "end_id"}
+
+
+@dataclass(frozen=True)
+class Card:
+    """Stage 4 and 5 cards use text; stage 6 question cards must set unit explicitly."""
+
+    name: str
+    text: str
+    schema: dict
+    unit: str = "text"
+    think: bool = False
+    max_answer_tokens: int = 8192
+
+    @property
+    def version(self) -> str:
+        return hashlib.sha256(self.text.encode("utf-8")).hexdigest()[:12]
+
+
+@dataclass(frozen=True)
+class Verdict:
+    attempt: int
+    gate: str
+    verdict: str
+    message: str
+
+
+@dataclass(frozen=True)
+class Outcome:
+    ok: bool
+    answer: dict | None
+    attempts: int
+    verdicts: tuple[Verdict, ...]
+    read: tuple[str, ...]
+    uncited: tuple[str, ...]
+    failed: tuple[tuple[str, str], ...]
+    run_id: int
+
+
+def messages(card, pages: Sequence[Page], nonce, *, matter):
+    """The matter number is explicit because a Page carries no matter number."""
+    return [{"role": "system", "content": f"prompt_id: {nonce}\n{card.text}"},
+            {"role": "user", "content": f"Matter {matter}\n"
+             + "".join(benchrun.page_block(page) for page in pages)}]
+
+
+def _rules_strings(obj):
+    if isinstance(obj, str):
+        yield obj
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            if key not in _SKIP_RULES:
+                yield from _rules_strings(value)
+    elif isinstance(obj, list):
+        for value in obj:
+            yield from _rules_strings(value)
+
+
+def _page_id(page):
+    return page.stamps[0] if page.stamps else page.page_id
+
+
+def _objects(obj):
+    if isinstance(obj, dict):
+        yield obj
+        for value in obj.values():
+            yield from _objects(value)
+    elif isinstance(obj, list):
+        for value in obj:
+            yield from _objects(value)
+
+
+def _references(obj, pages):
+    faults, rungs, cited = [], [], set()
+    searched = ", ".join(_page_id(page) for page in pages)
+
+    def lookup(cite):
+        found = next((page for page in pages
+                      if stamps.normalize(cite) in page.stamps or cite == page.page_id), None)
+        if found is None:
+            faults.append(f"cite {cite} is not a page of this chunk (pages searched: {searched})")
+        else:
+            cited.add(_page_id(found))
+        return found
+
+    for item in _objects(obj):
+        if "cite" in item:
+            page = lookup(item["cite"])
+            if page is not None and "quote" in item:
+                hit = quotes.match(item["quote"], page.text)
+                if hit is None:
+                    faults.append(f"quote on {item['cite']} not found (pages searched: {searched})")
+                else:
+                    rungs.append(hit.rung)
+        for cite in item.get("cites", []):
+            lookup(cite)
+    for fact in obj.get("facts", []):
+        numbers = set(re.findall(r"\d+", fact["quote"]))
+        for number in dict.fromkeys(re.findall(r"\d+", fact["text"])):
+            if number not in numbers:
+                faults.append(f"text number {number} not in quote")
+    if faults:
+        return f"faults={len(faults)}; " + "; ".join(faults) + "; check source pages and retry", cited
+    return " ".join(f"{rung}={rungs.count(rung)}" for rung in
+                    ("exact", "whitespace", "curly", "ocr")), cited
+
+
+def _end_id(text, nonce):
+    # Start on a real string token so a string containing a key imitation cannot pass.
+    tokens = list(re.finditer(r'"(?:[^"\\]|\\.)*"', text, re.DOTALL))
+    tail = text[tokens[-2].start():] if len(tokens) >= 2 else ""
+    return re.fullmatch(r'"end_id"\s*:\s*' + re.escape(json.dumps(nonce)) + r"[\s\]}]*", tail)
+
+
+def open_items(log, matter):
+    return log.open_items(matter)
+
+
+def ask(card, pages: Sequence[Page], *, client, rules, log, matter, nonce=None,
+        job="gates", playbook_version="") -> Outcome:
+    """Check every received reply; a failed transport without a reply remains the caller's error."""
+    pages = tuple(pages)
+    nonce = secrets.token_hex(8) if nonce is None else nonce
+    initial = messages(card, pages, nonce, matter=matter)
+    run_id = log.start_run(job=job, matter=matter, card=card.name, card_version=card.version,
+                           playbook_version=playbook_version, model=client.config.name,
+                           pages_in=len(pages), prompt_sha256=benchrun.prompt_sha256(initial))
+    verdicts = []
+    reason = ""
+    obj = None
+    cited = set()
+    ok = False
+    for attempt in (1, 2):
+        if attempt == 2:
+            nonce = secrets.token_hex(8)
+        msgs = initial if attempt == 1 else messages(card, pages, nonce, matter=matter)
+        if attempt == 2:
+            header, body = msgs[1]["content"].split("\n", 1)
+            msgs[1]["content"] = header + "\nRetry: the previous answer failed the " + reason + (
+                ". Answer again with one JSON object and nothing else.\n") + body
+        gate, message, retryable = "truncation", "", True
+        raw = None
+        fields = {}
+        answer = None
+        budget = sum(model.tokens_at_most(m["content"]) for m in msgs) + model.TEMPLATE_TOKENS
+        if budget > client.config.num_ctx - card.max_answer_tokens:
+            message, retryable = "over budget", False
+        else:
+            try:
+                answer = client.chat(msgs, options={"num_predict": card.max_answer_tokens},
+                                     think=card.think, truncate=False)
+            except model.ModelError as exc:
+                if not exc.received:
+                    raise
+                raw = "" if exc.raw is None else exc.raw
+                gate = "truncation" if model.context_length_error(str(exc) + str(raw)) else "model"
+                message, retryable = " ".join(str(exc).split()), gate != "truncation"
+            else:
+                raw = answer.raw
+                fields = {key: getattr(answer, key) for key in
+                          ("done_reason", "prompt_eval_count", "eval_count", "prompt_eval_cached_count")}
+        if answer is not None:
+            for gate in GATES:
+                message = ""
+                if gate == "truncation":
+                    text = jsonrepair.unfence(answer.content).strip()
+                    p, e = answer.prompt_eval_count, answer.eval_count
+                    if answer.done_reason != "stop":
+                        message = f"done_reason={answer.done_reason}"
+                    elif not all(type(c) is int and c > 0 for c in (p, e)):
+                        message = "counts must be positive integers"
+                    elif p > client.config.num_ctx or p + e > client.config.num_ctx:
+                        message = "counts exceed context"
+                    elif e >= card.max_answer_tokens:
+                        message = "counts reach max_answer_tokens"
+                    elif not re.match(r'\{\s*"prompt_id"\s*:\s*' + re.escape(json.dumps(nonce)), text):
+                        message, retryable = "prompt cut (prompt_id missing)", False
+                    elif not _end_id(text, nonce):
+                        message = "answer cut (end_id missing)"
+                elif gate == "repair":
+                    try:
+                        repaired = jsonrepair.repair(answer.content, nonce=nonce)
+                        obj = json.loads(repaired.text)
+                        obj.pop("prompt_id", None)
+                        obj.pop("end_id", None)
+                    except jsonrepair.RepairError as exc:
+                        message = str(exc)
+                    else:
+                        for kind in repaired.repairs:
+                            verdict = Verdict(attempt, GATE_NAMES[gate], "repaired", kind)
+                            verdicts.append(verdict)
+                            log.record_gate(run_id, attempt=attempt, gate=verdict.gate,
+                                            verdict=verdict.verdict, message=verdict.message)
+                        if repaired.repairs:
+                            continue
+                elif gate == "schema":
+                    message = "; ".join(schema.validate(obj, card.schema))
+                elif gate == "quotes":
+                    detail, cited = _references(obj, pages)
+                    if detail.startswith("faults="):
+                        message = detail
+                elif gate == "rules":
+                    findings = [finding for value in _rules_strings(obj)
+                                for finding in rules.check(value, unit=card.unit,
+                                                           stamped=all(p.stamps for p in pages))]
+                    message = "; ".join(f"{f.rule_id}: {f.excerpt}" for f in findings if f.severity == "error")
+                elif gate == "coverage":
+                    if not obj.get("facts") and not obj.get("flags"):
+                        message = "empty answer"
+                if message:
+                    break
+                detail = ""
+                if gate == "quotes":
+                    detail, _ = _references(obj, pages)
+                elif gate == "rules":
+                    unstamped = [p.page_id for p in pages if not p.stamps]
+                    warnings = [f"{f.rule_id}: {f.excerpt}" for f in findings if f.severity == "warning"]
+                    if unstamped:
+                        warnings.insert(0, "warning: no Bates stamp on " + ", ".join(unstamped)
+                                        + "; cites are page ids")
+                    detail = "; ".join(warnings)
+                verdict = Verdict(attempt, GATE_NAMES[gate], "pass", detail)
+                verdicts.append(verdict)
+                log.record_gate(run_id, attempt=attempt, gate=verdict.gate,
+                                verdict=verdict.verdict, message=verdict.message)
+            else:
+                ok = True
+        if raw is not None:
+            log.record_answer(run_id, raw_answer=raw if isinstance(raw, str) else json.dumps(raw),
+                              status="ok" if ok else "failed", **fields)
+        if ok:
+            break
+        message = " ".join(message.split())
+        name = GATE_NAMES.get(gate, f"gate.{gate}")
+        verdict = Verdict(attempt, name, "fail", message)
+        verdicts.append(verdict)
+        log.record_gate(run_id, attempt=attempt, gate=name, verdict="fail", message=message)
+        log.record_failure(run_id, name, message)
+        reason = f"{gate} check: {message}"
+        if not retryable:
+            break
+    read = tuple(_page_id(page) for page in pages if _page_id(page) in cited) if ok else ()
+    uncited = tuple(_page_id(page) for page in pages if _page_id(page) not in cited) if ok else ()
+    failed = () if ok else tuple((_page_id(page), f"{name}: {message}") for page in pages)
+    for page in pages:
+        page_id = _page_id(page)
+        status = ("read" if page_id in read else "uncited") if ok else "failed"
+        why = ("" if status == "read" else f"no fact or flag cites {page_id}") if ok else f"{name}: {message}"
+        log.record_coverage(run_id, matter=matter, page_id=page_id, card=card.name,
+                            status=status, reason=why)
+    return Outcome(ok, obj if ok else None, attempt, tuple(verdicts), read, uncited, failed, run_id)
