@@ -1,0 +1,29 @@
+Northgate Medical Evaluations
+Independent Medical Evaluation
+Page 1 of 3
+Date of Examination: [DATE D+101]
+Patient Name: [CLAIMANT]
+Date of Birth: [DOB]
+Claim Number: [ID-1]
+Examining Physician: Dr. [DR-6]
+
+Records Reviewed:
+Fennimore County Hospital ER record [DATE D+0]
+Brightwater Family Medicine, Dr. [DR-2], [DATE D+3]
+Ridgeline Physical Therapy notes
+Lakeshore Imaging MRI [DATE D+38]
+Lakeshore Orthopedic Associates, Dr. [DR-5], [DATE D+59]
+
+History of Present Illness:
+Mr. [CLAIMANT] is a 44 year old male who presents for an independent medical evaluation regarding a work injury sustained at [EMPLOYER].
+The patient reports the injury occurred on [DATE D+0] while performing duties as an order picker.
+He describes the mechanism of injury as lifting a plastic tote from a floor level pallet to a cart.
+The examinee reports lifting a tote of about 60 pounds.
+He states he experienced immediate low back pain following the incident.
+He acknowledges a [YEAR Y-6] episode of low back pain that resolved.
+The pain has been intermittent since the reported incident.
+Current complaints include localized lower back pain and stiffness.
+He reports difficulty with prolonged sitting and bending.
+
+Examination findings are reported on page 2.
+Opinions are given on page 3.

@@ -1,0 +1,29 @@
+{
+  "pages_seen": [
+    "medical/001",
+    "medical/002",
+    "medical/003",
+    "medical/004",
+    "medical/005",
+    "medical/006",
+    "medical/007",
+    "medical/008",
+    "employer/001",
+    "employer/002",
+    "employer/003",
+    "defense-report/001",
+    "defense-report/002",
+    "defense-report/003"
+  ],
+  "people": [
+    {
+      "name": "Rosalind Mbeki-Farrow",
+      "kind": "person",
+      "quote": "Witness Statement: Rosalind Mbeki-Farrow",
+      "cite": "EMP0001"
+    }
+  ],
+  "organizations": [],
+  "places": [],
+  "anchor_dates": []
+}

@@ -40,7 +40,7 @@ CASES = (
     'flag_cite', 'forbidden_json', 'quoted_ime', 'unstamped', 'empty_answer', 'retry_ok',
     'retry_budget', 'no_reply', 'open_items', 'request_body',
     'date_ok', 'date_not_on_page', 'date_bad_form', 'provider_not_on_page', 'date_empty_ok',
-    'text_cite_ok', 'text_cite_bad', 'text_see_page', 'mixed_chunk', 'no_coverage', 'required_any', 'echo',
+    'text_cite_ok', 'text_cite_bad', 'text_see_page', 'mixed_chunk', 'no_coverage', 'required_any', 'echo', 'anon_name_exempt',
 )
 
 
@@ -80,7 +80,7 @@ def content_edit(change):
 def gate_totals():
     passed = []
     yield passed
-    print(f'gate_cases={len(passed)} of 39', flush=True)
+    print(f'gate_cases={len(passed)} of 40', flush=True)
 
 
 @pytest.mark.parametrize('case', CASES)
@@ -90,14 +90,14 @@ def test_gate_cases(case, tmp_path, gate_totals):
     card = extraction_card()
     firm = rules.load(ROOT / 'playbook/rules.toml')
     settings = config.load(write_config(tmp_path)).model
-    assert len(CASES) == 39
+    assert len(CASES) == 40
     with open_db(tmp_path / f'{case}.sqlite') as log:
         _case(case, log, loaded, ideal, card, firm, settings)
     gate_totals.append(case)
 
 
 def _case(case, log, loaded, ideal, card, firm, settings):
-    if case in {"no_coverage", "required_any", "echo"}:
+    if case in {"no_coverage", "required_any", "echo", "anon_name_exempt"}:
         return contract_case(case,log,loaded,firm,settings)
     pages, number = loaded.pages, loaded.number
     recordings = recordings_for(FIXTURE)
@@ -616,18 +616,23 @@ def contract_case(case, log, loaded, firm, settings):
     from fakemodel.bench import recording_for
 
     pages=loaded.pages[:2]
-    if case == 'echo':
+    if case in ('echo', 'anon_name_exempt'):
         card=cards.card('07-ANON')
         answer=dict(pages_seen=[p.page_id for p in pages],people=[],organizations=[],places=[],anchor_dates=[])
     else:
         card=cards.card('02-C-DEFDOC')
         answer=dict(section='primary',questions=[dict(text='The report records pain, correct?',cite='MED0001',quote='Pain 7/10 in the low back, no radiation.',note='')],points_for_our_expert=[])
+    if case == 'anon_name_exempt':
+        pages = (matter.Page('probe',1,'IME Evaluation Company reports normal gait.', ('MED0001',)),)
+        answer.update(pages_seen=['probe/001'], organizations=[dict(name='IME Evaluation Company',kind='provider',quote=pages[0].text,cite='MED0001')])
     def invoke(answer,card=card):
         fake=FakeModel(recordings=[recording_for(card,pages,loaded.number,answer)])
         return gates.ask(card,pages,client=model.ModelClient(settings,FakeTransport(fake)),rules=firm,
                          log=log,matter=loaded.number)
     outcome=invoke(answer)
     assert outcome.ok, f'{case}: valid answer refused: {outcome.verdicts[-1].message}'
+    if case == 'anon_name_exempt':
+        return
     if case == 'no_coverage':
         assert not outcome.read and not outcome.uncited and not outcome.failed, 'no_coverage: page dispositions written'
         assert not log.connection.execute('SELECT * FROM coverage').fetchall(), 'no_coverage: coverage rows written'

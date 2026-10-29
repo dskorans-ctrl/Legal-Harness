@@ -1,0 +1,142 @@
+{
+  "pages_seen": [
+    "medical/001",
+    "medical/002",
+    "medical/003",
+    "medical/004",
+    "medical/005",
+    "medical/006",
+    "medical/007",
+    "medical/008",
+    "employer/001",
+    "employer/002",
+    "employer/003",
+    "defense-report/001",
+    "defense-report/002",
+    "defense-report/003"
+  ],
+  "people": [
+    {
+      "name": "Morgan Ashby-Vale",
+      "kind": "claimant",
+      "quote": "Patient: Morgan Ashby-Vale",
+      "cite": "MED0001"
+    },
+    {
+      "name": "Halvard Quist-Benning",
+      "kind": "doctor",
+      "quote": "Provider: Dr. Halvard Quist-Benning, MD",
+      "cite": "MED0001"
+    },
+    {
+      "name": "Ines Castellanos-Reyes",
+      "kind": "doctor",
+      "quote": "Provider: Dr. Ines Castellanos-Reyes",
+      "cite": "MED0003"
+    },
+    {
+      "name": "Odalys Ferro-Lindqvist",
+      "kind": "doctor",
+      "quote": "Provider: Odalys Ferro-Lindqvist, PT, DPT",
+      "cite": "MED0004"
+    },
+    {
+      "name": "Ansgar Velloso-Krantz",
+      "kind": "doctor",
+      "quote": "Radiologist: Dr. Ansgar Velloso-Krantz, MD",
+      "cite": "MED0006"
+    },
+    {
+      "name": "Priya Okonkwo-Lind",
+      "kind": "doctor",
+      "quote": "Provider: Dr. Priya Okonkwo-Lind",
+      "cite": "MED0007"
+    },
+    {
+      "name": "Theodore Marchetti",
+      "kind": "doctor",
+      "quote": "Examining Physician: Dr. Theodore Marchetti",
+      "cite": "DEF0001"
+    },
+    {
+      "name": "Rosalind Mbeki-Farrow",
+      "kind": "person",
+      "quote": "The shift lead, Rosalind Mbeki-Farrow, was present and witnessed the event.",
+      "cite": "EMP0001"
+    },
+    {
+      "name": "Tobiah Varga-Ellison",
+      "kind": "person",
+      "quote": "Supervisor Review: Tobiah Varga-Ellison, Warehouse Supervisor",
+      "cite": "EMP0001"
+    },
+    {
+      "name": "Silas Vane-Harrow",
+      "kind": "person",
+      "quote": "Prepared By: Silas Vane-Harrow",
+      "cite": "EMP0003"
+    }
+  ],
+  "organizations": [
+    {
+      "name": "Quarry Ridge Logistics LLC",
+      "kind": "employer",
+      "quote": "Works as an order picker at Quarry Ridge Logistics LLC.",
+      "cite": "MED0001"
+    },
+    {
+      "name": "Fennimore County Hospital",
+      "kind": "provider",
+      "quote": "Fennimore County Hospital",
+      "cite": "MED0001"
+    },
+    {
+      "name": "Brightwater Family Medicine",
+      "kind": "provider",
+      "quote": "Brightwater Family Medicine",
+      "cite": "MED0003"
+    },
+    {
+      "name": "Ridgeline Physical Therapy",
+      "kind": "provider",
+      "quote": "Ridgeline Physical Therapy",
+      "cite": "MED0004"
+    },
+    {
+      "name": "Lakeshore Imaging",
+      "kind": "provider",
+      "quote": "Lakeshore Imaging",
+      "cite": "MED0006"
+    },
+    {
+      "name": "Lakeshore Orthopedic Associates",
+      "kind": "provider",
+      "quote": "Lakeshore Orthopedic Associates",
+      "cite": "MED0007"
+    },
+    {
+      "name": "Northgate Medical Evaluations",
+      "kind": "provider",
+      "quote": "Northgate Medical Evaluations",
+      "cite": "DEF0001"
+    }
+  ],
+  "places": [],
+  "anchor_dates": [
+    {
+      "date": "03/11/2025",
+      "quote": "Incident Date: 03/11/2025",
+      "cite": "EMP0001"
+    },
+    {
+      "date": "03/11/2025",
+      "quote": "Date of service: 03/11/2025",
+      "cite": "MED0001"
+    },
+    {
+      "date": "03/11/2025",
+      "quote": "The injury occurred on 03/11/2025 while the patient was working at Quarry Ridge Logistics LLC.",
+      "cite": "MED0007"
+    }
+  ]
+}

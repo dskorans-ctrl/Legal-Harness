@@ -9,7 +9,7 @@ import pytest
 from casefile import cards, playbook
 from conftest import ROOT
 
-VERSIONS = {'01-MEMO': 'ed0e58680bc9', '00-BILLS': '7805311400a2', '00-CLASSIFY': '0919de24f802', '00-PROCEDURAL': '58ef7e481a89', '00-TESTIMONY': 'acf3b1c3a5ef', '01-P0': 'c87983a810e7', '02-A': '008d522f2b4d', '02-C-CLIENT': 'f243ad762b1f', '02-C-DEFDOC': '77f7427b15f0', '02-C-OURDOC': 'a1d57a9f112b', '02-C-WITNESS': 'ddd72eea4d3e', '03-CLIENT': 'dbead8527c45', '04-G': '3279e19325a0', '05-A': 'cd37084912ca', '07-ANON': 'bd075ed6a208'}
+VERSIONS = {'01-MEMO': 'ed0e58680bc9', '00-BILLS': '7805311400a2', '00-CLASSIFY': '0919de24f802', '00-PROCEDURAL': '58ef7e481a89', '00-TESTIMONY': 'acf3b1c3a5ef', '01-P0': 'c87983a810e7', '02-A': '008d522f2b4d', '02-C-CLIENT': 'f243ad762b1f', '02-C-DEFDOC': '77f7427b15f0', '02-C-OURDOC': 'a1d57a9f112b', '02-C-WITNESS': 'ddd72eea4d3e', '03-CLIENT': 'dbead8527c45', '04-G': '3279e19325a0', '05-A': 'cd37084912ca', '07-ANON': '83377ac23684'}
 
 
 def test_cards():

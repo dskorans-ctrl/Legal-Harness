@@ -14,7 +14,7 @@ from casefile.rules import cite_body
 
 GATES = ("truncation", "repair", "schema", "quotes", "rules", "coverage")
 GATE_NAMES = {gate: f"gate.{gate}" for gate in GATES}
-_SKIP_RULES = {"quote", "cite", "cites", "prompt_id", "end_id"}
+_SKIP_RULES = {"quote", "cite", "cites", "prompt_id", "end_id", "name"}
 
 
 @dataclass(frozen=True)

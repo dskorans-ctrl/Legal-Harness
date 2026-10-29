@@ -1,0 +1,28 @@
+[EMPLOYER]
+Employee Incident Report
+Date of Report: [DATE D+0]
+Employee Name: [CLAIMANT]
+Date of Birth: [DOB]
+Claim Number: [ID-1]
+Position: Order Picker
+Department: Warehouse Operations
+Incident Date: [DATE D+0]
+Time of Incident: Approximately 10:40 AM
+Incident Location: Aisle 4, Dock Bay 12
+Body Part Affected: Low back
+Description of Incident:
+The employee was performing routine material handling duties.
+Employee reported lifting a tote weighing approximately 40 pounds from a floor pallet.
+The lift was performed to place the tote onto a mobile cart.
+Date of hire: [DATE D-1317]
+The employee experienced immediate discomfort in the lower back region.
+The shift lead, [PERSON-1], was present and witnessed the event.
+The employee reported the pain started during the lifting motion.
+First aid was offered immediately at the scene.
+The employee was subsequently transported to Fennimore County Hospital for evaluation.
+The incident was reported to the immediate supervisor on [DATE D+0].
+Witness Statement: [PERSON-1]
+Report Prepared By: [PERSON-1]
+Supervisor Review: [PERSON-2], Warehouse Supervisor
+Signature: _________________________
+Date: [DATE D+0]
