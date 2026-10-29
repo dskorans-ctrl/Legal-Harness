@@ -84,3 +84,41 @@ def test_hearing_flags(monkeypatch, tmp_path):
                      and {key: kwargs[key] for key in flags} == {key: key == flag for key in flags})
     print(f'hearing_flags={count} of 4')
     assert len(seen) == 4 and count == 4, f'hearing_flags={count} of 4'
+
+
+def test_brief_dispatch(monkeypatch, tmp_path):
+    from pathlib import Path
+    from casefile import cli
+    from conftest import write_config
+
+    path = write_config(tmp_path)
+    seen = []
+    def run(config, number, value, **kwargs):
+        seen.append((config, number, value, kwargs))
+        return 7
+    monkeypatch.setattr(cli.brief_out, 'run', run)
+    monkeypatch.setattr(cli.brief_in, 'run', run)
+    for command, positional, flags in (('brief-out', 'Review injury', []),
+                                      ('brief-out', 'Review injury', ['--pages', 'all']),
+                                      ('brief-in', 'invented.docx', [])):
+        monkeypatch.setattr('sys.argv', ['casefile', command, '--matter', '9001.001', positional,
+                                        '--config', str(path), *flags])
+        assert cli.main() == 7
+        cfg, number, value, kwargs = seen[-1]
+        assert cfg.model.host == 'http://127.0.0.1:9' and number == '9001.001'
+        assert value == (Path(positional) if command == 'brief-in' else positional)
+        assert set(kwargs) == ({'out', 'err'} if command == 'brief-in' else {'out', 'err', 'pages_all'})
+        if command == 'brief-out':
+            assert kwargs['pages_all'] == bool(flags), '--pages all was not forwarded'
+    assert len(seen) == 3
+
+
+def test_brief_config_refused(monkeypatch, tmp_path, capsys):
+    from casefile import cli
+
+    for command, positional in (('brief-out', 'Review injury'), ('brief-in', 'invented.docx')):
+        monkeypatch.setattr('sys.argv', ['casefile', command, '--matter', '9001.001', positional,
+                                        '--config', str(tmp_path / 'absent.toml')])
+        assert cli.main() == 2
+        captured = capsys.readouterr()
+        assert not captured.out and captured.err.startswith(command + ': cannot run: no config file')

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import sys
 
-from casefile import __version__, bench, depo, doctor, hearing, intake, memo_job, playbook, report, status
+from casefile import __version__, bench, brief_in, brief_out, depo, doctor, hearing, intake, memo_job, playbook, report, status
 from casefile.config import ConfigError, load
 
 
@@ -138,7 +138,6 @@ def main() -> int:
                            provider=args.provider, binder=args.binder, selected=args.pages,
                            issue=args.issue, standard=args.standard, relief=args.relief, when=args.when)
     elif args.command == "brief-out":
-        from casefile import brief_out
         try:
             config = load(args.config)
         except ConfigError as exc:
@@ -147,7 +146,6 @@ def main() -> int:
         return brief_out.run(config, args.matter, args.issue, out=sys.stdout, err=sys.stderr,
                              pages_all=args.pages == "all")
     elif args.command == "brief-in":
-        from casefile import brief_in
         try:
             config = load(args.config)
         except ConfigError as exc:

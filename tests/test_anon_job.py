@@ -116,6 +116,9 @@ def test_halt_four(tmp_path,monkeypatch):
     out=StringIO()
     with pytest.raises(anon_job.NameListNeeded) as caught:
         anon_job.halt(listed,[new],StringIO(),out)
+    assert all(hit.name not in out.getvalue() for hit in [new]), 'non-tty key_leak=1'
+    assert out.getvalue() == ('NAME LIST NEEDED: 1 names found on the pages are not in matter.toml [anon]: '
+                              'person (MED0001)\n')
     results.append(caught.value.code==2 and 'NAME LIST NEEDED' in out.getvalue() and len(calls)==2 and
                    (folder/'matter.toml').read_bytes()==before and not (folder/'anon').exists() and not (folder/'outbox').exists())
     print(f'halt={sum(results)} of 4')

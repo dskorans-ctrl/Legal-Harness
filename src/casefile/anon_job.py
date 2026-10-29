@@ -119,7 +119,7 @@ def halt(namelist, hits, stdin, stdout):
     if not unknown:
         return namelist
     if not stdin.isatty():
-        detail = '; '.join(f'{h.name} ({h.kind}, {h.cite})' for h in unknown)
+        detail = '; '.join(f'{h.kind} ({h.cite})' for h in unknown)
         print(f'NAME LIST NEEDED: {len(unknown)} names found on the pages are not in matter.toml [anon]: {detail}',file=stdout)
         raise NameListNeeded('NAME LIST NEEDED')
     people, organizations = dict(namelist.people),dict(namelist.organizations)
