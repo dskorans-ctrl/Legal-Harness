@@ -1009,14 +1009,44 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
 ## Round 7: stage 7 brief package and anonymizer (opened 2026-10-28 on `loop/round-07` at 85675dc, same session, owner Q60)
 Tiers: Q46. Owner check-in held at the open (Q61). Exit test (spec §7 stage 7): the identifier check passes on the test
 matter; re-import fact-checks a draft. All records are invented fixtures.
-- [ ] R7-1. Anonymizer under casefile-anon/1 (ledger Q47, Q61): local model finds names and the anchor date only, code
+- [x] R7-1. Anonymizer under casefile-anon/1 (ledger Q47, Q61): local model finds names and the anchor date only, code
   replaces, converts dates, re-identifies and checks; identifier check fails closed before anything leaves; restore
   check after; key only in the matter folder.
-- [ ] R7-2. Brief package (spec §2) and re-import: an anonymized fact package is built, a draft re-imported is
+  - Verifier (blind, 2026-10-28, tip 68f57fa): `scripts/run.sh pytest -q -s tests/test_stage7_exit.py` -> `stage7 exit=0
+    packages=2 of 2 blocked_seeded=1 of 1 drafts=2 of 2 answers=+8 identifiers_in_package=0 server_stopped=1`; my own
+    oracle (78 `[anon]`, header and name-variant values plus a calendar-date regex) over both packages' package.md,
+    package.json and check.txt -> `leak_total=0`, and over two raw records -> `leak_total=60` (control). Key
+    `anon/key.json` mode `-rw-------` in the matter folder. Seeds V5 (srcs restore dropped), V9 (anchor tie rule) RED.
+    Open findings (not blocking): `Aged 44` is not replaced and passes check_code (Q63 forms only); two different stated
+    ages restore in prose to the first (`A 44 year old ... a 45 year old` -> both `44`); `the 11th of March 2025` keeps
+    `11th`.
+- [x] R7-2. Brief package (spec §2) and re-import: an anonymized fact package is built, a draft re-imported is
   re-identified and fact-checked against the case file.
-- [ ] R7-3. Fact identity (round 6 critic 2 M1): wording plus date plus provider; old case files upgraded in place.
-- [ ] R7-4. Binder role edge cases asked of the attorney (Q61); round 6 verifier test gaps S1, S3, S4.
-- [ ] V. Fresh blind verification: every non-deferred R7 item `[x]` with the verifier's own evidence.
+  - Verifier: own run on the invented matter, `brief-out ... --pages all` -> `brief-out 9001.001 packet=49e5914290bf ...
+    facts=38 pages=14 conflicts=5 open_items=1 check=pass review=24`; default -> `... packet=cf31616a898d ... facts=38
+    pages=9 ...`; package.json facts carry only quote and cite (38), 5 conflicts with both full pages each; own 8 paragraph
+    draft -> `brief-in 9001.001 file=v7draft2 checks=24 of 28 failed=4 uncited=2 rule_hits=1
+    output=brief-in-v7draft2.partial.docx exit=1` (wrong number, wrong quote date, uncited quote and em dash each marked;
+    names and dates restored); real name draft -> `blocked at step 1 (claimant, offset 0); nothing was written`. Seeds
+    V1 (partial published as final), V6 (`--pages all` dropped in cli), V7 (conflict priority inverted) RED.
+- [x] R7-3. Fact identity (round 6 critic 2 M1): wording plus date plus provider; old case files upgraded in place.
+  - Verifier: fresh package lists `Straight leg raise negative bilaterally.` twice ([cite MED0002], [cite DEF0002]); a
+    forged round 6 style file (DEF0002 merged as cite plus reading) -> `status ... facts=37 ... split_needed=1`, then the
+    next memo appended `{"kind":"split","payload":{"fact":"F5","to":"F53",...,"cite":"DEF0002"...}}` and status ->
+    `facts=38 ... split_needed=0 outputs=memo:stale,brief-out:stale`. Seeds V3 (status split_needed), V4 (split replay
+    keeps the moved cite) RED. Stage 5 `casefile_lines=55` (baseline 56): one fact event replaces a cite plus a reading.
+- [x] R7-4. Binder role edge cases asked of the attorney (Q61); round 6 verifier test gaps S1, S3, S4.
+  - Verifier: `roles.role` probe: DME, dme-2, D.M.E., IME_report, ime2, ime.2, defense medical, Independent-Medical ->
+    defense; Imelda Health, imex, DMEs -> ROLE NEEDED; crime-scene, Dimes, primes, medical -> ours. Seeds V2 (ask_roles
+    not written), V8 (start never asks) RED; round 6 seeds re-applied: S1 RED (`test_cli.py::test_hearing_flags`), S3
+    RED (`test_schema.py::test_schema_evidence`), S4 RED by the pin and alone by `test_cards.py::test_card_practice`.
+    Low: brief-out on a non-tty prints no ROLE NEEDED line (depo, hearing, report, memo do, in the document).
+- [x] V. Fresh blind verification: every non-deferred R7 item `[x]` with the verifier's own evidence.
+  - Verifier: `scripts/run.sh pytest -q` -> `937 passed in 81.08s`; gate -> `0` (exit 0, prose `dashes=0`); unused imports
+    `unused_imports=0`; bench flawed -> exit 1 and ideal -> exit 0, both lines byte-equal to the `## Project` baselines;
+    stage 5 `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=55 chain_ok=1 server_stopped=1`; stage 6
+    `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1`. 12 of 12 seeds RED, every file restored
+    (`cmp` identical, `git status` unchanged). Report `docs/loop/round-07/round07-verify.md`.
 - Chair rulings on the brief (2026-10-28): plan review (fresh Fable) 3 high, 10 med, 8 low, all 21 ACCEPTED in the
   revision; chair reproduced H1, H2, M1 and measured the key: 1 pair collides under the folded quote (`straight leg raise
   negative bilaterally`, MED0002 03/11/2025 vs DEF0002 06/20/2025), 0 under quote plus date plus provider. H2 ruling: the
