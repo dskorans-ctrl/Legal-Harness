@@ -357,7 +357,7 @@ def test_fix2_stated_ages(tmp_path, value):
     assert not anon.check_code(source.text.encode(), key, anon.NameList(), ()).ok
     other = matter.Page('age', 2, 'age 45 male.', ())
     result = anon.text(other.text, key, protected=())
-    assert result == '[AGE] male.'
+    assert result == '[AGE-2] male.'
     assert anon.restore_quote(result, key, other) == other.text
     anon.save_key(tmp_path, key)
 

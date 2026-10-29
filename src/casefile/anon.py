@@ -68,15 +68,22 @@ class Verdict:
 
 TITLE = re.compile(r'^(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+')
 TAG = re.compile(r'\[[^\]\n]*\]')
-GRAMMAR = re.compile(r'\[(?:CLAIMANT|EMPLOYER|DOB|AGE|(?:DR|ATTY|PERSON|ORG|PLACE|EMAIL|SSN|PHONE|STREET|ZIP|ID|DATE-REF|SRC)-(?:\d+|n)|DATE D[+-](?:\d+|n)|MONTH M[+-](?:\d+|n)|YEAR Y[+-](?:\d+|n))\]')
-AGE = re.compile(r'\bage[ \t]+\d{1,3}\b|\b\d{1,3}[ \t-]+(?:years?[ \t-]+old|y[ \t]*/[ \t]*o)\b', re.I)
+GRAMMAR = re.compile(r'\[(?:CLAIMANT|EMPLOYER|DOB|AGE|(?:AGE|DR|ATTY|PERSON|ORG|PLACE|EMAIL|SSN|PHONE|STREET|ZIP|ID|DATE-REF|SRC)-(?:\d+|n)|DATE D[+-](?:\d+|n)|MONTH M[+-](?:\d+|n)|YEAR Y[+-](?:\d+|n))\]')
+AGE_WORD = r'(?:age[ds]?|(?:years?|yrs?)[ \t-]+old|yo|y[ \t]*/[ \t]*o|y\.[ \t]*o\.?)'
+AGE = re.compile(r'(?<!\w)(?:' + AGE_WORD + r'[ \t:=-]+\d{1,3}|\d{1,3}[ \t-]+' + AGE_WORD
+                 + r'|\d{1,3}(?:yo|y/o|y\.o\.))(?!\w)', re.I)
+# Independent exit detector, deliberately not assembled from AGE or AGE_WORD.
+CHECK_AGE = re.compile(
+    r'\b(?:aged?|ages|years?[\s-]+old|yrs?[\s-]+old|y\s*/\s*o|y\.\s*o\.?|yo)[\s:=-]+[0-9]{1,3}\b|'
+    r'\b[0-9]{1,3}[\s-]+(?:aged?|ages|years?[\s-]+old|yrs?[\s-]+old|y\s*/\s*o|y\.\s*o\.?|yo)(?!\w)|'
+    r'\b[0-9]{1,3}(?:y/?o|y\.o\.)(?!\w)', re.I)
 MONTH_FORMS = {form: i + 1 for i, month in enumerate(dates.MONTHS)
                for form in (month, month[:3], *(['sept'] if month == 'september' else []))}
 MONTH = '(?:' + '|'.join(sorted(MONTH_FORMS, key=len, reverse=True)) + r')\.?'
 SPACE = r'[ \t]*(?:\r?\n[ \t]*)?'
 FULL_DATE = re.compile(r'(?<!\w)(?:\d{4}-\d{2}-\d{2}|\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|'
-                       + MONTH + r'[ \t]+\d{1,2}(?:st|nd|rd|th)?,?' + SPACE + r'\d{4}|'
-                       + r'\d{1,2}(?:st|nd|rd|th)?[ \t]+' + MONTH + r',?' + SPACE + r'\d{4})(?!\w)', re.I)
+                       + MONTH + r'[ \t]+(?:the[ \t]+)?\d{1,2}(?:st|nd|rd|th)?,?' + SPACE + r'\d{4}|'
+                       + r'(?:the[ \t]+)?\d{1,2}(?:st|nd|rd|th)?[ \t]+(?:of[ \t]+)?' + MONTH + r',?' + SPACE + r'\d{4})(?!\w)', re.I)
 MONTH_DATE = re.compile(r'(?<!\w)' + MONTH + r'(?:[ \t]+|[ \t]*\r?\n[ \t]*)\d{4}(?!\w)', re.I)
 YEAR = re.compile(r'(?<![\w./-])(?:19[3-9]\d|20[0-4]\d)(?![\w./-])')
 DATE_REF = re.compile(r'(?<!\w)(?=(?-i:[A-Z]))' + MONTH + r'[ \t]+\d{1,2}(?:st|nd|rd|th)?(?![\w\d])', re.I)
@@ -88,6 +95,11 @@ CHECK_DATE = re.compile(
     r'[ \t\r\n]+(?:\d{1,2}(?:st|nd|rd|th)?(?:,?[ \t\r\n]+\d{2,4})?|\d{4})|'
     r'\d{1,2}(?:st|nd|rd|th)?[ \t]+[A-Za-z]{3,9}\.?[, \t\r\n]+\d{2,4}|'
     r'(?:19[3-9]\d|20[0-4]\d))(?!\w)', re.I)
+CHECK_DAY = re.compile(
+    r'(?<!\w)(?:(?:the\s+)?(?P<before>\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?'
+    r'(?:\[MONTH M[+-]\d+\]|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?(?!\w))|'
+    r'(?:\[MONTH M[+-]\d+\]|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?)'
+    r'\s+(?:the\s+)?(?P<after>\d{1,2})(?:st|nd|rd|th)?(?!\w))', re.I)
 PATTERNS = (
     ('email', re.compile(r'(?<![\w.])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?!\w)')),
     ('ssn', re.compile(r'(?<!\w)\d{3}[ .-]\d{2}[ .-]\d{4}(?!\w)')),
@@ -145,6 +157,8 @@ def entity_pattern(name, kind, forms):
     parts = [re.escape(form) for form in forms if '\n' not in form and '\r' not in form]
     if kind in PERSON_KINDS and len(name.split()) > 1:
         given, surname = name.split()[0], name.split()[-1]
+        parts.extend(re.escape(g[0]) + r'\.?[ \t]+' + re.escape(s)
+                     for g, s in ((given, surname), (given.upper(), surname.upper())))
         parts.extend(re.escape(g) + r'[ \t]+[A-Z]\.?' + r'(?:[ \t]+' + re.escape(s) + r')?'
                      for g, s in ((given, surname), (given.upper(), surname.upper())))
     if kind in ORG_KINDS:
@@ -272,6 +286,7 @@ def _parsed(value):
                 y += 1900 if y >= 69 else 2000
             return date(y, mo, d)
         compact = re.sub(r'(?<=\d)(?:st|nd|rd|th)\b', '', compact, flags=re.I)
+        compact = re.sub(r'\b(?:the|of)\s+', '', compact, flags=re.I)
         compact = compact.replace(',', '').replace('.', '')
         if m := re.fullmatch(r'([A-Za-z]+) (\d{1,2}) (\d{4})', compact):
             return date(int(m[3]), MONTH_FORMS[m[1].casefold()], int(m[2]))
@@ -303,6 +318,31 @@ def _date_tag(value, key, dob=''):
     return tag + ''.join(re.findall(r'[\r\n]', value))
 
 
+def _age_groups(key):
+    groups = {}
+    for spelling in key.ages:
+        number = int(re.search(r'\d+', spelling)[0])
+        groups.setdefault(number, []).append(spelling)
+    return list(groups.values())
+
+
+def _remember_ages(value, key, tokens):
+    def remember(m):
+        if m[0] not in key.ages:
+            key.ages.append(m[0])
+        return m[0]
+    _sub(AGE, remember, value, tokens)
+
+
+def _age_spellings(tag, key):
+    groups = _age_groups(key)
+    if tag == '[AGE]':
+        return groups[0] if len(groups) == 1 else []
+    if m := re.fullmatch(r'\[AGE-(\d+)\]', tag):
+        return groups[int(m[1]) - 1] if 0 < int(m[1]) <= len(groups) else []
+    return []
+
+
 def text(value, key, *, protected, namelist=None) -> str:
     """Transform each line, preserving protected syntax and newline counts."""
     if not value:
@@ -310,10 +350,11 @@ def text(value, key, *, protected, namelist=None) -> str:
     keep = namelist.kept if namelist else getattr(key, "_keep", ())
     tokens = (*protected, *keep)
     value = _sub(GRAMMAR, lambda m: _allocate(key.srcs, 'SRC', m[0]), value, tokens, tags=False)
+    _remember_ages(value, key, tokens)
     def age(m):
-        if m[0] not in key.ages:
-            key.ages.append(m[0])
-        return '[AGE]'
+        groups = _age_groups(key)
+        index = next(i for i, spellings in enumerate(groups, 1) if m[0] in spellings)
+        return '[AGE]' if len(groups) == 1 else f'[AGE-{index}]'
     value = _sub(AGE, age, value, tokens)
     for kind, pattern in PATTERNS:
         value = _sub(pattern, lambda m, k=kind: _allocate(key.refs, k.upper(), m[0]), value, tokens)
@@ -385,6 +426,19 @@ def packet(packet, key):
         if isinstance(value, (list,tuple)):
             return [convert(v) for v in value]
         return value
+    def remember(value):
+        if isinstance(value, str):
+            _remember_ages(value, key, (*tokens, *getattr(key, '_keep', ())))
+        elif isinstance(value, dict):
+            for part in value.values():
+                remember(part)
+        elif isinstance(value, (list, tuple)):
+            for part in value:
+                remember(part)
+    # Discover ages on every surface before rendering any surface with its final tags.
+    remember([packet.options, *([getattr(f, k) for k in ('quote', 'text', 'provider', 'date')]
+              for f in packet.facts), *(p.text for p in packet.pages),
+              *({k: v for k, v in flag.items() if k in ('about', 'abouts')} for flag in packet.flags)])
     return replace(packet, options=convert(packet.options),
         facts=tuple(replace(f, **{k:convert(getattr(f,k)) for k in ('quote','text','provider','date')}) for f in packet.facts),
         pages=tuple(replace(p, text=convert(p.text)) for p in packet.pages),
@@ -392,8 +446,11 @@ def packet(packet, key):
 
 
 def _canonical(tag, key):
-    if tag == '[AGE]' and key.ages:
-        return key.ages[0]
+    if tag == '[AGE]' or re.fullmatch(r'\[AGE-\d+\]', tag):
+        if spellings := _age_spellings(tag, key):
+            return spellings[0]
+        if tag == '[AGE]' and key.ages:
+            raise AnonError('ambiguous age: use a numbered age placeholder')
     if tag in key.entities:
         return key.entities[tag]['name']
     if tag in key.refs:
@@ -417,8 +474,8 @@ def restore(value, key) -> str:
 
 
 def _known(tag, key):
-    if tag == '[AGE]':
-        return bool(key.ages)
+    if tag == '[AGE]' or re.fullmatch(r'\[AGE-\d+\]', tag):
+        return bool(_age_spellings(tag, key))
     if tag in key.entities or tag in key.refs or tag in key.srcs:
         return True
     if m := re.fullmatch(r'\[(DATE D|MONTH M)([+-]\d+)\]', tag):
@@ -441,7 +498,7 @@ def restore_quote(quote, key, page) -> str | None:
             return None
         values = key.entities[tag]['variants'] if tag in key.entities else [key.srcs[tag]] if tag in key.srcs else None
         label = tag[6:-1] if tag.startswith('[DATE ') else tag[7:-1] if tag.startswith('[MONTH ') else 'DOB' if tag=='[DOB]' else ''
-        values = values or (key.ages if tag == '[AGE]' else key.dates.get(label)) or [_canonical(tag,key)]
+        values = values or _age_spellings(tag, key) or key.dates.get(label) or [_canonical(tag,key)]
         values = sorted(values, key=len, reverse=True)
         candidates = []
         for value in values:
@@ -561,9 +618,16 @@ def check_code(data, key, namelist, pages, *, cite_pages=None) -> Verdict:
         for m in pattern.finditer(value):
             if not exempt(m):
                 add(2,'date',m.start())
-    for m in AGE.finditer(value):
+    for m in CHECK_DAY.finditer(value):
+        index = m.start('before') if m['before'] is not None else m.start('after')
+        if not any(a <= index < b for a, b in exemptions):
+            add(2, 'date', index)
+    for m in CHECK_AGE.finditer(value):
         if not exempt(m):
             add(3, 'age', m.start())
+    for m in re.finditer(r'(?<!\w)[A-Z]\.?[ \t]+\[(?:CLAIMANT|(?:DR|ATTY|PERSON)-(?:\d+|n))\]', value):
+        if not any(a <= m.start() < b for a, b in exemptions):
+            add(3, 'initial', m.start())
     for kind,pattern in PATTERNS:
         for m in pattern.finditer(value):
             if not exempt(m):
@@ -596,7 +660,7 @@ def review(value, key, namelist, pages):
 def drafter_rules(book=None):
     convention = ('Drafter rules (casefile-anon/1):\n'
         '1. Preserve every placeholder exactly, including brackets and signs.\n'
-        '2. Use [CLAIMANT], [EMPLOYER], [DOB] and [AGE] without numbers.\n'
+        '2. Use [CLAIMANT], [EMPLOYER] and [DOB] without numbers; preserve [AGE] for one distinct age or [AGE-n] for multiple ages.\n'
         '3. Keep titles outside [DR-n], [ATTY-n] and [PERSON-n].\n'
         '4. Keep date offsets such as [DATE D+n], [MONTH M+n] and [YEAR Y+n].\n'
         '5. Preserve [ID-n], [DATE-REF-n] and all contact placeholders.\n'

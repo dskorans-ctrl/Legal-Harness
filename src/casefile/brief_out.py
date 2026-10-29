@@ -7,7 +7,7 @@ import re
 import shutil
 import sys
 
-from casefile import anon, anon_job, brief, dates, facts, outputs, packet
+from casefile import anon, anon_job, brief, dates, facts, outputs, packet, roles
 
 
 def _review_words(value, listed, pages, *, rules_text=''):
@@ -31,6 +31,13 @@ def _review_words(value, listed, pages, *, rules_text=''):
 def run(config, number, issue, *, out, err, opener=None, stdin=None, pages_all=False):
     try:
         with outputs.start(config, number, 'brief', opener=opener, stdin=stdin, out=out) as started:
+            if not (sys.stdin if stdin is None else stdin).isatty():
+                needed = [i for i, binder in enumerate(dict.fromkeys(p.binder for p in started.loaded.pages), 1)
+                          if roles.role(binder, started.info) == 'ROLE NEEDED']
+                if needed:
+                    print(f'ROLE NEEDED: {len(needed)} binders need a role in matter.toml [roles]', file=err)
+                    for index in needed:
+                        print(f'binder={index} kind=ROLE NEEDED', file=err)
             value = packet.build(started.casefile, started.loaded.pages, matter=number, task='brief',
                                  options={'issue': issue}, playbook_version=started.book.version)
             opened = started.counts['open_items']
