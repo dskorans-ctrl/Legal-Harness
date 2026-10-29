@@ -88,6 +88,9 @@ def cite(value):
 
 
 def evidence(item, prefix=''):
+    missing = [key for key in ('quote', 'cite') if key not in item]
+    if missing:
+        raise OutputError(f'evidence item {item!r}: missing {", ".join(missing)}')
     return Paragraph([Run(prefix), Run('"' + item['quote'] + '"', exempt='quote'), Run(' '), cite(item['cite'])])
 
 
@@ -316,6 +319,9 @@ def start(config, number, job, *, opener=None, stdin=None, out=None):
         stream = sys.stdin if stdin is None else stdin
         if not info.has_header and stream.isatty():
             info = matterinfo.ask(info, stream, sys.stdout if out is None else out)
+        if stream.isatty():
+            info = matterinfo.ask_roles(info, (page.binder for page in loaded.pages),
+                                        stream, sys.stdout if out is None else out)
         with open_db(config.paths.state / 'runlog.sqlite') as log:
             counts = status.snapshot(loaded, casefile, log.coverage(number, job='memo'), book, folder=folder)
             yield Started(config, folder, book, loaded, casefile, info, log,

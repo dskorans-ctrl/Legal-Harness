@@ -30,6 +30,13 @@ class MatterInfo:
     standard: str = ''
     relief: str = ''
     roles: dict[str, str] = field(default_factory=dict)
+    anon_employer: str = ''
+    anon_dob: str = ''
+    anon_ids: tuple[str, ...] = ()
+    anon_places: tuple[str, ...] = ()
+    anon_keep: tuple[str, ...] = ()
+    anon_people: dict[str, str] = field(default_factory=dict)
+    anon_organizations: dict[str, str] = field(default_factory=dict)
     folder: Path | None = field(default=None, compare=False)
     has_header: bool = field(default=False, compare=False)
 
@@ -49,7 +56,7 @@ def load(folder) -> MatterInfo:
     def refuse(key):
         raise MatterInfoError(f'{folder / "matter.toml"}: {key}: invalid or unknown value')
 
-    unknown = data.keys() - {'number', 'binders', 'header', 'hearing', 'roles'}
+    unknown = data.keys() - {'number', 'binders', 'header', 'hearing', 'roles', 'anon'}
     if unknown:
         refuse(sorted(unknown)[0])
     for table, keys in (('header', set(HEADER)), ('hearing', {'issues','standard','relief'})):
@@ -85,9 +92,32 @@ def load(folder) -> MatterInfo:
     for binder, role in roles.items():
         if role not in ('defense','ours','other') or binder not in binders:
             refuse('roles.' + binder)
+    anon = data.get('anon', {})
+    anon_keys = {'employer', 'dob', 'ids', 'places', 'keep', 'people', 'organizations'}
+    if not isinstance(anon, dict):
+        refuse('anon')
+    if anon.keys() - anon_keys:
+        refuse('anon.' + sorted(anon.keys() - anon_keys)[0])
+    for key in ('employer', 'dob'):
+        if key in anon and not isinstance(anon[key], str):
+            refuse('anon.' + key)
+    for key in ('ids', 'places', 'keep'):
+        if key in anon and (not isinstance(anon[key], list)
+                            or any(not isinstance(v, str) for v in anon[key])):
+            refuse('anon.' + key)
+    for key, kinds in (('people', ('claimant', 'doctor', 'attorney', 'adjuster', 'person')),
+                       ('organizations', ('employer', 'insurer', 'provider', 'other'))):
+        values = anon.get(key, {})
+        if not isinstance(values, dict):
+            refuse('anon.' + key)
+        for name, value in values.items():
+            if not name.strip() or not isinstance(value, str) or value not in kinds:
+                refuse(f'anon.{key}.{name}')
+    anon_values = {'anon_' + key: tuple(value) if key in ('ids', 'places', 'keep') else value
+                   for key, value in anon.items()}
     return MatterInfo(**header, issues=tuple(issues), standard=hearing.get('standard',''),
                       relief=hearing.get('relief',''), roles=roles, folder=folder,
-                      has_header='header' in data)
+                      has_header='header' in data, **anon_values)
 
 
 def write(folder, info):
@@ -100,6 +130,8 @@ def write(folder, info):
     hearing.update(issues=list(info.issues), standard=info.standard, relief=info.relief)
     if info.roles:
         data['roles'] = info.roles
+    data['anon'] = {key: getattr(info, 'anon_' + key) for key in
+                    ('employer', 'dob', 'ids', 'places', 'keep', 'people', 'organizations')}
     lines = []
     for key,value in data.items():
         if not isinstance(value, dict):
@@ -107,7 +139,13 @@ def write(folder, info):
     for key,value in data.items():
         if isinstance(value, dict):
             lines.append(f'\n[{json.dumps(key)}]')
-            lines.extend(f'{json.dumps(k)} = {json.dumps(v, ensure_ascii=False)}' for k,v in value.items())
+            lines.extend(f'{json.dumps(k)} = {json.dumps(v, ensure_ascii=False)}'
+                         for k,v in value.items() if not isinstance(v, dict))
+            for subkey, subvalue in value.items():
+                if isinstance(subvalue, dict):
+                    lines.append(f'\n[{json.dumps(key)}.{json.dumps(subkey)}]')
+                    lines.extend(f'{json.dumps(k)} = {json.dumps(v, ensure_ascii=False)}'
+                                 for k,v in subvalue.items())
     path = folder / 'matter.toml'
     temporary = folder / 'matter.toml.tmp'
     try:
@@ -159,6 +197,29 @@ def ask(info, stdin, stdout) -> MatterInfo:
     except ValueError as exc:
         raise MatterInfoError('hearing.issues: expected comma-separated choice numbers') from exc
     result = replace(info, matter_type=kind, **values, plaintiffs=plaintiffs, issues=issues, has_header=True)
+    if info.folder is not None:
+        write(info.folder, result)
+    return result
+
+
+def ask_roles(info, binders, stdin, stdout) -> MatterInfo:
+    """Persist unresolved binder roles once, only on an interactive terminal."""
+    from casefile import roles
+
+    if not stdin.isatty():
+        return info
+    selected = dict(info.roles)
+    for binder in dict.fromkeys(binders):
+        if roles.role(binder, info) != 'ROLE NEEDED':
+            continue
+        print(f'Binder {binder}: defense, ours or other: ', end='', file=stdout, flush=True)
+        value = stdin.readline().strip()
+        if value not in ('defense', 'ours', 'other'):
+            raise MatterInfoError(f'roles.{binder}: expected defense, ours or other')
+        selected[binder] = value
+    if selected == info.roles:
+        return info
+    result = replace(info, roles=selected)
     if info.folder is not None:
         write(info.folder, result)
     return result

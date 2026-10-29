@@ -10,4 +10,8 @@ def role(binder, info) -> str:
         return 'ROLE NEEDED'
     name = re.sub(r'\b([di])[\W_]*m[\W_]*e', r'\1me', binder.casefold())
     name = re.sub(r'[^\w]+', ' ', name.replace('_', ' '))
-    return 'defense' if re.search(r'\b(?:dme|ime)|\b(?:defense|independent) medical\b', name) else 'ours'
+    if re.search(r'\b(?:dme|ime)\d*\b|\b(?:defense|independent) medical\b', name):
+        return 'defense'
+    if re.search(r'\b(?:dme|ime)\w+', name):
+        return 'ROLE NEEDED'
+    return 'ours'

@@ -57,7 +57,7 @@ def load(root) -> Matter:
     except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
         raise MatterError(f"{meta}: {exc}") from exc
 
-    if not {"number", "binders"} <= data.keys() or data.keys() - {"number", "binders", "header", "hearing", "roles"}:
+    if not {"number", "binders"} <= data.keys() or data.keys() - {"number", "binders", "header", "hearing", "roles", "anon"}:
         raise MatterError(f"{meta}: expected keys number and binders")
 
     from casefile import matterinfo

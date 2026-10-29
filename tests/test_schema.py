@@ -184,3 +184,29 @@ def test_fix9_enum_json_types(value, enum, node):
     assert validate(value, dict(node, enum=[enum])), 'R9: enum conflates nested boolean and number'
     assert validate(value, dict(node, enum=[value])) == []
     assert validate([1], {'type': 'array', 'items': {'type': 'integer'}, 'enum': [[1.0]]}) == []
+
+
+def test_schema_evidence():
+    manifest = json.loads((ROOT / 'cards/manifest.json').read_text(encoding='utf-8'))
+    paths = {row['schema'] for row in manifest['cards'] if row['stage'] in (6, 7)}
+    assert {Path(path).name for path in paths} == {name + '.schema.json' for name in
+        ('anonymize', 'concessions', 'elements', 'factsheet', 'medical_memo', 'questions')}
+    objects = []
+    def visit(node, location):
+        if not isinstance(node, dict):
+            return
+        properties = node.get('properties', {})
+        if 'quote' in properties:
+            objects.append((location, node))
+        for key, child in properties.items():
+            visit(child, location + '.' + key)
+        if 'items' in node:
+            visit(node['items'], location + '[]')
+    for path in sorted(paths):
+        visit(load(ROOT / path), path)
+    failures = [location for location, node in objects
+                if not {'quote', 'cite'} <= set(node.get('required', ()))
+                or node['properties'].get('cite') != {'type': 'string'}]
+    count = len(objects) - len(failures)
+    print(f'schema_evidence={count} of 13')
+    assert len(objects) == 13 and not failures, f'schema_evidence={count} of 13; {failures}'

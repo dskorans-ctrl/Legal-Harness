@@ -17,3 +17,31 @@ relief = ""
 
 [roles]
 defense-report = "defense"
+
+[anon]
+employer = "Quarry Ridge Logistics LLC"
+dob = "02/17/1981"
+ids = ["QRL-2025-0418"]
+places = []
+keep = []
+
+[anon.people]
+"Morgan Ashby-Vale" = "claimant"
+"Halvard Quist-Benning" = "doctor"
+"Ines Castellanos-Reyes" = "doctor"
+"Odalys Ferro-Lindqvist" = "doctor"
+"Ansgar Velloso-Krantz" = "doctor"
+"Priya Okonkwo-Lind" = "doctor"
+"Theodore Marchetti" = "doctor"
+"Rosalind Mbeki-Farrow" = "person"
+"Tobiah Varga-Ellison" = "person"
+"Silas Vane-Harrow" = "person"
+
+[anon.organizations]
+"Quarry Ridge Logistics LLC" = "employer"
+"Fennimore County Hospital" = "provider"
+"Brightwater Family Medicine" = "provider"
+"Ridgeline Physical Therapy" = "provider"
+"Lakeshore Imaging" = "provider"
+"Lakeshore Orthopedic Associates" = "provider"
+"Northgate Medical Evaluations" = "provider"

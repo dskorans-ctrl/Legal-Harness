@@ -27,7 +27,7 @@ def intake(folder, stamp='ABC123'):
     (binder / '001.json').write_text(json.dumps(row),encoding='utf-8')
 
 
-def test_matterinfo(tmp_path):
+def test_matterinfo(tmp_path, monkeypatch):
     passed, failures = [], []
     def case(name, fn):
         try:
@@ -107,8 +107,73 @@ def test_matterinfo(tmp_path):
         with pytest.raises(pages.PagesError, match='ambiguous layout'):
             pages.load(tmp_path,'9001.001',r'[A-Z]+\d{4,}')
     case('ambiguous',ambiguous)
-    print(f'matterinfo_ok={len(passed)} of 12')
-    assert len(passed) == 12, f"matterinfo_ok={len(passed)} of 12; {failures}"
+    def ask_roles():
+        role_folder = tmp_path / 'roles'
+        role_folder.mkdir()
+        (role_folder / 'matter.toml').write_text(
+            'number="9001.002"\nbinders=["Imelda Health", "medical", "dmexport"]\n'
+            '[header]\nclient_name="Invented Client"\n[roles]\nmedical="other"\n', encoding='utf-8')
+        info = matterinfo.load(role_folder)
+        out = StringIO()
+        writes = []
+        original_write = matterinfo.write
+        def counted_write(folder, value):
+            writes.append(folder)
+            return original_write(folder, value)
+        monkeypatch.setattr(matterinfo, 'write', counted_write)
+        result = matterinfo.ask_roles(info, ['Imelda Health', 'medical', 'Imelda Health', 'dmexport'],
+                                      Terminal('ours\ndefense\n'), out)
+        assert result.roles == {'medical': 'other', 'Imelda Health': 'ours', 'dmexport': 'defense'}
+        assert matterinfo.load(role_folder) == result and writes == [role_folder]
+        assert out.getvalue().count('Binder ') == 2
+        before = (role_folder / 'matter.toml').read_bytes()
+        untouched = Terminal('other\n')
+        assert matterinfo.ask_roles(result, ['Imelda Health', 'dmexport'], untouched, StringIO()) == result
+        assert untouched.tell() == 0 and (role_folder / 'matter.toml').read_bytes() == before
+    case('ask_roles', ask_roles)
+    def roles_non_tty():
+        role_folder = tmp_path / 'roles-non-tty'
+        role_folder.mkdir()
+        info = replace(matterinfo.MatterInfo(), folder=role_folder)
+        inp = StringIO('ours\n')
+        assert matterinfo.ask_roles(info, ['Imelda Health'], inp, StringIO()) == info
+        assert not (role_folder / 'matter.toml').exists(), 'non-tty role prompt wrote matter.toml'
+        assert inp.tell() == 0, 'non-tty role prompt consumed input'
+    case('roles_non_tty', roles_non_tty)
+    def anon_fixture():
+        assert fixture.anon_employer == 'Quarry Ridge Logistics LLC'
+        assert fixture.anon_dob == '02/17/1981' and fixture.anon_ids == ('QRL-2025-0418',)
+        assert fixture.anon_places == fixture.anon_keep == ()
+        assert fixture.anon_people == {
+            'Morgan Ashby-Vale': 'claimant', 'Halvard Quist-Benning': 'doctor',
+            'Ines Castellanos-Reyes': 'doctor', 'Odalys Ferro-Lindqvist': 'doctor',
+            'Ansgar Velloso-Krantz': 'doctor', 'Priya Okonkwo-Lind': 'doctor',
+            'Theodore Marchetti': 'doctor', 'Rosalind Mbeki-Farrow': 'person',
+            'Tobiah Varga-Ellison': 'person', 'Silas Vane-Harrow': 'person'}
+        assert fixture.anon_organizations == {'Quarry Ridge Logistics LLC': 'employer',
+            **{name: 'provider' for name in ('Fennimore County Hospital', 'Brightwater Family Medicine',
+                'Ridgeline Physical Therapy', 'Lakeshore Imaging', 'Lakeshore Orthopedic Associates',
+                'Northgate Medical Evaluations')}}
+        # The other accepted person kinds include the automatically kept adjuster.
+        (folder / 'matter.toml').write_text('[anon.people]\nInvented="adjuster"\n', encoding='utf-8')
+        assert matterinfo.load(folder).anon_people == {'Invented': 'adjuster'}
+    case('anon_fixture', anon_fixture)
+    case('anon_kind', lambda: refuse('[anon.people]\nInvented="unknown"\n', 'anon.people.Invented'))
+    def anon_roundtrip():
+        target = tmp_path / 'anon-roundtrip'
+        shutil.copytree(FIXTURE, target)
+        info = matterinfo.load(target)
+        matterinfo.write(target, info)
+        try:
+            restored = matterinfo.load(target)
+        except matterinfo.MatterInfoError as exc:
+            raise AssertionError(f'anon.people round trip refused: {exc}') from exc
+        assert restored == info, 'anon.people round trip differs'
+        assert '["anon"."people"]' in (target / 'matter.toml').read_text(encoding='utf-8')
+    case('anon_roundtrip', anon_roundtrip)
+    case('anon_type', lambda: refuse('[anon]\nemployer=1\n', 'anon.employer'))
+    print(f'matterinfo_ok={len(passed)} of 18')
+    assert len(passed) == 18, f"matterinfo_ok={len(passed)} of 18; {failures}"
 
 
 def test_stamps_compatible(tmp_path):

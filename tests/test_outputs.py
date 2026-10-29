@@ -182,3 +182,38 @@ with outputs.start(config.load(sys.argv[1]), '9001.001', 'report') as s:
             assert result.ok, 'W5 ask omitted packet body or lookup pages'
     if row==12:
         with capsys.disabled(): print('outputs_ok=13 of 13')
+
+
+def test_evidence_closed():
+    for key in ('quote', 'cite'):
+        item = {'text': 'Invented evidence item', 'quote': 'Invented quote', 'cite': 'MED0001'}
+        del item[key]
+        with pytest.raises(outputs.OutputError) as error:
+            outputs.evidence(item)
+        assert str(error.value) == f'evidence item {item!r}: missing {key}'
+    assert outputs.question_paragraphs(None, 'Questions', reason='gate.schema: missing quote')[0].runs
+    print('evidence_closed=1')
+
+
+def test_roles_through_start(tmp_path):
+    from test_matterinfo import Terminal
+
+    _, cfg, folder, loaded, _, _ = setup_case(tmp_path)
+    info = replace(matterinfo.load(folder), plaintiffs=2)
+    matterinfo.write(folder, info)
+    before = (folder / 'matter.toml').read_bytes()
+    non_tty = StringIO('ours\nother\n')
+    with outputs.start(cfg, loaded.number, 'report', stdin=non_tty, out=StringIO()) as started:
+        assert outputs.needed(started.info, loaded.pages) == ['ROLE NEEDED: medical', 'ROLE NEEDED: employer']
+    assert non_tty.tell() == 0 and (folder / 'matter.toml').read_bytes() == before
+    out = StringIO()
+    with outputs.start(cfg, loaded.number, 'report', stdin=Terminal('ours\nother\n'), out=out) as started:
+        assert started.info.has_header
+        assert started.info.roles == {'defense-report': 'defense', 'medical': 'ours', 'employer': 'other'}
+        assert not outputs.needed(started.info, loaded.pages)
+    assert out.getvalue() == 'Binder medical: defense, ours or other: Binder employer: defense, ours or other: '
+    saved = (folder / 'matter.toml').read_bytes()
+    inp = Terminal('defense\n')
+    with outputs.start(cfg, loaded.number, 'report', stdin=inp, out=StringIO()):
+        pass
+    assert inp.tell() == 0 and (folder / 'matter.toml').read_bytes() == saved

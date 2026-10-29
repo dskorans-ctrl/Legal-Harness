@@ -50,3 +50,19 @@ def test_manifest_refusals(tmp_path):
     book=playbook.load(ROOT/'playbook')
     entries=tuple(replace(e,rule=e.rule+' Added practice.') if isinstance(e,playbook.Entry) and e.id=='question-form' else e for e in book.entries)
     assert cards.card('02-C-DEFDOC',replace(book,entries=entries)).version != before
+
+
+def test_card_practice():
+    book = playbook.load(ROOT / 'playbook')
+    ours = cards.card('02-C-OURDOC', book).text
+    defense = cards.card('02-C-DEFDOC', book).text
+    required = [
+        'ALWAYS two separate questions' in ours,
+        'Ask separately whether all treatment was reasonable, necessary and causally related, and whether all bills '
+        'were reasonable and causally related. Anchor the bills question on the bill memo by name and walk every provider.' in ours,
+        'Use short, leading questions, one fact each, tied to a Bates cite or the report. Stop when the point is made. '
+        'If he volunteers an alternative explanation, note it for our expert and move on.' in defense,
+    ]
+    count = sum(required)
+    print(f'card_practice={count} of 3')
+    assert count == 3, f'card_practice={count} of 3'

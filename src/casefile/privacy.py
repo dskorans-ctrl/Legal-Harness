@@ -1,7 +1,8 @@
-"""Inventory tracked and ignored paths without reading their contents."""
+"""Check tracked and ignored paths and text for private artifacts and secrets."""
 
 from pathlib import Path, PurePosixPath
 import subprocess
+import re
 
 
 SUFFIXES = frozenset({".pdf", ".doc", ".docx", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".heic", ".gif", ".bmp", ".webp", ".heif", ".svg", ".dot", ".dotx", ".docm", ".rtf", ".odt", ".pages", ".avif", ".ico", ".jxl", ".jfif", ".jpe", ".dib", ".eps", ".psd", ".raw", ".dng", ".cr2", ".nef", ".arw", ".rw2", ".raf", ".orf", ".pef", ".ppm", ".pgm", ".pbm", ".pnm", ".tga", ".wmf", ".emf", ".cur", ".apng", ".odg", ".ott", ".dotm", ".svgz", ".jp2", ".j2k", ".hif"})
@@ -33,7 +34,20 @@ def scan(repo_root) -> list[str]:
     for path in paths(repo_root):
         relative = PurePosixPath(path)
         forbidden = bool(relative.parts) and relative.parts[0].casefold() in {"cases", "bench"}
-        if (forbidden or _unsafe_link(root, relative) or
+        private_key = tuple(part.casefold() for part in relative.parts[-2:]) == ('anon', 'key.json')
+        if (forbidden or private_key or _unsafe_link(root, relative) or
                 (relative.suffix.lower() in SUFFIXES and not path.startswith("tests/fixtures/"))):
             offenders.append(path)
+            continue
+        file = root / relative
+        if file.is_file():
+            try:
+                contents = file.read_text(encoding='utf-8')
+            except UnicodeError:
+                continue
+            except OSError:
+                offenders.append(path)
+                continue
+            if re.search(r'sk-ant-[A-Za-z0-9_-]{20,}', contents):
+                offenders.append(path)
     return offenders

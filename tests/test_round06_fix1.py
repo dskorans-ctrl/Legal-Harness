@@ -70,7 +70,7 @@ def test_m1(tmp_path):
 
 def test_m2():
     for name in ('IME-report', 'IME', 'DMEreport', 'DME2025', 'D.M.E.', 'Independent_medical', 'imereport', 'D.M.Ereport', 'I-M-E2025', 'D/M/E-report'):
-        assert roles.role(name, matterinfo.MatterInfo()) == 'defense', 'M2: examiner binder assigned ours: ' + name
+        assert roles.role(name, matterinfo.MatterInfo()) == ('ROLE NEEDED' if name in ('DMEreport', 'imereport', 'D.M.Ereport') else 'defense'), 'M2: examiner binder role differs: ' + name
     assert roles.role('time-record', matterinfo.MatterInfo()) == 'ours'
     assert roles.role('IME', matterinfo.MatterInfo(plaintiffs=2)) == 'ROLE NEEDED'
 

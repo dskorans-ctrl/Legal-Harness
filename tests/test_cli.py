@@ -61,3 +61,26 @@ def test_bad_playbook_show_exits_2(tmp_path):
                             capture_output=True, text=True, timeout=30)
     assert (result.returncode, result.stdout) == (2, ""), result.stdout + result.stderr
     assert "PlaybookError:" in result.stderr and "why" in result.stderr
+
+
+def test_hearing_flags(monkeypatch, tmp_path):
+    from casefile import cli
+    from conftest import write_config
+
+    path = write_config(tmp_path)
+    seen = []
+    def run(config, number, **kwargs):
+        seen.append((config, number, kwargs))
+        return 7
+    monkeypatch.setattr(cli.hearing, 'run', run)
+    flags = ('outline', 'client', 'doctor', 'closing')
+    count = 0
+    for flag in flags:
+        monkeypatch.setattr('sys.argv', ['casefile', 'hearing', '--matter', '9001.001',
+                                        '--config', str(path), '--' + flag])
+        code = cli.main()
+        cfg, number, kwargs = seen[-1]
+        count += int(code == 7 and number == '9001.001' and cfg.model.host == 'http://127.0.0.1:9'
+                     and {key: kwargs[key] for key in flags} == {key: key == flag for key in flags})
+    print(f'hearing_flags={count} of 4')
+    assert len(seen) == 4 and count == 4, f'hearing_flags={count} of 4'

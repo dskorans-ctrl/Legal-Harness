@@ -27,12 +27,17 @@ def test_offenders(tmp_path, capsys):
     # No commit is needed: --cached reads this disposable index.
     subprocess.run(["git", "add", "-f", "tests/fixtures/a.pdf", "notes.md",
                     "Bench/k.md", "docs/tests/fixtures/x.pdf"], cwd=root, check=True)
-    expected = ["Bench/k.md", "Cases/c.txt", "docs/b.PNG", "docs/tests/fixtures/x.pdf"]
+    for path in ('x/anon/key.json', 'tests/fixtures/matters/x/key.json', 'spec-words.txt', 'state/ignored-secret.txt'):
+        touch(root, path)
+    (root / 'state/ignored-secret.txt').write_text('sk-ant-' + 'x' * 24, encoding='utf-8')
+    (root / 'spec-words.txt').write_text('The bare words sk-ant- are not a key.', encoding='utf-8')
+    expected = ["Bench/k.md", "Cases/c.txt", "docs/b.PNG", "docs/tests/fixtures/x.pdf",
+                "state/ignored-secret.txt", "x/anon/key.json"]
     offenders = privacy.scan(root)
     with capsys.disabled():
-        print(f"offenders={len(offenders)} expected=4 scanned={len(privacy.paths(root))}")
+        print(f"offenders={len(offenders)} expected=6 scanned={len(privacy.paths(root))}")
     assert offenders == expected
-    assert len(privacy.paths(root)) == 8  # Seven paths plus the copied .gitignore.
+    assert len(privacy.paths(root)) == 12  # Eleven paths plus the copied .gitignore.
 
 
 def test_suffixes_and_prefixes(tmp_path):
@@ -81,3 +86,12 @@ def test_inventory_symlink_targets(tmp_path, monkeypatch):
         link.symlink_to(target)
     monkeypatch.setattr(privacy, "paths", lambda repo: list(links))
     assert privacy.scan(root) == ["external", "nested/to-cases", "to-bench"]
+
+
+def test_private_key_path_case_and_secret_boundary(tmp_path):
+    root = init_repo(tmp_path)
+    for path in ('x/ANON/KEY.JSON', 'x/anon-key.json', 'nineteen.txt', 'twenty.txt'):
+        touch(root, path)
+    (root / 'nineteen.txt').write_text('sk-ant-' + 'x' * 19, encoding='utf-8')
+    (root / 'twenty.txt').write_text('sk-ant-' + 'x' * 20, encoding='utf-8')
+    assert privacy.scan(root) == ['twenty.txt', 'x/ANON/KEY.JSON']
