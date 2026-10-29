@@ -129,7 +129,7 @@ def test_restore_six():
            ('Dr. [DR-2], [DATE D+3]','Dr. Ines Castellanos-Reyes, 03/14/2025',defense),
            ('Invented absent sentence',None,page),('[DR-999]',None,page)]
     result=[anon.restore_quote(s,key,p)==want for s,want,p in pairs]
-    result.append(anon.restore('[DATE D+0]',key)=='3/11/2025')
+    result.append(anon.restore('[DATE D+0]',key)=='03/11/2025')
     print(f'restore_quote={sum(result)} of {len(result)}')
     assert all(result),'restore_quote: canonical or source spelling differs'
 
@@ -308,7 +308,7 @@ def test_m3_date_detector_independent(monkeypatch):
 def test_l1_restore_bracketed_only():
     key = anon.Key(anchor='2025-03-11', entities={'[DR-1]': {'name': 'Althea Quill'}})
     value = 'vitamin D-3 and DR-1; D+2 [DR-1] [DATE D+2]'
-    assert anon.restore(value, key) == 'vitamin D-3 and DR-1; D+2 Althea Quill 3/13/2025', 'L1: loose prose rewritten'
+    assert anon.restore(value, key) == 'vitamin D-3 and DR-1; D+2 Althea Quill 03/13/2025', 'L1: loose prose rewritten'
 
 
 @pytest.mark.parametrize('value', ['on March\n14 the patient', 'Seen Mar. 11th,\r\n2025.',
@@ -334,3 +334,33 @@ def test_l5_contact_separators(kind, value):
     key = anon.Key(anchor='2025-03-11')
     assert anon.text(value, key, protected=()) == f'[{kind.upper()}-1]', 'L5: contact separator escaped'
     assert (3, kind, 0) in anon.check_code(value.encode(), key, anon.NameList(), ()).hits
+
+
+def test_fix2_date_prose_convention():
+    key = anon.Key(anchor='2025-03-11', dates={'D+0': ['03/11/2025']})
+    assert anon.restore('[DATE D+0]', key) == '03/11/2025', 'L1: prose date differs from sole page spelling'
+    key.dates['D+0'].append('March 11, 2025')
+    assert anon.restore('[DATE D+0] [DATE D+3]', key) == '03/11/2025 03/14/2025'
+
+
+@pytest.mark.parametrize('value', ['44 year old', 'age 44', '44 y/o', '44-year-old'])
+def test_fix2_stated_ages(tmp_path, value):
+    key = anon.Key(anchor='2025-03-11')
+    source = matter.Page('age', 1, value + ' male. Tuesday.', ())
+    result = anon.text(source.text, key, protected=())
+    assert result == '[AGE] male. Tuesday.', 'L6: stated age survived anonymization'
+    assert anon.restore(result, key) == source.text
+    anon.save_key(tmp_path, key)
+    key = anon.load_key(tmp_path)
+    assert anon.restore_quote(result, key, source) == source.text
+    assert anon.check_code(result.encode(), key, anon.NameList(), ()).ok
+    assert not anon.check_code(source.text.encode(), key, anon.NameList(), ()).ok
+    other = matter.Page('age', 2, 'age 45 male.', ())
+    result = anon.text(other.text, key, protected=())
+    assert result == '[AGE] male.'
+    assert anon.restore_quote(result, key, other) == other.text
+    anon.save_key(tmp_path, key)
+
+
+def test_fix2_anchor_rule():
+    assert 'D+0 is the date of accident' in anon.drafter_rules(), 'L6: package does not explain the date anchor'

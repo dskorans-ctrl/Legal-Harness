@@ -15,7 +15,7 @@ Lakeshore Imaging MRI [DATE D+38]
 Lakeshore Orthopedic Associates, Dr. [DR-5], [DATE D+59]
 
 History of Present Illness:
-Mr. [CLAIMANT] is a 44 year old male who presents for an independent medical evaluation regarding a work injury sustained at [EMPLOYER].
+Mr. [CLAIMANT] is a [AGE] male who presents for an independent medical evaluation regarding a work injury sustained at [EMPLOYER].
 The patient reports the injury occurred on [DATE D+0] while performing duties as an order picker.
 He describes the mechanism of injury as lifting a plastic tote from a floor level pallet to a cart.
 The examinee reports lifting a tote of about 60 pounds.

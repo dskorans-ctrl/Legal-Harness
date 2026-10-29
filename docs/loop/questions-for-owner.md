@@ -435,3 +435,4 @@ adjuster and treating facilities are not.
 ANSWERED 2026-10-28 (owner, ledger Q62): 88 defense examiner's company kept unreplaced; 89 `[DOB]` placeholder; 90 both
 full pages; 91 print only; 92 matter number and stamps stay; 93 facts, conflicts, gaps plus a `--pages all` flag; 94
 `brief-in` takes a Word file; 95 `[PERSON-n]`, and an `adjuster` entity kind kept automatically.
+96. Stated ages in the package: replaced or kept? ANSWERED 2026-10-28 (owner, ledger Q63): replaced with `[AGE]`.

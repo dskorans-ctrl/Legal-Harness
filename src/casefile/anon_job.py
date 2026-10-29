@@ -198,14 +198,14 @@ def _record(verdict, log, run_id, stdout):
 
 
 def check(data, key, namelist, pages, *, client, rules, log, matter, playbook_version,
-          job='brief',run_id=None,stdout=None) -> anon.Verdict:
+          job='brief',run_id=None,stdout=None,cite_pages=None) -> anon.Verdict:
     """Block before any model request when code finds an identifier in output bytes."""
     if run_id is None and log is not None:
         row = log.connection.execute(
             "SELECT id FROM runs WHERE matter=? AND job=? AND card='07-ANON' ORDER BY id DESC LIMIT 1",
             (matter,job)).fetchone()
         run_id = row[0] if row is not None else None
-    verdict = anon.check_code(data,key,namelist,pages)
+    verdict = anon.check_code(data,key,namelist,pages,cite_pages=cite_pages)
     if not verdict.ok:
         return _record(verdict,log,run_id,stdout)
     try:

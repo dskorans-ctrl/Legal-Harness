@@ -24,6 +24,7 @@ class Key:
     dates: dict = field(default_factory=dict)
     srcs: dict = field(default_factory=dict)
     aliases: dict = field(default_factory=dict)
+    ages: list = field(default_factory=list)
 
     def to_json(self):
         return json.dumps(asdict(self), ensure_ascii=False, allow_nan=False)
@@ -67,7 +68,8 @@ class Verdict:
 
 TITLE = re.compile(r'^(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+')
 TAG = re.compile(r'\[[^\]\n]*\]')
-GRAMMAR = re.compile(r'\[(?:CLAIMANT|EMPLOYER|DOB|(?:DR|ATTY|PERSON|ORG|PLACE|EMAIL|SSN|PHONE|STREET|ZIP|ID|DATE-REF|SRC)-(?:\d+|n)|DATE D[+-](?:\d+|n)|MONTH M[+-](?:\d+|n)|YEAR Y[+-](?:\d+|n))\]')
+GRAMMAR = re.compile(r'\[(?:CLAIMANT|EMPLOYER|DOB|AGE|(?:DR|ATTY|PERSON|ORG|PLACE|EMAIL|SSN|PHONE|STREET|ZIP|ID|DATE-REF|SRC)-(?:\d+|n)|DATE D[+-](?:\d+|n)|MONTH M[+-](?:\d+|n)|YEAR Y[+-](?:\d+|n))\]')
+AGE = re.compile(r'\bage[ \t]+\d{1,3}\b|\b\d{1,3}[ \t-]+(?:years?[ \t-]+old|y[ \t]*/[ \t]*o)\b', re.I)
 MONTH_FORMS = {form: i + 1 for i, month in enumerate(dates.MONTHS)
                for form in (month, month[:3], *(['sept'] if month == 'september' else []))}
 MONTH = '(?:' + '|'.join(sorted(MONTH_FORMS, key=len, reverse=True)) + r')\.?'
@@ -308,6 +310,11 @@ def text(value, key, *, protected, namelist=None) -> str:
     keep = namelist.kept if namelist else getattr(key, "_keep", ())
     tokens = (*protected, *keep)
     value = _sub(GRAMMAR, lambda m: _allocate(key.srcs, 'SRC', m[0]), value, tokens, tags=False)
+    def age(m):
+        if m[0] not in key.ages:
+            key.ages.append(m[0])
+        return '[AGE]'
+    value = _sub(AGE, age, value, tokens)
     for kind, pattern in PATTERNS:
         value = _sub(pattern, lambda m, k=kind: _allocate(key.refs, k.upper(), m[0]), value, tokens)
     # List ids must precede the date and bare-year readers.
@@ -385,13 +392,16 @@ def packet(packet, key):
 
 
 def _canonical(tag, key):
+    if tag == '[AGE]' and key.ages:
+        return key.ages[0]
     if tag in key.entities:
         return key.entities[tag]['name']
     if tag in key.refs:
         return key.refs[tag]
     if m := re.fullmatch(r'\[DATE D([+-]\d+)\]', tag):
         d = date.fromisoformat(key.anchor) + timedelta(days=int(m[1]))
-        return f'{d.month}/{d.day}/{d.year}'
+        spellings = key.dates.get(f'D{int(m[1]):+d}', [])
+        return spellings[0] if len(spellings) == 1 else d.strftime('%m/%d/%Y')
     if m := re.fullmatch(r'\[MONTH M([+-]\d+)\]', tag):
         anchor = date.fromisoformat(key.anchor)
         y,mo = divmod(anchor.year*12 + anchor.month-1 + int(m[1]),12)
@@ -407,6 +417,8 @@ def restore(value, key) -> str:
 
 
 def _known(tag, key):
+    if tag == '[AGE]':
+        return bool(key.ages)
     if tag in key.entities or tag in key.refs or tag in key.srcs:
         return True
     if m := re.fullmatch(r'\[(DATE D|MONTH M)([+-]\d+)\]', tag):
@@ -429,7 +441,7 @@ def restore_quote(quote, key, page) -> str | None:
             return None
         values = key.entities[tag]['variants'] if tag in key.entities else [key.srcs[tag]] if tag in key.srcs else None
         label = tag[6:-1] if tag.startswith('[DATE ') else tag[7:-1] if tag.startswith('[MONTH ') else 'DOB' if tag=='[DOB]' else ''
-        values = values or key.dates.get(label) or [_canonical(tag,key)]
+        values = values or (key.ages if tag == '[AGE]' else key.dates.get(label)) or [_canonical(tag,key)]
         values = sorted(values, key=len, reverse=True)
         candidates = []
         for value in values:
@@ -470,7 +482,7 @@ def _fold_positions(value):
     return ''.join(result),positions
 
 
-def check_code(data, key, namelist, pages) -> Verdict:
+def check_code(data, key, namelist, pages, *, cite_pages=None) -> Verdict:
     """Inspect exact UTF-8 bytes and report offsets without disclosing values."""
     try:
         value = data.decode('utf-8')
@@ -549,6 +561,9 @@ def check_code(data, key, namelist, pages) -> Verdict:
         for m in pattern.finditer(value):
             if not exempt(m):
                 add(2,'date',m.start())
+    for m in AGE.finditer(value):
+        if not exempt(m):
+            add(3, 'age', m.start())
     for kind,pattern in PATTERNS:
         for m in pattern.finditer(value):
             if not exempt(m):
@@ -556,10 +571,11 @@ def check_code(data, key, namelist, pages) -> Verdict:
     for m in re.finditer(r'\b(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+[A-Z][\w-]*',value):
         if not exempt(m):
             add(3,'titled_name',m.start())
-    cites = {p.page_id for p in pages} | {s for p in pages for s in p.stamps}
+    sources = pages if cite_pages is None else cite_pages
+    cites = {p.page_id for p in sources} | {s for p in sources for s in p.stamps}
     for m in TAG.finditer(value):
         tag = m[0]
-        generic = bool(GRAMMAR.fullmatch(tag) and ('n' in tag or tag in ('[CLAIMANT]','[EMPLOYER]','[DOB]')))
+        generic = bool(GRAMMAR.fullmatch(tag) and ('n' in tag or tag in ('[CLAIMANT]','[EMPLOYER]','[DOB]', '[AGE]')))
         citation = re.fullmatch(r'\[(?:cite|page) (.+)\]',tag)
         if not (_known(tag,key) or generic or (citation and citation[1] in cites)):
             add(5,'placeholder',m.start())
@@ -577,15 +593,20 @@ def review(value, key, namelist, pages):
     return len({v for v in re.findall(r'\b[A-Z][a-z]+\b',value) if v.casefold() not in dictionary and v.casefold() not in dates.MONTHS})
 
 
-def drafter_rules():
-    return ('Drafter rules (casefile-anon/1):\n'
+def drafter_rules(book=None):
+    convention = ('Drafter rules (casefile-anon/1):\n'
         '1. Preserve every placeholder exactly, including brackets and signs.\n'
-        '2. Use [CLAIMANT], [EMPLOYER] and [DOB] without numbers.\n'
+        '2. Use [CLAIMANT], [EMPLOYER], [DOB] and [AGE] without numbers.\n'
         '3. Keep titles outside [DR-n], [ATTY-n] and [PERSON-n].\n'
         '4. Keep date offsets such as [DATE D+n], [MONTH M+n] and [YEAR Y+n].\n'
         '5. Preserve [ID-n], [DATE-REF-n] and all contact placeholders.\n'
         '6. Quote only supplied text and retain its supplied citation.\n'
-        '7. Do not guess identities, dates or missing facts.\n')
+        '7. Do not guess identities, dates or missing facts. D+0 is the date of accident.\n'
+        '8. Cite every factual sentence with its supplied Bates stamp, written like [cite MED0001], in the paragraph or in a Word footnote; use straight double quotes.\n')
+    if book is not None:
+        entries = [*book.rules.rules, *(entry for entry in book.entries if entry.id == 'header-block')]
+        convention += '\nFirm drafting rules:\n' + '\n'.join(f'{entry.id}: {entry.rule}' for entry in entries) + '\n'
+    return convention
 
 
 def load_key(folder) -> Key:
@@ -597,7 +618,8 @@ def load_key(folder) -> Key:
         if directory.is_symlink() or path.is_symlink() or path.stat().st_mode & 0o077:
             raise AnonError('anon/key.json must be mode 600')
         data = jsonrepair.loads(path.read_text(encoding='utf-8'))
-        if (not isinstance(data,dict) or set(data) not in (set(Key.__dataclass_fields__), set(Key.__dataclass_fields__) - {'aliases'})
+        if (not isinstance(data,dict) or not set(Key.__dataclass_fields__) - {'aliases', 'ages'} <= data.keys()
+                or data.keys() - set(Key.__dataclass_fields__)
                 or data['convention']!='casefile-anon/1'):
             raise ValueError
         if not isinstance(data['anchor'],str) or (data['anchor'] and not dates.parse(data['anchor'])):
@@ -614,6 +636,8 @@ def load_key(folder) -> Key:
             if any(not isinstance(v,str) for v in data[table].values()):
                 raise ValueError
         if any(not isinstance(v,list) or any(not isinstance(s,str) for s in v) for v in data['dates'].values()):
+            raise ValueError
+        if not isinstance(data.get('ages', []), list) or any(not isinstance(v, str) or not AGE.fullmatch(v) for v in data.get('ages', [])):
             raise ValueError
         if (not isinstance(data.get('aliases', {}), dict) or any(not isinstance(alias, str)
                 or tag not in data['entities'] for alias, tag in data.get('aliases', {}).items())):
@@ -632,6 +656,8 @@ def save_key(folder, key):
     old = load_key(folder)
     if old.anchor and old.anchor != key.anchor:
         raise AnonError('anon/key.json cannot change anchor')
+    if key.ages[:len(old.ages)] != old.ages:
+        raise AnonError('anon/key.json cannot drop or change an entry')
     for table in ('entities','refs','dates','srcs','aliases'):
         for tag,value in getattr(old,table).items():
             new = getattr(key,table).get(tag)

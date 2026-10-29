@@ -1003,6 +1003,8 @@ What a deposition or hearing output contains is practice: from `playbook/` and t
   that adds every anonymized page (interim was without the flag); 94 `brief-in` takes a Word file (.docx) draft (interim
   was Markdown or text); 95 people of kind `person` become `[PERSON-n]`, and the entity card gains an `adjuster` kind
   that is kept automatically (interim was keep-list only).
+- Q63: output critic L6 (owner, 2026-10-28) -> stated ages ("44 year old", "age 44", "44 y/o") in the anonymized
+  package become `[AGE]`, restored locally from the key; consistent with Q62 item 89 (`[DOB]`).
 
 ## Round 7: stage 7 brief package and anonymizer (opened 2026-10-28 on `loop/round-07` at 85675dc, same session, owner Q60)
 Tiers: Q46. Owner check-in held at the open (Q61). Exit test (spec §7 stage 7): the identifier check passes on the test

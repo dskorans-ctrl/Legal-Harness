@@ -85,7 +85,7 @@ def test_package_contract(tmp_path, row, contract_results):
         assert 'Issue: Review [CLAIMANT]\n' in text, 'package issue not transformed'
         seen = []
         package(transform=lambda s: seen.append(s) or s)
-        assert all(f.quote in seen and f.provider in seen for f in value.facts if f.provider)
+        assert all(f.quote in seen for f in value.facts)
         assert all(about in seen for flag in cf.flags for about in flag.abouts)
         assert all(p.text in seen for p in loaded.pages if any(p.page_id in flag.page_ids for flag in cf.flags if flag.kind == 'conflict'))
     elif row == 2:
@@ -104,8 +104,8 @@ def test_package_contract(tmp_path, row, contract_results):
         text = package(transform=transform)
         lines = text.split('## Facts\n\n', 1)[1].split('\n\n## Conflicts', 1)[0].split('\n\n')
         assert [line.rsplit('[cite ', 1)[1] for line in lines] == [f.cite + ']' for f in (selected[2], selected[3], selected[1], selected[0])]
-        assert lines[0].startswith('[DATE D+3], '), 'fact date line shape lost'
-        assert lines[-1].startswith('Undated, '), 'undated fact must be last'
+        assert lines[0] == f'"{selected[2].quote}" [cite {selected[2].cite}]', 'chronological quote and cite lost'
+        assert lines[-1] == f'"{selected[0].quote}" [cite {selected[0].cite}]', 'undated fact must be last'
     elif row == 3:
         body = package().split('## Facts\n\n', 1)[1].split('\n\n## Conflicts', 1)[0]
         assert body.count('[cite ') == len(value.facts)
@@ -178,7 +178,7 @@ def test_draft_contract(tmp_path, row, monkeypatch, contract_results):
         assert sum(len(u.quotes) for u in units) == 8
     elif row == 2:
         report = check(draft, pages, rules)
-        assert report.ok and (report.checks, report.total, report.uncited, report.rule_hits) == (10, 10, (11, 12), 0), 'good draft must pass 10 of 10 including placeholder-form prose numbers'
+        assert report.ok and (report.checks, report.total, report.uncited, report.rule_hits) == (44, 44, (11, 12), 0), 'good draft must pass all 44 operations including placeholder-form prose numbers'
         assert len(report.paragraphs) == 12
     elif row == 3:
         report = check(['"Pain 7/10 in the low back, no radiation." [cite MED9999]'], pages, rules)
@@ -195,8 +195,8 @@ def test_draft_contract(tmp_path, row, monkeypatch, contract_results):
     elif row == 5:
         bad_path, _ = draft_file(tmp_path, 'draft-bad-quote')
         report = check(brief.read_draft(bad_path), pages, rules)
-        assert (report.checks, report.failed) == (9, 1)
-        assert 'medical/001' in report.paragraphs[0].failures[0]
+        assert (report.checks, report.failed) == (43, 1)
+        assert 'MED0001' in report.paragraphs[0].failures[0]
         # This quote is present in the matter, but only on MED0001.
         assert not check(['"Pain 7/10 in the low back, no radiation." [cite MED0003]'], pages, rules).ok
     elif row == 6:
@@ -219,9 +219,9 @@ def test_draft_contract(tmp_path, row, monkeypatch, contract_results):
     else:
         report = check(['"Not on this page." [cite MED0003]'], pages, rules)
         text = saved(tmp_path, report, matterinfo.load(folder), rules)
-        assert any(t.startswith('[FACT CHECK FAILED: paragraph 1: quote not on medical/003;') for t in text), 'failed quote check not marked in saved document'
+        assert any(t.startswith('[FACT CHECK FAILED: paragraph 1: quote not on MED0003;') for t in text), 'failed quote check not marked in saved document'
         assert text.index('Fact check') > text.index('Draft')
-        assert 'Checks: 0 of 1; failures: 1; uncited: 0; rule hits: 0; skipped: 0' in text
+        assert 'Checks: 3 of 4; failures: 1; uncited: 0; rule hits: 0; skipped: 0' in text
         assert len(report.paragraphs) == 1
     contract_results['draft'][-1] = True
 
@@ -236,7 +236,7 @@ def test_contract_totals(capsys, contract_results):
 def test_l7_curly_or_unparsable_quote_fails(tmp_path, text):
     _, _, _, loaded, _, book = setup_case(tmp_path)
     report = check([text], loaded.pages, book.rules)
-    assert (report.checks, report.total, report.failed) == (0, 1, 1), 'L7: quote verification silently skipped'
+    assert (report.checks, report.total, report.failed) == (3, 4, 1), 'L7: quote verification silently skipped'
 
 
 def test_l8_totals_measure_executed_cases():
@@ -283,3 +283,141 @@ def test_package_rollback_owns_paths(tmp_path, monkeypatch):
     with pytest.raises(FileExistsError):
         brief.publish_package(folder, 'abcdef123456', {'package.md': b'draft'})
     assert (folder / '.abcdef123456.tmp/owned-by-another-run').read_text(encoding='utf-8') == 'keep'
+
+
+@pytest.mark.parametrize('text', [
+    'At 30 degrees, "Impression: L4-L5 disc protrusion with left L5 radiculopathy." [cite MED0007]',
+    'Strength 4/5 [cite DEF0002]', 'Pain 7/10 [cite MED0003]',
+    'Level L4-L6 [cite MED0006]', 'At 30.5 degrees [cite MED0007]',
+    'At 4:5 [cite DEF0002]', 'Range 4-5 [cite DEF0002]'])
+def test_fix2_numeric_tokens(tmp_path, text):
+    _, _, _, loaded, _, book = setup_case(tmp_path)
+    report = check([text], loaded.pages, book.rules)
+    assert not report.ok, 'H1/M3: unsupported whole numeric token accepted'
+    assert any('number not on' in reason for reason in report.paragraphs[0].failures)
+    assert check(['At 45 degrees, "Impression: L4-L5 disc protrusion with left L5 radiculopathy." [cite MED0007]'], loaded.pages, book.rules).ok
+    assert check(['Strength 5/5 [cite DEF0002]'], loaded.pages, book.rules).ok
+
+
+@pytest.mark.parametrize('text, reason', [
+    ('The record says "Invented words."', 'uncited quote'), ('Strength 3/5.', 'uncited number')])
+def test_fix2_uncited_partial(tmp_path, text, reason):
+    from io import StringIO
+    from casefile import anon, brief_in
+
+    _, cfg, folder, loaded, _, _ = setup_case(tmp_path)
+    key = anon.mapping(anon.names(matterinfo.load(folder)), [], loaded.pages, anon.Key(anchor='2025-03-11'))
+    anon.save_key(folder, key)
+    draft = Document()
+    draft.add_paragraph(text)
+    path = tmp_path / 'uncited.docx'
+    draft.save(path)
+    out, err = StringIO(), StringIO()
+    assert brief_in.run(cfg, loaded.number, path, out=out, err=err) == 1, 'H2: uncited evidence published as final'
+    assert not err.getvalue()
+    partial = folder / 'outputs/brief-in-uncited.partial.docx'
+    assert any(reason in p.text for p in Document(partial).paragraphs)
+    assert not partial.with_name('brief-in-uncited.docx').exists()
+
+
+def footnote_draft(path, texts, notes):
+    from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.opc.part import Part
+    from docx.opc.packuri import PackURI
+    from docx.opc.constants import RELATIONSHIP_TYPE as RT
+
+    doc = Document()
+    root = OxmlElement('w:footnotes')
+    for index, text in enumerate(texts, 1):
+        p = doc.add_paragraph(text)
+        if index not in notes:
+            continue
+        ref = OxmlElement('w:footnoteReference')
+        ref.set(qn('w:id'), str(index))
+        p.add_run()._r.append(ref)
+        note = OxmlElement('w:footnote')
+        note.set(qn('w:id'), str(index))
+        body, run, value = (OxmlElement(tag) for tag in ('w:p', 'w:r', 'w:t'))
+        value.text = notes[index]
+        run.append(value)
+        body.append(run)
+        note.append(body)
+        root.append(note)
+    from lxml import etree
+    part = Part(PackURI('/word/footnotes.xml'),
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml',
+                etree.tostring(root), doc.part.package)
+    doc.part.relate_to(part, RT.FOOTNOTES)
+    doc.save(path)
+
+
+def test_fix2_footnotes_follow_anchor_and_block_identifiers(tmp_path):
+    from io import StringIO
+    from casefile import anon, brief_in
+
+    _, cfg, folder, loaded, _, book = setup_case(tmp_path)
+    path = tmp_path / 'footnotes.docx'
+    footnote_draft(path, ['Strength 5/5.', 'Pain 4/10.'], {1: 'DEF0002', 2: '[cite MED0003]'})
+    report = check(brief.read_draft(path), loaded.pages, book.rules)
+    assert [item.unit.cites for item in report.paragraphs] == [('DEF0002',), ('MED0003',)], 'H2: Word footnote citations lost or associated with wrong paragraph'
+    assert report.ok and not report.uncited
+    footnote_draft(path, ['Strength 4/5.', 'Pain 4/10.'], {1: 'DEF0002', 2: '[cite MED0003]'})
+    report = check(brief.read_draft(path), loaded.pages, book.rules)
+    assert not report.ok and report.paragraphs[0].failures and not report.paragraphs[1].failures
+    key = anon.mapping(anon.names(matterinfo.load(folder)), [], loaded.pages, anon.Key(anchor='2025-03-11'))
+    anon.save_key(folder, key)
+    footnote_draft(path, ['Strength 5/5.', 'Pain 4/10.'], {1: 'DEF0002', 2: '[cite MED0003]'})
+    out, err = StringIO(), StringIO()
+    assert brief_in.run(cfg, loaded.number, path, out=out, err=err) == 0
+    restored = [p.text for p in Document(folder / 'outputs/brief-in-footnotes.docx').paragraphs]
+    assert 'Strength 5/5. [cite DEF0002]' in restored and 'Pain 4/10. [cite MED0003]' in restored
+    assert 'uncited=0' in out.getvalue() and not err.getvalue()
+    before = (folder / 'outputs/brief-in-footnotes.docx').read_bytes()
+    footnote_draft(path, ['Strength 5/5.'], {1: 'Morgan Ashby-Vale, DEF0002'})
+    out, err = StringIO(), StringIO()
+    assert brief_in.run(cfg, loaded.number, path, out=out, err=err) == 2, 'H2: real identifier in footnote escaped draft check'
+    assert (folder / 'outputs/brief-in-footnotes.docx').read_bytes() == before
+    assert not (folder / 'outputs/brief-in-footnotes.partial.docx').exists()
+
+
+def test_fix2_summary_and_visible_marks(tmp_path):
+    _, _, folder, loaded, _, book = setup_case(tmp_path)
+    report = check(['Pain 999/10 and "Not on the page." [cite MED0003]. The IME was reviewed.'], loaded.pages, book.rules)
+    # One cite, one quote, one numeric token, one prose rules check and one paragraph check.
+    assert (report.checks, report.total, report.failed) == (2, 5, 3), 'L3: check counters do not measure the same operations'
+    assert report.checks + report.failed == report.total
+
+
+def test_fix2_visible_marks(tmp_path):
+    _, _, folder, loaded, _, book = setup_case(tmp_path)
+    report = check(['"Not on the page." [cite MED0003]'], loaded.pages, book.rules)
+    doc = brief.render(report, matterinfo.load(folder), playbook_version=book.version, model='stand-in')
+    target = tmp_path / 'marks.docx'
+    outputs.render(doc, target, rules=book.rules)
+    document = Document(target)
+    marks = [p for p in document.paragraphs if p.text.startswith('[FACT CHECK FAILED:')]
+    assert marks and all(r.bold and r.font.highlight_color for p in marks for r in p.runs), 'L4: failure marks are not bold and highlighted'
+    assert any('quote not on MED0003' in p.text for p in marks), 'L4: failure mark lost Bates stamp'
+    assert all('medical/003' not in p.text for p in marks)
+
+
+def test_fix2_matter_header(tmp_path):
+    _, _, folder, loaded, _, book = setup_case(tmp_path)
+    report = check(['Argument only.'], loaded.pages, book.rules)
+    assert 'Matter 9001.001' in saved(tmp_path, report, matterinfo.load(folder), book.rules), 'L2: restored brief header lost matter number'
+
+
+@pytest.mark.parametrize('dash', [chr(0x2013), chr(0x2014)])
+def test_fix2_dash_style(tmp_path, dash):
+    _, _, _, loaded, _, book = setup_case(tmp_path)
+    report = check(['The accounts differ' + dash + 'review is needed.'], loaded.pages, book.rules)
+    assert not report.ok, 'L5: prohibited dash passed as final prose'
+    assert any('style' in reason for reason in report.paragraphs[0].failures)
+
+
+@pytest.mark.parametrize('text', ['Pain:4/10 [cite MED0003]', 'Strength:5/5 [cite DEF0002]',
+                                  'Angle:45 [cite MED0007]'])
+def test_fix2_numeric_label_boundary(tmp_path, text):
+    _, _, _, loaded, _, book = setup_case(tmp_path)
+    assert check([text], loaded.pages, book.rules).ok, 'numeric label became part of the asserted number'

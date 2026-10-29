@@ -1,13 +1,16 @@
 """Render portable brief packages and check restored Word draft paragraphs."""
 
-from dataclasses import dataclass, replace
+from dataclasses import asdict, dataclass, replace
 from datetime import date
+import json
 import os
 from pathlib import Path
 import re
 import shutil
 
 from docx import Document
+from docx.oxml.ns import qn
+from lxml import etree
 
 from casefile import dates, extract, outputs, quotes, roles, stamps
 
@@ -15,6 +18,19 @@ from casefile import dates, extract, outputs, quotes, roles, stamps
 CITE = re.compile(r'\[(?:cite|page) ([^\]\n]+)\]')
 QUOTED = re.compile(r'"([^\"]*)"')
 BRACKET = re.compile(r'\[[^\]]*\]')
+
+
+def numeric_tokens(value):
+    """Keep joined clinical numbers whole, including level names and signs."""
+    return tuple(m[0].casefold() for m in re.finditer(r'(?<!\w)[+-]?\w*\d\w*(?:[/.:-]\w*\d\w*)*(?!\w)', value)
+                 if any(char.isdigit() for char in m[0]))
+
+
+def package_json(packet):
+    """Export evidence only for facts; full page text has its own visible boundary."""
+    data = asdict(packet)
+    data['facts'] = [dict(quote=fact.quote, cite=fact.cite) for fact in packet.facts]
+    return json.dumps(data, ensure_ascii=False, allow_nan=False)
 
 
 def conflict_excerpts(casefile, pages, info, transform):
@@ -37,7 +53,8 @@ def conflict_excerpts(casefile, pages, info, transform):
     return '\n\n'.join(lines) or 'none'
 
 
-def package_text(packet, casefile, pages, info, *, issue, keep, rules_text, transform, pages_all=False):
+def package_text(packet, casefile, pages, info, *, issue, keep, rules_text, transform, pages_all=False,
+                 open_items=()):
     stored = {fact.id: fact for fact in casefile.facts}
 
     def chronology(fact):
@@ -50,12 +67,20 @@ def package_text(packet, casefile, pages, info, *, issue, keep, rules_text, tran
              'Real names kept in this package (never placeholders): ' + (', '.join(keep) or 'none'),
              '## Facts']
     for fact in sorted(packet.facts, key=chronology):
-        lines.append(f'{transform(fact.date) if fact.date else "Undated"}, '
-                     f'{transform(fact.provider) or "Provider not stated"}, '
-                     f'{fact.category.replace("_", " ")}: "{transform(fact.quote)}" [cite {fact.cite}]')
+        lines.append(f'"{transform(fact.quote)}" [cite {fact.cite}]')
     lines += ['## Conflicts', conflict_excerpts(casefile, pages, info, transform), '## Gaps']
     gaps = [transform(about) for flag in casefile.flags if flag.kind == 'gap' for about in flag.abouts]
     lines.extend(gaps or ['none'])
+    if open_items:
+        lines.append('## Pages not yet read')
+        by_id = {page.page_id: page for page in pages}
+        for item in open_items:
+            lines.append(f'{item.label}: {item.status}: {transform(item.reason)}')
+            if item.page_id in by_id:
+                page = by_id[item.page_id]
+                lines.append(extract.page_block(replace(page, text=transform(page.text))))
+            else:
+                lines.append('No readable text is available for this page.')
     if pages_all:
         lines.append('## Pages')
         lines.extend(extract.page_block(replace(page, text=transform(page.text))) for page in pages)
@@ -65,9 +90,10 @@ def package_text(packet, casefile, pages, info, *, issue, keep, rules_text, tran
 class Draft(list):
     """Body paragraphs with a count of ignored tables and populated header/footer parts."""
 
-    def __init__(self, paragraphs, *, skipped=0):
+    def __init__(self, paragraphs, *, skipped=0, footnotes=None):
         super().__init__(paragraphs)
         self.skipped = skipped
+        self.footnotes = footnotes or {}
 
 
 def read_draft(path):
@@ -77,7 +103,20 @@ def read_draft(path):
                           section.even_page_header.part, section.footer.part,
                           section.first_page_footer.part, section.even_page_footer.part)}
     skipped = len(document.tables) + sum(bool(part.element.xpath('.//w:t')) for part in parts.values())
-    return Draft([paragraph.text for paragraph in document.paragraphs], skipped=skipped)
+    notes = {}
+    for part in document.part.related_parts.values():
+        if str(part.partname).endswith('/footnotes.xml'):
+            root = etree.fromstring(part.blob)
+            notes.update((note.get(qn('w:id')), ''.join(note.itertext()))
+                         for note in root.iter(qn('w:footnote')))
+    anchored = {}
+    for index, paragraph in enumerate(document.paragraphs):
+        refs = [ref.get(qn('w:id')) for ref in paragraph._p.iter(qn('w:footnoteReference'))]
+        if any(ref not in notes for ref in refs):
+            raise outputs.OutputError('draft footnote is missing; repair the Word document')
+        if refs:
+            anchored[index] = tuple(notes[ref] for ref in refs)
+    return Draft([paragraph.text for paragraph in document.paragraphs], skipped=skipped, footnotes=anchored)
 
 
 @dataclass(frozen=True)
@@ -95,7 +134,12 @@ def parse_draft(paragraphs):
         text = text.translate(str.maketrans(quotes.CURLY))
         spans = tuple(QUOTED.finditer(text))
         outside = QUOTED.sub(lambda match: ' ' * len(match[0]), text)
-        result.append(Unit(index, text, tuple(match[1] for match in CITE.finditer(outside)),
+        cites = [match[1] for match in CITE.finditer(outside)]
+        for note in getattr(paragraphs, 'footnotes', {}).get(index, ()):
+            note = QUOTED.sub('', note.translate(str.maketrans(quotes.CURLY)))
+            cites.extend(match[1] for match in CITE.finditer(note))
+            cites.extend(stamp.raw for stamp in stamps.find(CITE.sub('', note), r'[A-Z]{1,8}[ -]?\d{4,}'))
+        result.append(Unit(index, text, tuple(dict.fromkeys(cites)),
                            tuple(match[1] for match in spans), bool(text.count('"') % 2)))
     return result
 
@@ -105,6 +149,7 @@ class Checked:
     unit: Unit
     paragraph: outputs.Paragraph
     failures: tuple[str, ...]
+    checks: tuple[bool, ...]
 
 
 @dataclass(frozen=True)
@@ -116,15 +161,15 @@ class Report:
 
     @property
     def total(self):
-        return sum(bool(item.unit.cites) for item in self.paragraphs)
+        return sum(len(item.checks) for item in self.paragraphs)
 
     @property
     def failed(self):
-        return sum(bool(item.failures) for item in self.paragraphs)
+        return sum(not ok for item in self.paragraphs for ok in item.checks)
 
     @property
     def checks(self):
-        return sum(bool(item.unit.cites) and not item.failures for item in self.paragraphs)
+        return self.total - self.failed
 
     @property
     def ok(self):
@@ -167,12 +212,14 @@ def fact_check(draft, pages, rules, *, restore_prose, restore_quote):
     units = parse_draft(draft) if not draft or isinstance(draft[0], str) else draft
     checked, uncited, rule_hits = [], [], 0
     for unit in units:
-        failures = []
+        failures, checks = [], []
         if unit.quote_error:
+            checks.append(False)
             failures.append(f'paragraph {unit.index + 1}: unparsable quote; close or correct the quotation marks')
         resolved = []
         for cite in unit.cites:
             page = _resolve(cite, pages)
+            checks.append(page is not None)
             if page is None:
                 failures.append(f'paragraph {unit.index + 1}: unknown or ambiguous cite {cite}; correct the cite')
             else:
@@ -184,15 +231,20 @@ def fact_check(draft, pages, rules, *, restore_prose, restore_quote):
             candidates = [restore_quote(quote, page) for page in resolved]
             good = bool(resolved) and all(value is not None and quotes.found_in(value, page.text)
                                           for value, page in zip(candidates, resolved))
-            if not good and unit.cites:
-                labels = ', '.join(page.page_id for page in resolved) or ', '.join(unit.cites)
-                failures.append(f'paragraph {unit.index + 1}: quote not on {labels}; correct the quote or cite')
+            checks.append(good)
+            if not good:
+                labels = ', '.join(page.stamps[0] if page.stamps else page.page_id for page in resolved) or ', '.join(unit.cites)
+                reason = f'quote not on {labels}' if unit.cites else 'uncited quote'
+                failures.append(f'paragraph {unit.index + 1}: {reason}; correct the quote or cite')
             restored_quotes.append((candidates[0] if good else restore_prose(quote), good))
-        if unit.cites and not unit.quotes:
-            prose_numbers = set(re.findall(r'\d+', BRACKET.sub('', unit.text)))
-            for page in resolved:
-                if not prose_numbers <= set(re.findall(r'\d+', page.text)):
-                    failures.append(f'paragraph {unit.index + 1}: number not on {page.page_id}; correct the number or cite')
+        prose_numbers = numeric_tokens(BRACKET.sub('', QUOTED.sub('', unit.text)))
+        for number in prose_numbers:
+            good = bool(resolved) and all(number in numeric_tokens(page.text) for page in resolved)
+            checks.append(good)
+            if not good:
+                labels = ', '.join(page.stamps[0] if page.stamps else page.page_id for page in resolved) or ', '.join(unit.cites)
+                reason = f'number not on {labels}' if unit.cites else 'uncited number'
+                failures.append(f'paragraph {unit.index + 1}: {reason}; correct the number or cite')
         runs, cursor, quote_index = [], 0, 0
         tokens = re.compile(r'"[^\"]*"|\[(?:cite|page) [^\]\n]+\]')
         restored_parts = []
@@ -215,29 +267,43 @@ def fact_check(draft, pages, rules, *, restore_prose, restore_quote):
         prose = restore_prose(unit.text[cursor:])
         restored_parts.append(prose)
         runs.append(outputs.Run(prose))
+        inline = {match[1] for match in CITE.finditer(QUOTED.sub('', unit.text))}
+        for cite in unit.cites:
+            if cite not in inline:
+                # Carry anchored citations into the restored body so they remain locatable.
+                runs.append(outputs.Run(f' [cite {cite}]', exempt='cite' if _resolve(cite, pages) else ''))
         paragraph, hits = _checked_prose(runs, rules)
+        dashes = bool(re.search('[\u2013\u2014]', unit.text))
+        checks.append(not hits and not dashes)
         rule_hits += hits
         if hits:
             failures.append(f'paragraph {unit.index + 1}: firm rule hit; revise the withheld prose')
+        if dashes:
+            rule_hits += 1
+            failures.append(f'paragraph {unit.index + 1}: style failure: no em or en dashes; revise the punctuation')
         restored = ''.join(restored_parts)
-        if restored.count('\n') != unit.text.count('\n') or restored.count('\r') != unit.text.count('\r'):
+        same_paragraphs = (restored.count('\n'), restored.count('\r')) == (unit.text.count('\n'), unit.text.count('\r'))
+        checks.append(same_paragraphs)
+        if not same_paragraphs:
             failures.append(f'paragraph {unit.index + 1}: paragraph count changed; correct the restoration')
-        checked.append(Checked(unit, paragraph, tuple(dict.fromkeys(failures))))
+        checked.append(Checked(unit, paragraph, tuple(dict.fromkeys(failures)), tuple(checks)))
     return Report(tuple(checked), tuple(uncited), rule_hits, skipped)
 
 
-def render(report, info, *, playbook_version, model):
+def render(report, info, *, playbook_version, model, matter=None):
     paragraphs = []
     for item in report.paragraphs:
         paragraphs.append(item.paragraph)
         for reason in item.failures:
-            paragraphs.append(outputs.Paragraph([outputs.Run('[FACT CHECK FAILED: ' + reason + ']', exempt='reason')]))
+            paragraphs.append(outputs.Paragraph([outputs.Run('[FACT CHECK FAILED: ' + reason + ']', exempt='reason',
+                                                               bold=True, highlight=True)]))
     summary = [outputs.p(f'Checks: {report.checks} of {report.total}; failures: {report.failed}; '
                          f'uncited: {len(report.uncited)}; rule hits: {report.rule_hits}; skipped: {report.skipped}'),
                outputs.p('Uncited paragraphs: ' + (', '.join(map(str, report.uncited)) or 'none')),
                outputs.p('Open items: ' + ('correct each marked paragraph' if report.failed else 'none')),
                outputs.p(f'Playbook {playbook_version}; model {model}')]
-    return outputs.Doc('Restored brief draft', outputs.header(info, '', 'brief'),
+    matter = matter or (info.folder.name if info.folder else 'NEEDED')
+    return outputs.Doc('Restored brief draft', outputs.header(info, matter, 'brief'),
                        [outputs.Section('Draft', paragraphs), outputs.Section('Fact check', summary)])
 
 

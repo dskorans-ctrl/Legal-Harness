@@ -11,7 +11,8 @@ from casefile import anon, brief, outputs
 
 def check_draft(draft, key, namelist, pages):
     """Reject identifiers and every placeholder absent from this matter's key."""
-    data = '\n'.join(draft).encode('utf-8')
+    notes = [note for group in getattr(draft, 'footnotes', {}).values() for note in group]
+    data = '\n'.join([*draft, *notes]).encode('utf-8')
     checked = anon.check_code(data, key, namelist, pages)
     text = data.decode('utf-8')
     citations = {len(text[:m.start()].encode('utf-8')) for m in
@@ -48,7 +49,7 @@ def run(config, number, file, *, out, err):
                 restore_prose=lambda s: anon.restore(s, key),
                 restore_quote=lambda s, page: anon.restore_quote(s, key, page))
             document = brief.render(report, started.info, playbook_version=started.book.version,
-                                    model=config.model.name)
+                                    model=config.model.name, matter=number)
             name = 'brief-in-' + file.stem
             outputs.publish(started.folder, name, document, started.book.rules, started.casefile,
                             started.counts, failed_steps=() if report.ok else ('restore',))

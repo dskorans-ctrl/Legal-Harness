@@ -1,6 +1,6 @@
 """Stage 7 exit proof over invented matters and one socket stand-in."""
 
-from dataclasses import replace
+from dataclasses import asdict, replace
 import hashlib
 import json
 import os
@@ -154,8 +154,8 @@ def test_stage7_exit(tmp_path, capsys):
             second = _answer('entities-empty' if number == NUMBER else 'entities-second-hit')
             second_pages = anonymous.pages
             if number != NUMBER:
-                used = {fact.page_id for fact in anonymous.facts}
-                used.update(pid for flag in anonymous.flags for pid in flag['page_ids'])
+                used = {pid for flag in anonymous.flags if flag['kind'] == 'conflict' for pid in flag['page_ids']}
+                used.add('defense-report/001')
                 second_pages = tuple(p for p in anonymous.pages if p.page_id in used)
                 second['pages_seen'] = [p.page_id for p in second_pages]
             fake.record(recording_for(cards.card('07-ANON'), second_pages, number, second))
@@ -171,7 +171,13 @@ def test_stage7_exit(tmp_path, capsys):
         identifiers = _identifiers(markdown + serialized, info)
         assert identifiers == 0, f'identifiers_in_package={identifiers}'
         key = anon.load_key(folders[NUMBER])
-        anonymous = packet.Packet.from_json(serialized)
+        loaded = pages.load(settings.paths.matters, NUMBER, settings.ocr.stamp_pattern)
+        value = packet.build(facts.load(folders[NUMBER] / 'casefile.jsonl'), loaded.pages, matter=NUMBER,
+                             task='brief', options={'issue': 'Review the records'}, playbook_version=book.version)
+        anonymous = anon.packet(replace(value, pages=loaded.pages), key)
+        payload = json.loads(serialized)
+        assert payload['pages'] == json.loads(anonymous.to_json())['pages']
+        assert payload['facts'] == [dict(quote=f.quote, cite=f.cite) for f in anonymous.facts]
         text = '\n'.join(page.text for page in anonymous.pages)
         review = re.search(r'review=(\w+)', good.stdout)[1]
         entities = len(key.entities) + len(anon.names(info).kept)
@@ -199,9 +205,10 @@ def test_stage7_exit(tmp_path, capsys):
         if review == 'unavailable':
             assert review_words == 'unavailable'
         else:
-            assert len(review_words.split(', ')) == 30 and all(
+            assert len(review_words.split(', ')) == int(review) and all(
                 word in markdown for word in review_words.split(', ')), 'review words missing'
-        assert review == ('30' if Path('/usr/share/dict/words').is_file() else 'unavailable'), f'review={review}'
+        assert review == ('24' if Path('/usr/share/dict/words').is_file() else 'unavailable'), f'review={review}'
+        assert 'open_items=1' in good.stdout
         lines.append(f'stage7 package matter={NUMBER} pages=14 pages_in_package=14 entities=17 of 17 anchor=D+0 '
                      f'people=46 employer=8 ids=3 dob=14 dates=61 years=2 kept_orgs=6 leaks=0 review={review} '
                      'key_mode=600 facts=38 conflicts=5 exit=0')
@@ -216,8 +223,8 @@ def test_stage7_exit(tmp_path, capsys):
         listed = anon.names(info)
         anon.mapping(listed, [], full.pages, key)
         converted = anon.packet(replace(anonymous, pages=full.pages), key)
-        used = {fact.page_id for fact in anonymous.facts}
-        used.update(pid for flag in anonymous.flags for pid in flag['page_ids'])
+        used = {pid for flag in anonymous.flags if flag['kind'] == 'conflict' for pid in flag['page_ids']}
+        used.update(('defense-report/001', 'medical/009'))
         selected = tuple(p for p in converted.pages if p.page_id in used)
         for part in (converted.pages, selected):
             second = _answer('entities-empty')
@@ -227,9 +234,11 @@ def test_stage7_exit(tmp_path, capsys):
         assert default.returncode == 0 and not default.stderr, default.stdout + default.stderr
         default_id = re.search(r'packet=([a-f0-9]+)', default.stdout)[1]
         default_md, default_json = _read_package(folders[NUMBER] / 'outbox' / default_id)
-        default_packet = packet.Packet.from_json(default_json)
-        assert [p.page_id for p in default_packet.pages] == [p.page_id for p in selected], 'M1: default JSON carries unused pages'
-        assert '## Pages' not in default_md
+        default_packet = json.loads(default_json)
+        assert default_packet['pages'] == json.loads(json.dumps([asdict(p) for p in selected])), 'M1: default JSON carries unused pages'
+        assert all(p['text'] in default_md for p in default_packet['pages']), 'M1: JSON page not displayed in Markdown'
+        assert 'open_items=2' in default.stdout
+        assert '## Pages\n' not in default_md
         assert _identifiers(default_md + default_json, info) == 0
         # The new page itself must round-trip and pass the independent leak oracle.
         variant = converted.pages[-1] if converted.pages[-1].stamps == ('VAR0001',) else next(p for p in converted.pages if p.stamps == ('VAR0001',))
@@ -239,7 +248,7 @@ def test_stage7_exit(tmp_path, capsys):
         assert variant.text.count('\n') == source.text.count('\n')
         identifiers += _identifiers(default_md + default_json + variant.text, info)
         packages += 1
-        lines.append(f'stage7 default pages={len(full.pages)} pages_in_package={len(default_packet.pages)} identifiers_in_package=0 exit=0')
+        lines.append(f'stage7 default pages={len(full.pages)} pages_in_package={len(default_packet["pages"])} identifiers_in_package=0 exit=0')
 
         blocked = cli('9001.002', 'brief-out', 'Review the records')
         folder = folders['9001.002']
@@ -261,11 +270,11 @@ def test_stage7_exit(tmp_path, capsys):
         result = cli(NUMBER, 'brief-in', str(draft_path))
         assert result.returncode == 0 and not result.stderr, result.stdout + result.stderr
         checks, total, failed, uncited, rule_hits = _summary(result)
-        assert (checks, total, failed, uncited, rule_hits) == (10, 10, 0, 2, 0), f'checks={checks} of {total} failed={failed}'
+        assert (checks, total, failed, uncited, rule_hits) == (44, 44, 0, 2, 0), f'checks={checks} of {total} failed={failed}'
         document, paragraphs = _draft_paragraphs(folders[NUMBER] / 'outputs/brief-in-draft.docx')
         assert len(paragraphs) == 12
         assert [re.search(r'"([^\"]*)"', p)[1] for p in paragraphs[:8]] == list(EXPECTED_QUOTES)
-        assert paragraphs[8:] == ['At 3/14/2025, pain was 4/10 [cite MED0003].',
+        assert paragraphs[8:] == ['At 03/14/2025, pain was 4/10 [cite MED0003].',
             'The job required lifting up to 50 pounds [page employer/002].',
             'Morgan Ashby-Vale asks that the records be considered together.',
             'The competing accounts warrant careful review.']
@@ -273,21 +282,21 @@ def test_stage7_exit(tmp_path, capsys):
         placeholders = re.findall(r'\[(?!cite |page )[^\]]+\]', '\n'.join(original))
         restored = len(placeholders) - len(re.findall(r'\[(?!cite |page )[^\]]+\]', '\n'.join(paragraphs)))
         assert restored == 11, f'placeholders_restored={restored}'
-        assert 'Checks: 10 of 10; failures: 0; uncited: 2; rule hits: 0; skipped: 0' in [p.text for p in document.paragraphs]
+        assert 'Checks: 44 of 44; failures: 0; uncited: 2; rule hits: 0; skipped: 0' in [p.text for p in document.paragraphs]
         drafts_ok += 1
-        lines.append(f'stage7 draft=draft paragraphs=12 checks=10 of 10 uncited=2 placeholders_restored={restored} rule_hits=0 exit=0')
+        lines.append(f'stage7 draft=draft paragraphs=12 checks=44 of 44 uncited=2 placeholders_restored={restored} rule_hits=0 exit=0')
 
         bad_path = _draft(tmp_path, 'draft-bad-quote')
         result = cli(NUMBER, 'brief-in', str(bad_path))
         assert result.returncode == 1 and not result.stderr, result.stdout + result.stderr
-        assert _summary(result) == (9, 10, 1, 2, 0)
+        assert _summary(result) == (43, 44, 1, 2, 0)
         partial = folders[NUMBER] / 'outputs/brief-in-draft-bad-quote.partial.docx'
         document, paragraphs = _draft_paragraphs(partial)
-        marked = sum(p.startswith('[FACT CHECK FAILED: paragraph 1: quote not on medical/001;') for p in paragraphs)
+        marked = sum(p.startswith('[FACT CHECK FAILED: paragraph 1: quote not on MED0001;') for p in paragraphs)
         assert marked == 1 and len(paragraphs) == 13
         assert not partial.with_name('brief-in-draft-bad-quote.docx').exists()
         drafts_ok += 1
-        lines.append('stage7 draft=draft-bad-quote checks=9 of 10 failed=1 marked=1 partial=1 exit=1')
+        lines.append('stage7 draft=draft-bad-quote checks=43 of 44 failed=1 marked=1 partial=1 exit=1')
         result = cli(NUMBER, 'status')
         assert result.returncode == 0 and not result.stderr
         output_status = result.stdout.splitlines()[0].split(' outputs=', 1)[1]
@@ -380,3 +389,74 @@ def test_out_prerequisite_exit_two(tmp_path, missing):
     assert len(opener.requests) == 1
     assert (folder / 'matter.toml').read_bytes() == before
     assert not (folder / 'anon').exists() and not (folder / 'outbox').exists()
+
+
+@pytest.mark.parametrize('row', ['pages', 'facts', 'rules', 'open-items', 'review'])
+def test_fix2_package_surfaces(tmp_path, monkeypatch, row):
+    from io import StringIO
+
+    _, cfg, folder, loaded, cf, book = setup_case(tmp_path)
+    from casefile.runlog import open_db
+    with open_db(cfg.paths.state / 'runlog.sqlite') as log:
+        log.record_coverage(1, matter=NUMBER, page_id='defense-report/001', card='medical_memo', status='uncited', reason='uncited')
+    value = packet.build(cf, loaded.pages, matter=NUMBER, task='brief', options={'issue': 'Review'}, playbook_version=book.version)
+    key = anon.mapping(anon.names(matterinfo.load(folder)), [], loaded.pages, anon.Key(anchor='2025-03-11'))
+    anonymous = anon.packet(replace(value, pages=loaded.pages), key)
+    expected = {'medical/001', 'medical/003', 'medical/006', 'medical/007', 'medical/008',
+                'defense-report/001', 'defense-report/002', 'defense-report/003', 'employer/001'}
+    selected = tuple(p for p in anonymous.pages if p.page_id in expected)
+    fake = FakeModel()
+    fake.record(recording_for(cards.card('07-ANON'), loaded.pages, NUMBER, _answer('entities')))
+    old_ids = {p.page_id for p in value.pages} | {pid for f in value.flags for pid in f['page_ids']}
+    old_selected = tuple(p for p in anonymous.pages if p.page_id in old_ids)
+    for part in (anonymous.pages, old_selected, selected):
+        second = _answer('entities-empty')
+        second['pages_seen'] = [p.page_id for p in part]
+        fake.record(recording_for(cards.card('07-ANON'), part, NUMBER, second))
+    out, err = StringIO(), StringIO()
+    assert brief_out.run(cfg, NUMBER, 'Review', out=out, err=err, opener=FakeTransport(fake), stdin=StringIO()) == 0, out.getvalue() + err.getvalue()
+    target = next((folder / 'outbox').iterdir())
+    md, serialized = _read_package(target)
+    payload = json.loads(serialized)
+    if row == 'pages':
+        assert {p['binder'] + '/' + str(p['number']).zfill(3) for p in payload['pages']} == expected, 'M1: JSON includes pages whose full text is not displayed'
+        assert all(p['text'] in md for p in payload['pages']), 'M1: JSON page text absent from Markdown'
+    elif row == 'facts':
+        assert all(set(f) == {'quote', 'cite'} for f in payload['facts']), 'M1: package facts carry more than quote and cite'
+        assert len(payload['facts']) == 38
+    elif row == 'rules':
+        rules_text = md.split('## Facts', 1)[0]
+        for rule in book.rules.rules:
+            assert rule.id in rules_text and rule.rule in rules_text, 'M2: package omits a rule id or its source text'
+        assert 'header-block' in rules_text and 'No em or en dashes' in rules_text
+        assert 'footnote' in rules_text and 'straight double quotes' in rules_text
+    elif row == 'open-items':
+        assert '## Pages not yet read\n' in md, 'M4: package omits unread-page section'
+        section = md.split('## Pages not yet read\n', 1)[1]
+        assert 'DEF0001' in section and next(p.text for p in anonymous.pages if p.page_id == 'defense-report/001') in section
+        assert 'open_items=1' in out.getvalue(), 'M4: status omits open-item count'
+    else:
+        # An empty dictionary makes exclusion of template vocabulary observable on every machine.
+        original = Path.read_text
+        def read_text(path, *args, **kwargs):
+            return '' if path == Path('/usr/share/dict/words') else original(path, *args, **kwargs)
+        monkeypatch.setattr(Path, 'read_text', read_text)
+        original_is_file = Path.is_file
+        monkeypatch.setattr(Path, 'is_file', lambda p: True if p == Path('/usr/share/dict/words') else original_is_file(p))
+        words = brief_out._review_words(md, anon.names(matterinfo.load(folder)), anonymous.pages)
+        assert not {'Conflicts', 'Facts', 'Gaps', 'Pages', 'Dr', 'Drafter', 'Matter', 'Issue'} & set(words.split(', ')), 'L6: template vocabulary fills review list'
+
+
+def test_fix2_page_aware_name_restore(tmp_path):
+    from io import StringIO
+
+    _, cfg, folder, loaded, _, _ = setup_case(tmp_path)
+    key = anon.mapping(anon.names(matterinfo.load(folder)), [], loaded.pages, anon.Key(anchor='2025-03-11'))
+    anon.save_key(folder, key)
+    doc = Document()
+    doc.add_paragraph('The report identifies "Mr. [CLAIMANT]" [cite DEF0001].')
+    path = tmp_path / 'source-name.docx'
+    doc.save(path)
+    out, err = StringIO(), StringIO()
+    assert brief_in.run(cfg, NUMBER, path, out=out, err=err) == 0, 'W5c: quote restoration lost the page spelling'
+    assert any('"Mr. Ashby-Vale"' in p.text for p in Document(folder / 'outputs/brief-in-source-name.docx').paragraphs)

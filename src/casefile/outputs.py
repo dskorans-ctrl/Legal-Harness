@@ -25,6 +25,8 @@ class OutputError(ValueError):
 class Run:
     text: str
     exempt: str = ''
+    bold: bool = False
+    highlight: bool = False
 
 
 @dataclass
@@ -134,7 +136,7 @@ def checked_runs(paragraph, rules):
                 spans.append((finding.start, finding.end, finding.rule_id))
         for start, end, rule_id in reversed(spans):
             value = value[:start] + f'[withheld: {rule_id}]' + value[end:]
-        result.append(Run(value))
+        result.append(replace(run, text=value, exempt=''))
     return result
 
 
@@ -176,7 +178,11 @@ def render(doc, path, *, rules, stamped=True, providers=()):
 def _write_paragraph(document, paragraph, rules):
     target = document.add_heading(level=paragraph.level) if paragraph.level else document.add_paragraph()
     for run in checked_runs(paragraph, rules):
-        target.add_run(run.text)
+        written = target.add_run(run.text)
+        if run.bold:
+            written.bold = True
+        if run.highlight:
+            written.font.highlight_color = __import__('docx.enum.text', fromlist=['WD_COLOR_INDEX']).WD_COLOR_INDEX.YELLOW
     if paragraph.page_break:
         target.add_run().add_break(__import__('docx.enum.text', fromlist=['WD_BREAK']).WD_BREAK.PAGE)
 
