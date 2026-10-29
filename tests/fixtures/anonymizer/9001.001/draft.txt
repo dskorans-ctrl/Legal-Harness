@@ -1,0 +1,12 @@
+The emergency record states "Date of Service: [DATE D+0]" [cite MED0001].
+The follow up record states "Date of Service: [DATE D+3]" [cite MED0003].
+The therapy record states "Date of Service: [DATE D+13]" [cite MED0004].
+Therapy records "Referral from Dr. [DR-2] dated [DATE D+3]." [cite MED0004].
+The next visit was recorded as "Next appointment scheduled for [DATE D+27]." [cite MED0004].
+Imaging records "Date of Service: [DATE D+38]" [cite MED0006].
+The consultation records "Physical examination was performed today, [DATE D+59]." [cite MED0007].
+The report records "Date of Examination: [DATE D+101]" [cite DEF0001].
+At [DATE D+3], pain was 4/10 [cite MED0003].
+The job required lifting up to 50 pounds [page employer/002].
+[CLAIMANT] asks that the records be considered together.
+The competing accounts warrant careful review.

@@ -70,6 +70,15 @@ def main() -> int:
     hearing_parser.add_argument("--relief")
     hearing_parser.add_argument("--when", default="")
     hearing_parser.add_argument("--config", type=Path)
+    brief_out_parser = subcommands.add_parser("brief-out")
+    brief_out_parser.add_argument("--matter", required=True)
+    brief_out_parser.add_argument("issue")
+    brief_out_parser.add_argument("--pages", choices=("all",))
+    brief_out_parser.add_argument("--config", type=Path)
+    brief_in_parser = subcommands.add_parser("brief-in")
+    brief_in_parser.add_argument("--matter", required=True)
+    brief_in_parser.add_argument("file", type=Path)
+    brief_in_parser.add_argument("--config", type=Path)
     args = parser.parse_args()
     if args.command == "version":
         print(f"casefile {__version__}")
@@ -128,6 +137,23 @@ def main() -> int:
                            outline=args.outline, client=args.client, doctor=args.doctor, closing=args.closing,
                            provider=args.provider, binder=args.binder, selected=args.pages,
                            issue=args.issue, standard=args.standard, relief=args.relief, when=args.when)
+    elif args.command == "brief-out":
+        from casefile import brief_out
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"brief-out: cannot run: {exc}", file=sys.stderr)
+            return 2
+        return brief_out.run(config, args.matter, args.issue, out=sys.stdout, err=sys.stderr,
+                             pages_all=args.pages == "all")
+    elif args.command == "brief-in":
+        from casefile import brief_in
+        try:
+            config = load(args.config)
+        except ConfigError as exc:
+            print(f"brief-in: cannot run: {exc}", file=sys.stderr)
+            return 2
+        return brief_in.run(config, args.matter, args.file, out=sys.stdout, err=sys.stderr)
     elif args.command == "bench":
         return bench.main(args.matters, args.config, args.candidate)
     elif args.command == "config":
