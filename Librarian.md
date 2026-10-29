@@ -105,6 +105,18 @@ Cross-project failure classes live in the app-loop skill's catalog
 - Does an evaluative heading use explicit supporting labels rather than infer favorable weight from the source role?, #R06-OC-5
 - Does each reusable subsection derive its heading levels from the parent so the saved document navigation preserves the hierarchy?, #R06-OC-7
 - Does section-wide deduplication render each shared relationship once and distinguish already shown from genuinely absent?, #R06-OC-8
+- Does each privacy check name the matter boundary and test every outward file, message column and terminal stream without forbidding the private audit trail?, #R07-PC-2
+- Can a newly found spelling be registered as an alias of an existing entity, including an unnumbered claimant or employer, without creating a second identity?, #R07-CX-1
+- Does every serialized package expose exactly the pages and fields its readable review surface shows, with default and expanded modes checked separately?, #R07-CX-2
+- Does the identifier checker detect raw forms the replacer cannot recognize, with controls that disable replacement while leaving detection active?, #R07-CX-4
+- Does an identity migration group all source members by the destination identity and reuse one destination for each group?, #R07-CX-5
+- Does placeholder restoration require explicit placeholder syntax and preserve lookalike ordinary prose such as vitamin D-3?, #R07-CX-6
+- Does each text replacement preserve structural line breaks on wrapped inputs as well as on the ordinary fixture?, #R07-CX-7
+- Does Word import associate footnote evidence with its body paragraph and account for unsupported or unparsed quotation and citation forms?, #R07-OC-2
+- Does numeric evidence preserve each whole expression, including fractions, decimals, signs and ranges, rather than assemble it from digits elsewhere on the page?, #R07-OC-5
+- Does anonymization review residual calendar and demographic clues such as weekdays and stated ages after replacing explicit dates and birth dates?, #R07-OC-12
+- Is the full value set discovered before any cardinality-dependent placeholder is rendered, with distinct values restoring separately and legacy ambiguity refused?, #R07-V-2
+- Do builder prompts reserve playbook/, rules.toml and card text beyond the brief to the owner, never editing practice to make a test pass?, #R07-CH-1
 
 ## Round 1 (2026-10-25 to 2026-10-26)
 
@@ -1025,6 +1037,164 @@ Round 6 repeats and dispositions (no duplicate pre-flight bullets):
   remain but incompatible stamps refuse before the run log. Q56 is superseded by Q55's whole-matter
   cloud task direction; #R05-PC-1 remains a disclosed local-path limit until stage 7b replaces it.
 
+## Round 7 (2026-10-28; stage 7 brief package and anonymizer)
+
+Plan, code and critic IDs follow finding order (High, Medium, Low); verifier IDs use its numbered findings.
+Records checked: every file under `docs/loop/round-07/`, including brief §8, both reviews, the critic,
+verifier, W1, W1b, lane A, lane B, W5, fix cycles 1 to 3 and the fix2 old/new lines; ledger Round 7 and
+Q61 to Q63; CLAUDE.md and the canonical spec. Fixed statuses below describe those records, not new code
+work at this close. All prior entries were checked for duplicate classes; their IDs are listed below.
+
+### R07-PC-2: the privacy oracle had no consistent boundary
+**What broke:** `docs/loop/round-07/round07-brief-review.md:23-29` and build brief §1.2/§1.15: the proposed key-leak scan forbade names in raw answers that D15 requires storing, while the halt instruction treated terminal output as private although the boundary ruling made it outward.
+**Why:** privacy requirements classified values without first classifying the surfaces on which those values may appear.
+**Caught by:** plan H2, accepted in brief §8; lane A reported the conflicting halt instructions, and the chair ruled before W5.
+**Countermeasure:** D63 and §1.15 enumerate private answers and anon/ separately from outbox files, failure and gate message columns, stdout and stderr; test each outward surface with a planted value, including configuration refusals.
+**Status:** boundary ruled and implemented; W5's terminal controls and fix1's code L4 diagnostic control went red when a name was printed.
+
+### R07-CX-1: the halt could not attach another spelling to the claimant or employer
+**What broke:** `src/casefile/anon.py:104-109,160-171` and `anon_job.py:125-143` in review: an inverted, wrapped or given-name spelling escaped the variants, and adding it as another claimant or employer caused conflicting unnumbered entity on subsequent runs.
+**Why:** alias admission created a new entity instead of extending the existing identity that owns the placeholder.
+**Caught by:** code H1; fix1's variant and alias controls.
+**Countermeasure:** explicit alias registration to an existing entity, common person and organization variants, and a halt-to-rerun test for the unnumbered kinds; independently scan those variants in package outputs.
+**Status:** fixed in cycle 1; dropping a given-name variant fails H1: listed variant escaped replacement. A trailing legal suffix such as [EMPLOYER] INC. remains a recorded limit.
+
+### R07-CX-2: the readable package concealed extra serialized pages
+**What broke:** `src/casefile/brief_out.py:33,40,46` in review: the whole-matter entity-pass packet was serialized even without --pages all; after fix1 the critic still found 13 JSON pages against eight displayed conflict pages.
+**Why:** data collected for internal processing was exported without reconciling it with the attorney's readable review surface.
+**Caught by:** code M1, then output critic M1; fix2's independent surface assertions.
+**Countermeasure:** narrow the exported packet to displayed conflict and unread pages unless --pages all is requested, reduce exported facts to quote and cite, and compare the actual Markdown and JSON surfaces in both modes.
+**Status:** fixed in cycle 2; extra-page and extra-field seeds red; verifier measured 9 displayed and serialized pages by default, 14 with the flag. The separate exit fixture's added page yields 10 default pages, as recorded in fix2's old/new lines.
+
+### R07-CX-4: the leak checker inherited the replacer's blind spots
+**What broke:** `src/casefile/anon.py:70-78,412-415` in review: 3/11/25 and other unhandled date forms escaped both replacement and detection; SSNs with spaces or dots did likewise.
+**Why:** two production safeguards shared the same recognition grammar, so one omission disabled both.
+**Caught by:** code M3 and L5; verifier findings 1, 3 and 4 later exposed aged, ordinal-day and initial variants of the same class.
+**Countermeasure:** give the checker independent date, contact, age, day-ordinal and lone-initial detectors; prove that each detects raw input when its corresponding replacement is disabled, beyond the independent test-oracle rule in #R06-CX-16.
+**Status:** fix1 and fix3 built and seeded the independent detectors; fix3 records a remaining false rejection of Stages 44 and 45., which fails closed.
+
+### R07-CX-5: the migration split by cite instead of destination identity
+**What broke:** `src/casefile/facts.py:288-302,326` in review: two later cites with the same date and provider became two destination facts, and the identity-keyed merge then shadowed one duplicate.
+**Why:** a migration applied one operation per source member without grouping members that belong to the same destination entity.
+**Caught by:** code M4; the existing split_on_append test incorrectly pinned three facts instead of two.
+**Countermeasure:** group moved cites by folded quote, parsed date and folded provider and reuse one target fact per group; test three cites spanning exactly two identities and a subsequent merge into the migrated group.
+**Status:** fixed in cycle 1; restoring page-based grouping went red with assert (2 == 1). This is distinct from the source-provenance and alias-cardinality classes #R05-CX-5 and #R05-CX-7.
+
+### R07-CX-6: restoration interpreted ordinary prose as placeholder shorthand
+**What broke:** `src/casefile/anon.py:296-297` in review: vitamin D-3 supplement became vitamin 3/8/2025 supplement; loose DR-1 and D+2 were also rewritten without brackets.
+**Why:** a repair accepted marker-like prose without the explicit syntax that authorizes a semantic substitution.
+**Caught by:** code L1; fix1 restore control.
+**Countermeasure:** restore only recognized placeholder forms and preserve loose lookalikes; test vitamin D-3 beside genuine date and doctor placeholders.
+**Status:** fixed in cycle 1; restoring loose offsets fails L1: loose prose rewritten.
+
+### R07-CX-7: a replacement consumed a structural newline
+**What broke:** `src/casefile/anon.py:74,252` in review: DATE_REF matched March followed by a newline and 14, then replaced the whole match with one tag and lost a page line.
+**Why:** a content transformation treated structural separators inside its match as disposable whitespace.
+**Caught by:** code L2; plan L8 had already required preservation for a different wrapped-date path.
+**Countermeasure:** retain consumed line breaks on every replacement branch and exercise yearless and full dates wrapped at each supported boundary; compare page line counts independently of quote folding.
+**Status:** fixed in cycle 1; allowing newline consumption fails L2: page lost a line break.
+
+### R07-OC-2: Word evidence disappeared at the document parser boundary
+**What broke:** `src/casefile/brief.py:16,185-191` in review and critic H2: only inline body citations were read, so a draft using the firm's footnote practice appeared uncited; curly quotations could also silently lose quote verification.
+**Why:** successful parsing of a document's body was treated as accounting for evidence stored in other document structures or punctuation forms.
+**Caught by:** code L7 and output critic H2; fix1 quotation controls and fix2 anchored-footnote controls.
+**Countermeasure:** associate footnotes with their owning paragraphs, recognize curly quotes and disclose unsupported or unparsed structures; separately fail uncited quotations and numeric factual evidence while listing ordinary uncited argument.
+**Status:** fixed in cycles 1 and 2; disabling note association fails Word footnote citations lost or associated with wrong paragraph; ignoring uncited evidence fails uncited evidence published as final.
+
+### R07-OC-5: digit bags certified an invented numeric expression
+**What broke:** `src/casefile/brief.py:194` in the critic's revision: strength 4/5 passed because 4 occurred in L4-L5 and 5 occurred elsewhere on DEF0002, although that page states 5/5 strength.
+**Why:** membership of separate digit runs was substituted for evidence of the complete numeric expression.
+**Caught by:** output critic M3; fix2 whole-number controls, also covering H1's quoted-paragraph bypass.
+**Countermeasure:** compare whole numeric tokens including fractions, decimals, signs and ranges outside placeholders and cites, whether or not the paragraph also contains a verified quote; retain controls for compact numeric labels.
+**Status:** fixed in cycle 2; digit-bag and quote-bypass seeds fail unsupported whole numeric token accepted. Semantic association beyond token presence remains outside this check's claim.
+
+### R07-OC-12: date redaction retained calendar and demographic clues
+**What broke:** `docs/loop/round-07/round07-critic.md:130-137`: the package kept Tuesday beside D+0 and four stated ages after replacing calendar dates and the birth date.
+**Why:** removal of explicit identifiers was treated as sufficient without reviewing residual clues that constrain the hidden values.
+**Caught by:** output critic L6; owner Q63 required age replacement, followed by the verifier's additional age probes.
+**Countermeasure:** inspect transformed output for weekday and demographic clues as well as raw dates; replace stated ages under Q63/D68 and disclose the remaining weekday limit rather than claiming complete calendar concealment.
+**Status:** ages fixed in cycles 2 and 3 with red controls; weekday names stay in the package as a recorded limit.
+
+### R07-V-2: placeholder cardinality was decided before all values were known
+**What broke:** `docs/loop/round-07/round07-verify.md:112-118` and `round07-fix3-report.md:15`: two stated ages became the same [AGE] tag and prose restore returned the first age for both; metadata could render before page discovery established that numbering was necessary.
+**Why:** rendering chose a single-value representation before completing discovery of the value set that determines its grammar.
+**Caught by:** verifier finding 2; fix3's distinct-age and packet-preallocation controls.
+**Countermeasure:** discover all ages before rendering any packet field, use [AGE] for one distinct value and [AGE-n] for multiple values, restore each separately and refuse ambiguous legacy [AGE] prose; #R02-CX-5 also requires collision refusal.
+**Status:** fixed in cycle 3 with separate discovery, numbering and restoration seeds; D68's numbered-age chair ruling remains pending owner veto.
+
+### R07-CH-1: a fix builder changed owner practice to satisfy packaging
+**What broke:** `playbook/hearing.toml:2` header-block; `docs/loop/round-07/round07-fix2-report.md:24-26` reports the practice edit as a scope extension to satisfy the package's cite-format finding.
+**Why:** a builder changed the owner's practice contract to make a packaging test pass instead of implementing the package's instructions within its authorized scope.
+**Caught by:** chair at fix cycle 3; ledger Round 7 records the revert and relocation into drafter rule 8.
+**Countermeasure:** builder prompts say practice files (playbook/, rules.toml, cards text beyond the brief) are the owner's and are never edited to make a test pass; put package-specific cite instructions in the package drafter rules.
+**Status:** practice edit reverted by the chair and cite form moved into package drafter rule 8; prompt countermeasure applies to future builders.
+
+Round 7 repeats and dispositions (no duplicate entries or pre-flight bullets):
+
+- All 21 plan findings were real and accepted in brief §8. H1, M1, M7, M9, M10 and L1 to L6 repeat
+  #R03-PC-3/#R01-OC-M8: measure counts, scope, dependencies, serialization, current state and owner rulings.
+  H1's privacy over-block, M5's kept-name over-block and M6's wage-as-ZIP collision also repeat
+  #R01-CX-7/#R01-OC-H3's two-way regex controls. H2 is #R07-PC-2; H3 is #R04-PC-11's composed-gate
+  contract. M2 and L7 repeat #R01-V-B2/#R03-V-S1 (exercise the upgrade through real job callers and
+  prove the saved key cannot shrink); M3 repeats #R05-OC-3 (new semantic changes must reach counts
+  and freshness); M4 repeats #R01-CX-10 (a protected input masks a seed). M8 repeats #R04-V-2 and
+  #R04-PC-11: inspect placeholder-form prose outside structural numbers before canonical restoration.
+  L8 is #R07-CX-7's structural preservation class.
+- Code M2 repeats #R02-CX-5: shared surnames must refuse ambiguity rather than let dict(forms)
+  select the last identity. Fix1's ambiguity seed is red. L3 repeats #R01-OC-H2's alternate-label
+  coverage: dotted DOB, Birth date and Born are tested. L4 is #R07-PC-2's outward-diagnostic boundary;
+  invalid name-list kinds now identify table/index without the private name. L5 is #R07-CX-4.
+  L6 repeats #R06-PC-3: a legitimate known placeholder or kept-name variant must not make a clean
+  second pass impossible; fix1's exemption controls are red. L7 is #R07-OC-2. L8 repeats #R01-CX-9:
+  verdict totals must be derived from executed checks, not constant print strings; fixed in cycle 1.
+- Critic H1 repeats #R04-PC-7: verifying a quoted span does not verify prose numbers elsewhere in
+  that paragraph; fixed with #R07-OC-5's whole-token controls. H2's silent footnote loss is #R07-OC-2;
+  its unchecked uncited evidence also repeats #R04-PC-7. M1 is #R07-CX-2. M2 repeats #R04-PC-11:
+  the package must tell the drafter the firm rules, citation and quote syntax the importer enforces.
+  M4 repeats #R04-PC-6/#R03-OC-L1: package and status now disclose unread pages and their count.
+  L1 repeats #R04-PC-4's canonical-form contract; fix2 improves prose spelling but page-aware quotes
+  may retain a different spelling for the same date (fix2 report line 3, brief.py:232), still open.
+  L2, L3 and L4 repeat #R03-OC-L1/#R01-CX-9: supply the matter number, reconcile operation counts,
+  and make failure marks bold, highlighted and labelled by Bates; fixed in cycle 2. L5 repeats
+  #R01-CX-2's complete forbidden-class coverage: the draft now detects prohibited dashes without
+  changing owner practice. L6's age/weekday residue is #R07-OC-12; anchor wording and review-list
+  heading noise repeat #R03-OC-L1 and were fixed in cycle 2.
+- Verifier findings 1 and 3 repeat #R07-CX-4/#R01-OC-H2 (aged and another ordinal-date form);
+  finding 4 repeats #R07-CX-1/#R07-CX-4 (initial variants and residual-initial detection). Finding 5
+  repeats #R04-PC-9: a required non-tty ROLE NEEDED warning cannot depend on a document-rendering
+  path that brief-out never runs. All five verifier findings were addressed in fix3; #R07-V-2 holds
+  finding 2's complete-discovery requirement and the pending D68 ruling. All 12 verifier seeds went
+  red, including the carried S1/S3/S4; no newly surviving verifier seed is reported.
+- W1's pin inventory and variable collision, W1b's 13 versus 14 seed count and DMEreport regression,
+  lane A's folding/pattern variants, lane B's cross-cite rule boundary and predicted seed count,
+  and W5's stream, quote-oracle and stale/current discrepancies repeat #R03-PC-3, #R03-CX-5,
+  #R01-CX-7/#R01-OC-H3 and #R06-CX-16. Lane A's halt conflict is #R07-PC-2. Its missing audit
+  receipts repeat #R02-V-F1; grouped IDs and unseen years need the same complete-form controls.
+  Fix2's compact numeric-label regression is #R07-OC-5; the changed card pin and timing overrun
+  were disclosed and rechecked. Fix3's Stages 44 and 45. over-block repeats #R01-CX-7/#R01-OC-H3;
+  it remains a fail-closed limit, not an unreported fix.
+- Round 6 critic 2 M1 is closed by D65's composite fact identity and upgrade, W1's m1_fixed=1 and
+  the verifier's forged stored-file split. Its collision/provenance classes are #R02-CX-5/#R05-CX-5;
+  no duplicate identity entry. The verifier did not remeasure grouped multi-cite migration, so that
+  fix's evidence remains fix1's controls in #R07-CX-5. An upgrade surviving a later job failure fits
+  D65's before-any-other-write rule; it is recorded behavior, not a demonstrated new defect.
+- D67 leaves procedural.deadlines_stated quote-without-cite for stage 8 (#R04-PC-7); the stage 6/7
+  assertions do not close that exception. The organization's trailing legal suffix remains the
+  #R07-CX-1 alias-boundary limit. No round 6 practice or other explicitly deferred item is closed here.
+
+Prior entry IDs checked against this close (including process notes and combined headings):
+R01-CX-1, R01-CX-2, R01-CX-3, R01-CX-4, R01-CX-5, R01-CX-6, R01-CX-7, R01-CX-8, R01-CX-9,
+R01-OC-H1, R01-CX-10, R01-CX-11, R01-OC-H2, R01-OC-H3, R01-OC-M2, R01-OC-M7, R01-OC-M8,
+R01-V-B1, R01-V-B2, R01-V-B1b, R01-V-B3, R01-P-1, R01R-1, R01R-RX-1, R01R-RX-2, R01R-OC-F1,
+R01R-OC-F2, R02-CX-5, R02-CX-6, R02-V-F1, R02-V-F1b, R02-CX-7, R02-CH-1, R02-OC-H1, R02-P-1,
+R03-PC-1, R03-PC-2, R03-PC-3, R03-CX-1, R03-CX-2, R03-CX-3, R03-CX-4, R03-CX-5, R03-CX-6,
+R03-OC-M1, R03-OC-L1, R03-OC-L5, R03-V-S1, R03-V-L1, R03-P-1, R04-PC-1, R04-PC-4, R04-PC-6,
+R04-PC-7, R04-PC-9, R04-PC-11, R04-CX-1, R04-CX-3, R04-CX-7, R04-CX-9, R04-OC-1, R04-V-2,
+R04-CH-1, R05-PC-1, R05-PC-7, R05-PC-8, R05-PC-12, R05-PC-17, R05-CX-2, R05-CX-3, R05-CX-4,
+R05-CX-5, R05-CX-6, R05-CX-7, R05-CX-9, R05-OC-1, R05-OC-3, R05-V-1, R05-V-2, R06-PC-3,
+R06-PC-6, R06-PC-10, R06-PC-12, R06-CX-1, R06-CX-2, R06-CX-5, R06-CX-8, R06-CX-10, R06-CX-12,
+R06-CX-16, R06-CX-18, R06-OC-1, R06-OC-5, R06-OC-7, R06-OC-8, R06-CH-2.
+
 ## Open items a future pass must not re-discover
 
 - **Closed in round 5**: verifier L1 mixed-chunk test (#R01-V-B2, #R03-V-S1); verifier L2 citation digits
@@ -1039,24 +1209,39 @@ Round 6 repeats and dispositions (no duplicate pre-flight bullets):
 - **Q56 superseded by owner Q55** (#R05-PC-1, T-22): the reconcile requirement is withdrawn in favor of
   whole-matter cloud task runs at stage 7b. The current local path still finds 5 of 9 flags across three chunks;
   this is a disclosed limit, not a shipped cross-run fix or an open round 6 reconcile requirement.
-- **Verifier S1, CLI hearing flags** (#R01-V-B2, #R03-V-S1): swapping --doctor and --closing at cli.py:128
-  stays green (786 passed); add CLI section assertions per flag, including --outline and --client.
-- **Verifier S3, required quote and cite** (#R01-V-B2, #R04-PC-7): output schemas have no independent
-  assertion of the D44 required evidence keys; dropping questions.required quote stays green. Under that
-  mutation a question without quote crashes render at outputs.py:91; test schema requirements and fail closed.
-- **Verifier S4, card practice wording** (#R01-CX-10, #R03-PC-2): reversed treatment/bills wording is red
-  only through the card version pin; assert the required practice independently so re-pinning cannot hide it.
+- **Closed in round 7, verifier S1, S3 and S4** (#R01-V-B2, #R03-V-S1, #R04-PC-7, #R01-CX-10,
+  #R03-PC-2): W1b added independent CLI flag, evidence-schema and practice assertions plus the fail-closed
+  evidence guard; the blind verifier re-applied all three seeds and each went red, S4 also without its pin.
+  The stage 8 schema exception remains open below.
 - **Verifier note 3, hearing bare none** (#R06-OC-8): Defense report points prints none beneath later
   DEF0003 opinions after their conflict was already shown; omit it or name the earlier conflict block.
 - **Verifier note 4, chronology source placement** (#R05-CX-5): DEF0002's 06/20/2025 finding appears only
   as Also cited beneath the 03/11/2025 ER entry; the mirror report also has a trailing Also cited space.
-- **Verifier note 5, Imelda becomes defense** (#R03-CX-5): a word starting Ime matches the code-review
-  M2 ruling literally; show this false positive to the owner with the pending role-rule veto.
+- **Closed in round 7, verifier note 5 and critic 2 M1** (#R03-CX-5, #R02-CX-5, #R05-CX-5): an Ime
+  prefix now asks on a tty and prints ROLE NEEDED otherwise (D66, owner Q61); the folded quote plus date
+  plus provider identity and append-only upgrade separate the two dated findings (D65). W1 and the blind
+  verifier confirmed the identity split; fix3 added brief-out's missing non-tty role warning (#R04-PC-9).
 - **Code L7, oversize client packet** (#R04-PC-1): every deponent page is retained, so pages alone over
   budget defeat shrinking and the question step fails with zero facts; recorded tuning limit.
 - **Fix cycle 2 A2, stored date cannot be corrected** (#R06-CX-18): re-extracting the same quote and
   page cannot update its date; needs an append-only correction contract and regression control.
-- **Owner Q59 items 82 to 86, round 7**: 82 our-doctor testimony is preserved for the hearing, but purpose
+- **Round 7 fix cycle 2 L1, mixed date spelling** (#R04-PC-4): a restored quote keeps its page's date
+  spelling while prose uses the key's canonical spelling, so one date can have two forms in the same
+  document; fix2 report line 3 records the partial at brief.py:232. The quote ladder was not widened.
+- **Round 7 fix cycle 3 note, date-checker over-block** (#R01-CX-7, #R01-OC-H3, #R07-CX-4):
+  Stages 44 and 45. is rejected as a date; this remains a fail-closed false positive, unchanged in fix3.
+- **Round 7 weekday names** (#R07-OC-12): weekdays stay beside relative dates in the package; recorded
+  calendar-clue limit, even after the age and explicit-date fixes.
+- **Round 7 trailing organization suffix** (#R07-CX-1): [EMPLOYER] INC. can keep the organization's
+  trailing legal suffix after its placeholder; recorded limit, not a fully absorbed alias claim.
+- **D67, stage 8 procedural evidence** (#R04-PC-7): procedural.schema.json deadlines_stated items
+  carry quote without cite; the stage 6/7 13-of-13 check does not cover or fix this stage 8 exception.
+- **D68 numbered-age ruling pending owner veto** (#R07-V-2): one distinct age uses [AGE]; multiple
+  distinct ages use [AGE-n] after full discovery, each restoring separately. This refines Q63 by chair ruling.
+- **Round 6 critic 2 M2 to M6, practice follow-up** (#R06-OC-1, #R06-PC-10, #R06-OC-5): owner Q61
+  deferred these deposition-practice findings with the format specification and its 15 practice questions;
+  fixing fact identity M1 in round 7 does not close them.
+- **Owner Q59 items 82 to 86, deferred by Q61**: 82 our-doctor testimony is preserved for the hearing, but purpose
   still defaults to discovery with no logged implementation ruling (#R06-OC-1); 83 bills providers must come
   from the attorney's bill memo (#R06-PC-10); 84 add a caption using the placeholder-only format specification
   (#R03-OC-L1); 85 our-doctor primary must cover mechanism, injury, treatment, records reviewed, opinions and

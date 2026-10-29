@@ -22,9 +22,9 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
 - Standing freezes: none.
 - OCR tools (Q39): ocrmypdf and tesseract under `/opt/homebrew/bin`; `scripts/run.sh` appends it to PATH.
 - Privacy: no real client record, name or fact in any loop session; fixtures are invented.
-- Regression baselines (set at the round 6 merge, 2026-10-28, tip of `loop/round-06`; the key gained DEF0002's seven
-  facts and the bench line `dates_wrong=`, both deliberate): `scripts/run.sh pytest -q` -> `786 passed` (under 90 s:
-  `scripts/run.sh scripts/suite_time.sh 3` -> `verdict=PASS`, max about 67 s); `scripts/run.sh python -m casefile.gate`
+- Regression baselines (set at the round 7 close, 2026-10-28, tip of `loop/round-07`; round 7 moved `casefile_lines`
+  56 to 55 deliberately, fact identity D65): `scripts/run.sh pytest -q` -> `993 passed` (under 90 s:
+  `scripts/run.sh scripts/suite_time.sh 3` -> `verdict=PASS`, max about 85 s); `scripts/run.sh python -m casefile.gate`
   -> `0`; `scripts/run.sh python scripts/unused_imports.py src tests scripts` -> `unused_imports=0`; `casefile bench
   --config config.example.toml --matters tests/fixtures/matters --candidate tests/fixtures/bench/flawed.json` -> exit 1,
   `bench 9001.001 model=candidate found=26 of 36 missed=10 invented=2 extra=2 dates_wrong=1 flags=8 of 9 flags_missed=1
@@ -34,8 +34,9 @@ Seeded 2026-10-25; round 1 opened 2026-10-25 on `loop/round-01`.
   test_jobs=1`; stage 2 exit test `stage2 exit=0 runs=+1 answers_ok=+1 server_stopped=1`; stage 3 exit test `stage3
   exit=1 pages=6 ids_ok=6 of 6 stamps_ok=6 of 6 text_ok=6 of 6 must_ok=5 of 5 empty=1 failed=0 min_ratio=1.000`; stage 4
   exit test `stage4 exit=0 gates=6 of 6 cases=14 of 14 runs=+14 answers=+21 empty_saved=0 server_stopped=1`; stage 5 exit
-  test `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=56 chain_ok=1 server_stopped=1`; stage 6 exit
-  test `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1` (eight `stage6` lines); doctor
+  test `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=55 chain_ok=1 server_stopped=1`; stage 6 exit
+  test `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1` (eight `stage6` lines); stage 7 exit test
+  `stage7 exit=0 packages=2 of 2 blocked_seeded=1 of 1 drafts=2 of 2 answers=+8 identifiers_in_package=0 server_stopped=1`; doctor
   `runlog_schema PASS schema=2 triggers=21 (counted)`; intake of the fixture `intake 9002.001 scan pages=6 ok=5 empty=1
   failed=0 stamps=6 had_text=2 ocr_added=4`, exit 1.
 - Records: Librarian.md · docs/loop/round-NN/ · docs/loop/agent-log.md · docs/loop/questions-for-owner.md ·
@@ -1047,6 +1048,12 @@ matter; re-import fact-checks a draft. All records are invented fixtures.
     stage 5 `stage5 exit=0 runs=4 of 4 memos=3 of 3 answers=+4 casefile_lines=55 chain_ok=1 server_stopped=1`; stage 6
     `stage6 exit=0 docs=6 of 6 answers=+16 rule_hits=0 server_stopped=1`. 12 of 12 seeds RED, every file restored
     (`cmp` identical, `git status` unchanged). Report `docs/loop/round-07/round07-verify.md`.
+- Fix cycle 3 (chair, 2026-10-28, after the verifier's PASS on 68f57fa): the verifier's five open findings, three of them
+  reproduced by the chair as leaks through the identifier check (`Aged 44`, `the 11th of [MONTH M+0]`, `M. [CLAIMANT]`),
+  fixed at b7e4184 (993 passed, gate 0, every baseline and exit line unchanged). Chair ruling pending owner veto: one
+  distinct stated age stays `[AGE]` (Q63); two or more distinct ages are `[AGE-1]`, `[AGE-2]` (spec D68). Chair reverted
+  a fix cycle 2 edit to `playbook/hearing.toml` (practice text is the owner's; #R07-CH-1) and put the cite form in drafter
+  rule 8.
 - Chair rulings on the brief (2026-10-28): plan review (fresh Fable) 3 high, 10 med, 8 low, all 21 ACCEPTED in the
   revision; chair reproduced H1, H2, M1 and measured the key: 1 pair collides under the folded quote (`straight leg raise
   negative bilaterally`, MED0002 03/11/2025 vs DEF0002 06/20/2025), 0 under quote plus date plus provider. H2 ruling: the

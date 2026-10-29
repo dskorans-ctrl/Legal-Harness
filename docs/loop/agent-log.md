@@ -172,3 +172,24 @@ gpt-6.1-sol (plan and round review). No Fable agent beyond the brief and its rev
 | 19 | Output critic second grading (after fix cycles 2 and 3) | opus (fresh) | 5.2 min | 155 k | done; 7/10, high 0, med 6, low 9; earlier findings 19 fixed, 0 worse; M1 fact identity to round 7 |
 | 20 | Librarian close | codex gpt-6.1-sol (medium) | about 25 min | | done; 17 entries, 16 pre-flight bullets; its gate run printed 1 inside its own sandbox (socket binding denied), chair re-ran: 0 |
 | | **Round 6 total** | | **about 8 h wall-clock (09:48 to about 18:00), owner present** | **Fable about 2.3 M (brief and three revisions 688 k, cloud proposal 249 k, plan review 217 k, code review 203 k); Codex gpt-6.1-sol 9 runs (W1, two lane A and B runs plus a restart, W8, three fix cycles, Librarian); Opus about 940 k (critic 153 k and 155 k, format spec 212 k, verifier 204 k); chair not counted** | PASS after three fix cycles; merged to local main |
+
+## Round 7 (stage 7 anonymizer and brief package, opened 2026-10-28 on `loop/round-07`; owner check-in Q61 at the open, same session as round 6 by owner Q60)
+
+| # | Task | Tier | Elapsed | Tokens | Outcome |
+|---|---|---|---|---|---|
+| 1 | Build brief | fable | 20.6 min | 471 k | done; 720 lines; questions 88 to 95 |
+| 2 | Plan review | fable (fresh, read-only) | 14.0 min | 244 k | 3 high, 10 med, 8 low |
+| 3 | Brief revision | fable (resumed) | 6.1 min | 512 k (cumulative) | 21 accepted, 0 rejected; 867 lines |
+| 4 | W1 fact identity and split | codex gpt-6.1-sol | | | done; committed 335a854 |
+| 5 | W1b roles, name list tables, S1 S3 S4, privacy row | codex gpt-6.1-sol | | | done; committed 4bffb26 |
+| 6 | Lane A W2, W3 anonymizer | codex gpt-6.1-sol | | | done; committed b0e46da; one brief conflict ruled by the chair |
+| 7 | Lane B W4 package and draft check (worktree) | codex gpt-6.1-sol | | | done; committed f1c9206; merged |
+| 8 | W5 jobs and stage 7 exit test | codex gpt-6.1-sol | | | done; committed 99fb224 |
+| 9 | 8a code review | fable (fresh, read-only) | 15.5 min | 276 k | 1 high, 4 med, 8 low; H1 and M3 reproduced as leaks |
+| 10 | Fix cycle 1 | codex gpt-6.1-sol | | | 13 of 13 fixed; a06a256 |
+| 11 | 8b output critic | opus (fresh) | 9.2 min | 139 k | 6/10, high 2, med 4, low 6 |
+| 12 | Fix cycle 2 | codex gpt-6.1-sol | | | 12 fixed (L1 partly); chair reverted a playbook edit; 68f57fa |
+| 13 | 8c blind verifier | opus (fresh) | 13.7 min | 187 k | PASS; 12 seeds red; five open findings |
+| 14 | Fix cycle 3 | codex gpt-6.1-sol | | | 5 of 5 fixed; b7e4184 |
+| 15 | Librarian close | codex gpt-6.1-sol (medium) | | | see Librarian `## Round 7` |
+| | **Round 7 total** | | **same session as round 6, owner present** | **Fable about 1.5 M; Codex gpt-6.1-sol 10 runs; Opus about 330 k; chair not counted** | PASS; fix cycles 3 of 3 |
