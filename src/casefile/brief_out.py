@@ -29,6 +29,8 @@ def run(config, number, issue, *, out, err, opener=None, stdin=None, pages_all=F
         with outputs.start(config, number, 'brief', opener=opener, stdin=stdin, out=out) as started:
             value = packet.build(started.casefile, started.loaded.pages, matter=number, task='brief',
                                  options={'issue': issue}, playbook_version=started.book.version)
+            used = {p.page_id for p in value.pages}
+            used.update(pid for flag in value.flags for pid in flag['page_ids'])
             # Entity discovery covers the full matter, including pages without an extracted fact.
             value = replace(value, pages=tuple(started.loaded.pages))
             common = dict(client=started.client, rules=started.book.rules, log=started.log,
@@ -39,6 +41,9 @@ def run(config, number, issue, *, out, err, opener=None, stdin=None, pages_all=F
             info = listed.info or started.info
             anonymous, key = anon_job.anonymize(value, folder=started.folder, info=info, hits=hits)
             protected = anon.protected(value.pages)
+            if not pages_all:
+                value = replace(value, pages=tuple(p for p in value.pages if p.page_id in used))
+                anonymous = replace(anonymous, pages=tuple(p for p in anonymous.pages if p.page_id in used))
             markdown = brief.package_text(value, started.casefile, value.pages, info, issue=issue,
                 keep=listed.kept, rules_text=anon.drafter_rules(), pages_all=pages_all,
                 transform=lambda s: anon.text(s, key, protected=protected))
@@ -55,7 +60,9 @@ def run(config, number, issue, *, out, err, opener=None, stdin=None, pages_all=F
                                          run_id=hits.run_ids[0], **common)
             if not verdict.ok:
                 for step, kind, offset in verdict.hits:
-                    print(f'brief-out: blocked at step {step} ({kind}, offset {offset}); nothing was written', file=err)
+                    remedy = ('retry the identifier pass' if kind == 'model' else
+                              'correct matter.toml [anon.people], [anon.organizations] or [anon.aliases] and rerun')
+                    print(f'brief-out: blocked at step {step} ({kind}, offset {offset}); {remedy}; nothing was written', file=err)
                 return 1
             review = anon.review(markdown, key, listed, anonymous.pages)
             files['check.txt'] = (f'steps=1,2,3,4,5 check=pass leaks=0 entities={len(hits)} '

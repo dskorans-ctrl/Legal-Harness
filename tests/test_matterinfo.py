@@ -158,7 +158,7 @@ def test_matterinfo(tmp_path, monkeypatch):
         (folder / 'matter.toml').write_text('[anon.people]\nInvented="adjuster"\n', encoding='utf-8')
         assert matterinfo.load(folder).anon_people == {'Invented': 'adjuster'}
     case('anon_fixture', anon_fixture)
-    case('anon_kind', lambda: refuse('[anon.people]\nInvented="unknown"\n', 'anon.people.Invented'))
+    case('anon_kind', lambda: refuse('[anon.people]\nInvented="unknown"\n', 'anon.people entry 1'))
     def anon_roundtrip():
         target = tmp_path / 'anon-roundtrip'
         shutil.copytree(FIXTURE, target)
@@ -172,7 +172,7 @@ def test_matterinfo(tmp_path, monkeypatch):
         assert '["anon"."people"]' in (target / 'matter.toml').read_text(encoding='utf-8')
     case('anon_roundtrip', anon_roundtrip)
     case('anon_type', lambda: refuse('[anon]\nemployer=1\n', 'anon.employer'))
-    print(f'matterinfo_ok={len(passed)} of 18')
+    print(f'matterinfo_ok={len(passed)} of {len(passed) + len(failures)}')
     assert len(passed) == 18, f"matterinfo_ok={len(passed)} of 18; {failures}"
 
 

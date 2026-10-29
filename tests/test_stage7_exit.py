@@ -53,12 +53,42 @@ def _private_values(info):
 
 
 def _identifiers(text, info):
-    return sum(text.count(value) for value in _private_values(info) if value) + len(
-        re.findall(r'\b\d{1,2}/\d{1,2}/\d{4}\b', text))
+    # This oracle is deliberately independent of anon.variants and its date readers.
+    text = re.sub(r'\[(?!cite |page )[^\]\n]+\]', '', text)
+    patterns = {re.escape(value) for value in _private_values(info) if value}
+    for full in info.anon_people:
+        words = full.removeprefix('Dr. ').split()
+        given, surname = words[0], words[-1]
+        patterns.update((re.escape(given), re.escape(surname), re.escape(full),
+                         re.escape(surname) + r',\s*' + re.escape(given),
+                         re.escape(given) + r'\s+[A-Z]\.?\s+' + re.escape(surname)))
+    for organization in (info.anon_employer, *(n for n, k in info.anon_organizations.items() if k in ('employer', 'other'))):
+        words = organization.replace('.', '').replace(',', '').split()
+        if words and words[-1].casefold() in ('llc', 'inc', 'co', 'corp'):
+            words.pop()
+        if words:
+            patterns.add(r'[ .,]+'.join(re.escape(word) for word in words))
+    patterns.update(re.escape(alias) for alias, target in info.anon_aliases.items()
+                    if target not in info.anon_keep and info.anon_people.get(target) != 'adjuster'
+                    and info.anon_organizations.get(target) not in ('provider', 'insurer'))
+    names = sum(len(re.findall(r'(?<!\w)' + pattern + r'(?!\w)', text, re.I)) for pattern in patterns)
+    calendar = (r'\b\d{1,4}[/-]\d{1,2}[/-]\d{2,4}\b|'
+                r'\b(?:Jan\w*|Feb\w*|Mar\w*|Apr\w*|May|Jun\w*|Jul\w*|Aug\w*|Sep\w*|Oct\w*|Nov\w*|Dec\w*)'
+                r'\.?\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s+\d{2,4})?|'
+                r'\b\d{1,2}\s+[A-Za-z]{3,9}\.?\s+\d{4}\b')
+    return names + len(re.findall(calendar, text, re.I))
 
 
 def _read_package(target, *, transform=lambda s: s):
     return transform((target / 'package.md').read_text(encoding='utf-8')), (target / 'package.json').read_text(encoding='utf-8')
+
+
+@pytest.mark.parametrize('value', ['Morgan', 'Ashby-Vale', 'ASHBY-VALE, MORGAN',
+    'Morgan A. Ashby-Vale', 'Morgan A.', 'Quarry Ridge Logistics, LLC', 'Quarry Ridge Logistics',
+    'MAV', '3/11/25', 'March 11th, 2025', '11 March 2025', 'Mar. 11 2025'])
+def test_identifier_oracle_detects_each_variant(value):
+    info = replace(matterinfo.load(FIXTURE), anon_aliases={'MAV': 'Morgan Ashby-Vale'})
+    assert _identifiers(value, info) > 0, 'exit oracle missed a planted identifier'
 
 
 def _summary(result):
@@ -79,7 +109,7 @@ def test_stage7_exit(tmp_path, capsys):
     server = serve(port=0, model=fake)
     thread = Thread(target=server.serve_forever)
     thread.start()
-    lines, errors = [], []
+    lines = []
     packages = identifiers = answers = drafts_ok = blocked_ok = 0
     try:
         path = write_config(tmp_path, host=f'http://127.0.0.1:{server.server_port}', playbook=ROOT / 'playbook')
@@ -122,7 +152,13 @@ def test_stage7_exit(tmp_path, capsys):
             anon.mapping(anon.names(info), [], value.pages, key)
             anonymous = anon.packet(value, key)
             second = _answer('entities-empty' if number == NUMBER else 'entities-second-hit')
-            fake.record(recording_for(cards.card('07-ANON'), anonymous.pages, number, second))
+            second_pages = anonymous.pages
+            if number != NUMBER:
+                used = {fact.page_id for fact in anonymous.facts}
+                used.update(pid for flag in anonymous.flags for pid in flag['page_ids'])
+                second_pages = tuple(p for p in anonymous.pages if p.page_id in used)
+                second['pages_seen'] = [p.page_id for p in second_pages]
+            fake.record(recording_for(cards.card('07-ANON'), second_pages, number, second))
 
         good = cli(NUMBER, 'brief-out', 'Review the records', '--pages', 'all')
         targets = list((folders[NUMBER] / 'outbox').glob('[a-f0-9]' * 12))
@@ -170,6 +206,41 @@ def test_stage7_exit(tmp_path, capsys):
                      f'people=46 employer=8 ids=3 dob=14 dates=61 years=2 kept_orgs=6 leaks=0 review={review} '
                      'key_mode=600 facts=38 conflicts=5 exit=0')
 
+        # A new, uncited page exercises the default packet boundary without moving the 14-page baselines.
+        extra = folders[NUMBER] / 'records/medical/009.txt'
+        extra.write_bytes((ANSWERS.parent / 'variant-page.txt').read_bytes())
+        full = pages.load(settings.paths.matters, NUMBER, settings.ocr.stamp_pattern)
+        first = _answer('entities')
+        first['pages_seen'] = [p.page_id for p in full.pages]
+        fake.record(recording_for(cards.card('07-ANON'), full.pages, NUMBER, first))
+        listed = anon.names(info)
+        anon.mapping(listed, [], full.pages, key)
+        converted = anon.packet(replace(anonymous, pages=full.pages), key)
+        used = {fact.page_id for fact in anonymous.facts}
+        used.update(pid for flag in anonymous.flags for pid in flag['page_ids'])
+        selected = tuple(p for p in converted.pages if p.page_id in used)
+        for part in (converted.pages, selected):
+            second = _answer('entities-empty')
+            second['pages_seen'] = [p.page_id for p in part]
+            fake.record(recording_for(cards.card('07-ANON'), part, NUMBER, second))
+        default = cli(NUMBER, 'brief-out', 'Review selected records')
+        assert default.returncode == 0 and not default.stderr, default.stdout + default.stderr
+        default_id = re.search(r'packet=([a-f0-9]+)', default.stdout)[1]
+        default_md, default_json = _read_package(folders[NUMBER] / 'outbox' / default_id)
+        default_packet = packet.Packet.from_json(default_json)
+        assert [p.page_id for p in default_packet.pages] == [p.page_id for p in selected], 'M1: default JSON carries unused pages'
+        assert '## Pages' not in default_md
+        assert _identifiers(default_md + default_json, info) == 0
+        # The new page itself must round-trip and pass the independent leak oracle.
+        variant = converted.pages[-1] if converted.pages[-1].stamps == ('VAR0001',) else next(p for p in converted.pages if p.stamps == ('VAR0001',))
+        source = next(p for p in full.pages if p.stamps == ('VAR0001',))
+        assert _identifiers(variant.text, info) == 0, 'H1/M3: variant fixture leaks'
+        assert anon.restore_quote(variant.text, key, source) == source.text
+        assert variant.text.count('\n') == source.text.count('\n')
+        identifiers += _identifiers(default_md + default_json + variant.text, info)
+        packages += 1
+        lines.append(f'stage7 default pages={len(full.pages)} pages_in_package={len(default_packet.pages)} identifiers_in_package=0 exit=0')
+
         blocked = cli('9001.002', 'brief-out', 'Review the records')
         folder = folders['9001.002']
         written = int((folder / 'outbox').exists())
@@ -178,7 +249,9 @@ def test_stage7_exit(tmp_path, capsys):
         assert key_leak == 0, f'key_leak={key_leak}'
         assert written == 0, f'package_written={written}'
         assert blocked.returncode == 1 and key_written == 1, blocked.stdout + blocked.stderr
-        assert re.fullmatch(r'brief-out: blocked at step 4 \(person, offset \d+\); nothing was written\n', blocked.stdout + blocked.stderr)
+        assert 'matter.toml [anon.people]' in blocked.stdout + blocked.stderr and '[anon.aliases]' in blocked.stdout + blocked.stderr, 'L6: block message lacks name-list remedy'
+        assert re.fullmatch(r'brief-out: blocked at step 4 \(person, offset \d+\); correct matter.toml \[anon.people\], '
+                           r'\[anon.organizations\] or \[anon.aliases\] and rerun; nothing was written\n', blocked.stdout + blocked.stderr)
         assert blocked.stderr == ''
         assert (folder / 'anon/key.json').stat().st_mode & 0o777 == 0o600
         blocked_ok = 1
@@ -227,19 +300,19 @@ def test_stage7_exit(tmp_path, capsys):
                                  for row in log.connection.execute(f'SELECT message FROM {table}'))
         exported += ''.join(p.read_text(encoding='utf-8') for p in target.iterdir())
         assert _identifiers(exported + good.stdout + good.stderr, info) == 0, 'key_leak=1'
-        assert answers == 6 and sum(r['path'] == '/api/chat' for r in fake.requests) == 6
+        assert answers == 8 and sum(r['path'] == '/api/chat' for r in fake.requests) == answers
         assert all((folder / 'matter.toml').read_bytes() == metadata[number] for number, folder in folders.items())
     finally:
         server.shutdown()
         thread.join(timeout=5)
         stopped = not thread.is_alive()
         server.server_close()
-    failed = bool(errors or packages != 1 or blocked_ok != 1 or drafts_ok != 2 or answers != 6 or identifiers or not stopped)
-    lines.append(f'stage7 exit={int(failed)} packages={packages} of 1 blocked_seeded={blocked_ok} of 1 '
+    failed = bool(packages != 2 or blocked_ok != 1 or drafts_ok != 2 or answers != 8 or identifiers or not stopped)
+    lines.append(f'stage7 exit={int(failed)} packages={packages} of 2 blocked_seeded={blocked_ok} of 1 '
                  f'drafts={drafts_ok} of 2 answers={answers:+d} identifiers_in_package={identifiers} server_stopped={int(stopped)}')
     with capsys.disabled():
         print('\n'.join(lines), flush=True)
-    assert not failed, '\n'.join(errors)
+    assert not failed, '\n'.join(lines)
 
 
 @pytest.mark.parametrize('bad', ['[DR-999]', '[DR 3]', '[Dr-3]', '[DATE]', '[DR-n]', '[DATE D+99999]',

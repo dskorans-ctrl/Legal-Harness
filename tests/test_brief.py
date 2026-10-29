@@ -15,6 +15,15 @@ FIXTURES = ROOT / 'tests/fixtures/anonymizer/9001.001'
 RULES_TEXT = 'Drafter rules supplied by the caller. Keep [DR-n] and [DATE D+n] unchanged.'
 
 
+def contract_totals(results):
+    return ' '.join(f'{kind}_ok={sum(rows)} of {len(rows)}' for kind, rows in results.items())
+
+
+@pytest.fixture(scope='module')
+def contract_results():
+    return {'package': [], 'draft': []}
+
+
 def draft_file(tmp_path, name='draft', *, table=False):
     paragraphs = (FIXTURES / (name + '.txt')).read_text(encoding='utf-8').splitlines()
     doc = Document()
@@ -56,7 +65,8 @@ def saved(tmp_path, report, info, rules):
 
 
 @pytest.mark.parametrize('row', range(9))
-def test_package_contract(tmp_path, row):
+def test_package_contract(tmp_path, row, contract_results):
+    contract_results['package'].append(False)
     _, _, folder, loaded, cf, book = setup_case(tmp_path)
     info = matterinfo.load(folder)
     value = packet.build(cf, loaded.pages, matter=loaded.number, task='brief', options={},
@@ -144,10 +154,12 @@ def test_package_contract(tmp_path, row):
         blocks = '\n\n'.join(f'=== PAGE {p.page_id} BATES {" ".join(p.stamps)} ===\n' +
                                p.text.replace('Patient:', 'Subject:') + '\n' for p in loaded.pages)
         assert text.split('## Pages\n\n', 1)[1] == blocks + '\n', 'all page blocks must preserve page order'
+    contract_results['package'][-1] = True
 
 
 @pytest.mark.parametrize('row', range(10))
-def test_draft_contract(tmp_path, row, monkeypatch):
+def test_draft_contract(tmp_path, row, monkeypatch, contract_results):
+    contract_results['draft'].append(False)
     _, _, folder, loaded, _, book = setup_case(tmp_path)
     rules, pages = book.rules, loaded.pages
     path, paragraphs = draft_file(tmp_path, table=True)
@@ -211,11 +223,27 @@ def test_draft_contract(tmp_path, row, monkeypatch):
         assert text.index('Fact check') > text.index('Draft')
         assert 'Checks: 0 of 1; failures: 1; uncited: 0; rule hits: 0; skipped: 0' in text
         assert len(report.paragraphs) == 1
+    contract_results['draft'][-1] = True
 
 
-def test_contract_totals(capsys):
+def test_contract_totals(capsys, contract_results):
     with capsys.disabled():
-        print('package_ok=9 of 9 draft_ok=10 of 10')
+        print(contract_totals(contract_results))
+
+
+@pytest.mark.parametrize('text', ['“Changed words.” [cite MED0001]',
+    '“Unclosed quotation [cite MED0001]', '"Unclosed quotation [cite MED0001]'])
+def test_l7_curly_or_unparsable_quote_fails(tmp_path, text):
+    _, _, _, loaded, _, book = setup_case(tmp_path)
+    report = check([text], loaded.pages, book.rules)
+    assert (report.checks, report.total, report.failed) == (0, 1, 1), 'L7: quote verification silently skipped'
+
+
+def test_l8_totals_measure_executed_cases():
+    summary = globals().get('contract_totals')
+    assert callable(summary), 'L8: contract totals cannot measure executed cases'
+    assert summary({'package': [True, False], 'draft': [True]}) == 'package_ok=1 of 2 draft_ok=1 of 1'
+    assert summary({'package': [], 'draft': []}) == 'package_ok=0 of 0 draft_ok=0 of 0'
 
 
 @pytest.mark.parametrize('command, positional, options', [

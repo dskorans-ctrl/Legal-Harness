@@ -37,6 +37,7 @@ class MatterInfo:
     anon_keep: tuple[str, ...] = ()
     anon_people: dict[str, str] = field(default_factory=dict)
     anon_organizations: dict[str, str] = field(default_factory=dict)
+    anon_aliases: dict[str, str] = field(default_factory=dict)
     folder: Path | None = field(default=None, compare=False)
     has_header: bool = field(default=False, compare=False)
 
@@ -46,7 +47,7 @@ def document(folder):
     try:
         return tomllib.loads(path.read_text(encoding='utf-8')) if path.exists() else {}
     except (OSError, UnicodeError, tomllib.TOMLDecodeError) as exc:
-        raise MatterInfoError(f'{path}: {exc}') from exc
+        raise MatterInfoError(f'{path}: cannot read or parse; correct matter.toml syntax') from exc
 
 
 def load(folder) -> MatterInfo:
@@ -93,7 +94,7 @@ def load(folder) -> MatterInfo:
         if role not in ('defense','ours','other') or binder not in binders:
             refuse('roles.' + binder)
     anon = data.get('anon', {})
-    anon_keys = {'employer', 'dob', 'ids', 'places', 'keep', 'people', 'organizations'}
+    anon_keys = {'employer', 'dob', 'ids', 'places', 'keep', 'people', 'organizations', 'aliases'}
     if not isinstance(anon, dict):
         refuse('anon')
     if anon.keys() - anon_keys:
@@ -110,9 +111,18 @@ def load(folder) -> MatterInfo:
         values = anon.get(key, {})
         if not isinstance(values, dict):
             refuse('anon.' + key)
-        for name, value in values.items():
+        for index, (name, value) in enumerate(values.items(), 1):
             if not name.strip() or not isinstance(value, str) or value not in kinds:
-                refuse(f'anon.{key}.{name}')
+                refuse(f'anon.{key} entry {index}; correct the name and choose a listed kind')
+    aliases = anon.get('aliases', {})
+    if not isinstance(aliases, dict):
+        refuse('anon.aliases; correct the alias table')
+    listed = {*anon.get('people', {}), *anon.get('organizations', {}), *anon.get('places', []),
+              *anon.get('keep', []), header.get('client_name', ''), header.get('treating_physician', ''),
+              anon.get('employer', '')} - {''}
+    for index, (alias, target) in enumerate(aliases.items(), 1):
+        if not alias.strip() or not isinstance(target, str) or target not in listed:
+            refuse(f'anon.aliases entry {index}; correct the alias and use a listed full name')
     anon_values = {'anon_' + key: tuple(value) if key in ('ids', 'places', 'keep') else value
                    for key, value in anon.items()}
     return MatterInfo(**header, issues=tuple(issues), standard=hearing.get('standard',''),
@@ -131,7 +141,7 @@ def write(folder, info):
     if info.roles:
         data['roles'] = info.roles
     data['anon'] = {key: getattr(info, 'anon_' + key) for key in
-                    ('employer', 'dob', 'ids', 'places', 'keep', 'people', 'organizations')}
+                    ('employer', 'dob', 'ids', 'places', 'keep', 'people', 'organizations', 'aliases')}
     lines = []
     for key,value in data.items():
         if not isinstance(value, dict):

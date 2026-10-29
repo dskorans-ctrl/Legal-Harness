@@ -120,19 +120,24 @@ class CaseFile:
                 found[data["fact"]].reading_pages.append(data["page_id"])
             elif event.kind == "split":
                 fact = found[data["fact"]]
-                index = fact.page_ids.index(data["page_id"])
-                moved = [text for text, page_id in zip(fact.readings, fact.reading_pages)
-                         if page_id == data["page_id"]]
+                moves = [data, *data.get("moves", [])]
+                pages = [move["page_id"] for move in moves]
+                moved = [(text, page_id) for text, page_id in zip(fact.readings, fact.reading_pages)
+                         if page_id in pages]
+                for move in moves:
+                    if not any(page_id == move["page_id"] for _, page_id in moved):
+                        moved.append((move["text"], move["page_id"]))
                 kept = [(text, page_id) for text, page_id in zip(fact.readings, fact.reading_pages)
-                        if page_id != data["page_id"]]
+                        if page_id not in pages]
                 fact.readings = [text for text, _ in kept]
                 fact.reading_pages = [page_id for _, page_id in kept]
+                indices = [i for i, page_id in enumerate(fact.page_ids) if page_id in pages]
                 for values in (fact.cites, fact.page_ids, fact.dates, fact.providers):
-                    values.pop(index)
-                readings = moved or [data["text"]]
-                found[data["to"]] = Fact(data["to"], fact.quote, [data["cite"]],
-                    [data["page_id"]], readings, [data["page_id"]] * len(readings),
-                    [data["date"]], fact.category, [data["provider"]])
+                    for index in reversed(indices):
+                        values.pop(index)
+                found[data["to"]] = Fact(data["to"], fact.quote, [move["cite"] for move in moves],
+                    pages, [text for text, _ in moved], [page_id for _, page_id in moved],
+                    [move["date"] for move in moves], fact.category, [move["provider"] for move in moves])
         return list(found.values())
 
     @property
@@ -212,6 +217,7 @@ def _decode(raw):
                     or not isinstance(obj["kind"], str) or obj["kind"] not in FIELDS
                     or not isinstance(obj["payload"], dict)
                     or (set(obj["payload"]) != FIELDS[obj["kind"]]
+                        and not (obj["kind"] == "split" and set(obj["payload"]) == FIELDS["split"] | {"moves"})
                         and not (obj["kind"] in ("fact", "cite")
                                  and set(obj["payload"]) == FIELDS_V1[obj["kind"]]))):
                 raise _broken(index)
@@ -224,12 +230,27 @@ def _decode(raw):
                 ids[obj["kind"]].add(ident)
             if obj["kind"] == "split":
                 data = obj["payload"]
-                if (not all(isinstance(value, str) for value in data.values())
+                if (not all(isinstance(data[key], str) for key in FIELDS["split"])
                         or data["fact"] not in ids["fact"] or data["to"] in ids["fact"]):
                     raise _broken(index)
                 source = next(fact for fact in casefile.facts if fact.id == data["fact"])
-                if data["page_id"] not in source.page_ids or len(source.page_ids) < 2:
+                extra = data.get("moves", [])
+                if (not isinstance(extra, list) or any(not isinstance(move, dict)
+                        or set(move) != {"page_id", "cite", "date", "provider", "text"}
+                        or not all(isinstance(value, str) for value in move.values()) for move in extra)):
                     raise _broken(index)
+                moves = [data, *extra]
+                moved_pages = [move["page_id"] for move in moves]
+                wanted = identity(source.quote, data["date"], data["provider"])
+                if (len(set(moved_pages)) != len(moved_pages) or len(moved_pages) >= len(source.page_ids)
+                        or any(page_id not in source.page_ids for page_id in moved_pages)
+                        or any(identity(source.quote, move["date"], move["provider"]) != wanted for move in moves)):
+                    raise _broken(index)
+                for move in moves:
+                    i = source.page_ids.index(move["page_id"])
+                    if (move["cite"] != source.cites[i]
+                            or move["date"] != source.dates[i] or move["provider"] != source.providers[i]):
+                        raise _broken(index)
                 ids["fact"].add(data["to"])
             casefile.events.append(Event(obj["kind"], obj["payload"], obj["seq"], obj["at"], obj["prev"]))
         except (jsonrepair.RepairError, UnicodeDecodeError) as exc:
@@ -290,14 +311,19 @@ def upgrade_events(casefile) -> list[Event]:
     events = []
     for fact in casefile.facts:
         first = identity(fact.quote, fact.dates[0], fact.providers[0])
+        groups = {}
         for cite, page_id, date, provider in zip(fact.cites, fact.page_ids, fact.dates, fact.providers):
-            if identity(fact.quote, date, provider) == first:
+            ident = identity(fact.quote, date, provider)
+            if ident == first:
                 continue
             text = next((text for text, source in zip(fact.readings, fact.reading_pages)
                          if source == page_id), "")
-            events.append(Event("split", dict(fact=fact.id, page_id=page_id,
-                to=f"F{casefile.last_seq + len(events) + 1}", cite=cite, date=date,
-                provider=provider, text=text)))
+            groups.setdefault(ident, []).append(dict(page_id=page_id, cite=cite, date=date, provider=provider, text=text))
+        for moves in groups.values():
+            payload = dict(fact=fact.id, to=f"F{casefile.last_seq + len(events) + 1}", **moves[0])
+            if len(moves) > 1:
+                payload["moves"] = moves[1:]
+            events.append(Event("split", payload))
     return events
 
 

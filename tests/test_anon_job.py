@@ -88,8 +88,62 @@ def test_entity_four(tmp_path):
         with pytest.raises(anon_job.EntityError,match='kind=model'):
             anon_job.entity_pass(loaded.pages,**pass_args(log,settings,transport(loaded.pages,good,mode='bad_schema')))
         results.append(not (folder/'anon').exists() and not (folder/'outbox').exists())
-    print(f'entity_pass={sum(results)} of 4')
+    print(f'entity_pass={sum(results)} of {len(results)}')
     assert all(results),f'entity_pass={sum(results)} of 4'
+
+
+def test_h1_aliases_roundtrip_and_unnumbered_remedy(tmp_path):
+    folder, _, loaded, info = load(tmp_path)
+    path = folder / 'matter.toml'
+    path.write_text(path.read_text(encoding='utf-8') + '\n[anon.aliases]\n'
+        '"MAV" = "Morgan Ashby-Vale"\n"QRL" = "Quarry Ridge Logistics LLC"\n', encoding='utf-8')
+    info = matterinfo.load(folder)
+    matterinfo.write(folder, info)
+    listed = anon.names(matterinfo.load(folder))
+    key = anon.mapping(listed, [], loaded.pages, anon.Key(anchor='2025-03-11'))
+    assert anon.text('MAV QRL', key, protected=()) == '[CLAIMANT] [EMPLOYER]', 'H1: aliases lack canonical tags'
+    assert not anon.check_code(b'MAV QRL', key, listed, loaded.pages).ok
+    anon.save_key(folder, key)
+    assert anon.text('MAV QRL', anon.load_key(folder), protected=()) == '[CLAIMANT] [EMPLOYER]'
+    hit = anon.Hit('Invented abbreviation', 'claimant', 'Invented abbreviation', 'MED0001')
+    # An existing unnumbered kind asks for the listed target rather than adding a second claimant.
+    changed = anon_job.halt(listed, [hit], TTY('alias\nMorgan Ashby-Vale\n'), StringIO())
+    assert changed.aliases[hit.name] == 'Morgan Ashby-Vale'
+    key = anon.mapping(changed, [], loaded.pages, key)
+    assert anon.text(hit.name, key, protected=()) == '[CLAIMANT]'
+
+
+@pytest.mark.parametrize('bad', ['people', 'organizations', 'aliases'])
+def test_l4_non_tty_validation_hides_names(tmp_path, bad):
+    folder, _, _, _ = load(tmp_path)
+    path = folder / 'matter.toml'
+    text = path.read_text(encoding='utf-8')
+    if bad == 'people':
+        text = text.replace('"Morgan Ashby-Vale" = "claimant"', '"Morgan Ashby-Vale" = "typo"')
+    elif bad == 'organizations':
+        text = text.replace('"Quarry Ridge Logistics LLC" = "employer"', '"Quarry Ridge Logistics LLC" = "typo"')
+    else:
+        text += '\n[anon.aliases]\n"Secret abbreviation" = "Absent Person"\n'
+    path.write_text(text, encoding='utf-8')
+    with pytest.raises(matterinfo.MatterInfoError) as caught:
+        matterinfo.load(folder)
+    message = str(caught.value)
+    assert not any(v in message for v in ('Morgan', 'Quarry', 'Secret', 'Absent')), 'L4: private name in validation message'
+    assert f'anon.{bad}' in message and 'entry 1' in message and 'correct' in message, 'L4: key index and remedy missing'
+
+
+def test_l6_second_pass_placeholder_and_kept_variant(tmp_path):
+    _, settings, _, _ = load(tmp_path)
+    probe = matter.Page('probe', 1, '[CLAIMANT] saw Beatrice Finch.', ())
+    obj = dict(pages_seen=[probe.page_id], people=[
+        dict(name='[CLAIMANT]', kind='person', quote='[CLAIMANT]', cite=probe.page_id),
+        dict(name='Beatrice Finch', kind='person', quote='Beatrice Finch', cite=probe.page_id)],
+        organizations=[], places=[], anchor_dates=[])
+    with open_db(tmp_path / 'log.sqlite') as log:
+        opener = transport((probe,), obj)
+        verdict = anon_job.check(probe.text.encode(), anon.Key(), anon.NameList(keep=('Dr. Beatrice Finch',)),
+            (probe,), **check_args(log, settings, opener, StringIO()))
+    assert verdict.ok, 'L6: placeholder or authorized kept variant blocks'
 
 
 def test_halt_four(tmp_path,monkeypatch):
@@ -118,10 +172,10 @@ def test_halt_four(tmp_path,monkeypatch):
         anon_job.halt(listed,[new],StringIO(),out)
     assert all(hit.name not in out.getvalue() for hit in [new]), 'non-tty key_leak=1'
     assert out.getvalue() == ('NAME LIST NEEDED: 1 names found on the pages are not in matter.toml [anon]: '
-                              'person (MED0001)\n')
+                              'person (MED0001); add a listed name or an alias in [anon.aliases] with its listed full name\n')
     results.append(caught.value.code==2 and 'NAME LIST NEEDED' in out.getvalue() and len(calls)==2 and
                    (folder/'matter.toml').read_bytes()==before and not (folder/'anon').exists() and not (folder/'outbox').exists())
-    print(f'halt={sum(results)} of 4')
+    print(f'halt={sum(results)} of {len(results)}')
     assert all(results),f'halt={sum(results)} of 4'
 
 
@@ -140,7 +194,7 @@ def test_anchor_three(tmp_path,capsys):
     results.append(not (missing/'anon').exists())
     capture=capsys.readouterr()
     assert '03/11/2025' not in capture.err
-    print(f'anchor={sum(results)} of 3')
+    print(f'anchor={sum(results)} of {len(results)}')
     assert all(results),f'anchor={sum(results)} of 3'
 
 
@@ -185,7 +239,7 @@ def test_second_three_and_order(tmp_path):
         messages='\n'.join(r[0] for table in ('failures','gates') for r in log.connection.execute(f'SELECT message FROM {table}'))
         assert 'Rosalind Mbeki-Farrow' not in messages+out.getvalue(),'key_leak=1'
         assert not (folder/'outbox').exists() and not (missed/'outbox').exists()
-    print(f'second_pass={sum(results)} of 3')
+    print(f'second_pass={sum(results)} of {len(results)}')
     assert all(results),f'second_pass={sum(results)} of 3'
 
 

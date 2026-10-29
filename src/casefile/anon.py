@@ -2,6 +2,7 @@
 
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date, timedelta
+from functools import lru_cache
 import json
 import os
 from pathlib import Path
@@ -22,6 +23,7 @@ class Key:
     refs: dict = field(default_factory=dict)
     dates: dict = field(default_factory=dict)
     srcs: dict = field(default_factory=dict)
+    aliases: dict = field(default_factory=dict)
 
     def to_json(self):
         return json.dumps(asdict(self), ensure_ascii=False, allow_nan=False)
@@ -39,6 +41,7 @@ class NameList:
     anchor: str = ''
     folder: Path | None = None
     info: object = field(default=None, compare=False, repr=False)
+    aliases: dict = field(default_factory=dict)
 
     @property
     def kept(self):
@@ -65,16 +68,27 @@ class Verdict:
 TITLE = re.compile(r'^(?:Dr\.?|Mr\.?|Mrs\.?|Ms\.?)\s+')
 TAG = re.compile(r'\[[^\]\n]*\]')
 GRAMMAR = re.compile(r'\[(?:CLAIMANT|EMPLOYER|DOB|(?:DR|ATTY|PERSON|ORG|PLACE|EMAIL|SSN|PHONE|STREET|ZIP|ID|DATE-REF|SRC)-(?:\d+|n)|DATE D[+-](?:\d+|n)|MONTH M[+-](?:\d+|n)|YEAR Y[+-](?:\d+|n))\]')
-MONTH = '(?:' + '|'.join(m.capitalize() for m in dates.MONTHS) + ')'
+MONTH_FORMS = {form: i + 1 for i, month in enumerate(dates.MONTHS)
+               for form in (month, month[:3], *(['sept'] if month == 'september' else []))}
+MONTH = '(?:' + '|'.join(sorted(MONTH_FORMS, key=len, reverse=True)) + r')\.?'
 SPACE = r'[ \t]*(?:\r?\n[ \t]*)?'
-FULL_DATE = re.compile(r'(?<!\w)(?:\d{4}-\d{2}-\d{2}|\d{1,2}[/\-]\d{1,2}[/\-]\d{4}|'
-                       + MONTH + r'[ \t]+\d{1,2},?' + SPACE + r'\d{4})(?!\w)', re.I)
-MONTH_DATE = re.compile(r'(?<!\w)' + MONTH + r'[ \t]+(?:\r?\n[ \t]*)?\d{4}(?!\w)', re.I)
+FULL_DATE = re.compile(r'(?<!\w)(?:\d{4}-\d{2}-\d{2}|\d{1,2}[/\-]\d{1,2}[/\-](?:\d{4}|\d{2})|'
+                       + MONTH + r'[ \t]+\d{1,2}(?:st|nd|rd|th)?,?' + SPACE + r'\d{4}|'
+                       + r'\d{1,2}(?:st|nd|rd|th)?[ \t]+' + MONTH + r',?' + SPACE + r'\d{4})(?!\w)', re.I)
+MONTH_DATE = re.compile(r'(?<!\w)' + MONTH + r'(?:[ \t]+|[ \t]*\r?\n[ \t]*)\d{4}(?!\w)', re.I)
 YEAR = re.compile(r'(?<![\w./-])(?:19[3-9]\d|20[0-4]\d)(?![\w./-])')
-DATE_REF = re.compile(r'(?<!\w)' + MONTH + r'\s+\d{1,2}(?![\w\d])')
+DATE_REF = re.compile(r'(?<!\w)(?=(?-i:[A-Z]))' + MONTH + r'[ \t]+\d{1,2}(?:st|nd|rd|th)?(?![\w\d])', re.I)
+# The exit guard deliberately admits more forms than the replacement parser.
+CHECK_DATE = re.compile(
+    r'(?<!\w)(?:\d{1,4}[/-]\d{1,2}[/-]\d{1,4}|'
+    r'(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|'
+    r'Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?'
+    r'[ \t\r\n]+(?:\d{1,2}(?:st|nd|rd|th)?(?:,?[ \t\r\n]+\d{2,4})?|\d{4})|'
+    r'\d{1,2}(?:st|nd|rd|th)?[ \t]+[A-Za-z]{3,9}\.?[, \t\r\n]+\d{2,4}|'
+    r'(?:19[3-9]\d|20[0-4]\d))(?!\w)', re.I)
 PATTERNS = (
     ('email', re.compile(r'(?<![\w.])[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}(?!\w)')),
-    ('ssn', re.compile(r'(?<!\w)\d{3}-\d{2}-\d{4}(?!\w)')),
+    ('ssn', re.compile(r'(?<!\w)\d{3}[ .-]\d{2}[ .-]\d{4}(?!\w)')),
     ('phone', re.compile(r'(?<!\w)(?:\+?1[ .-]?)?(?:\(\d{3}\)|\d{3})[ .-]?\d{3}[ .-]\d{4}(?!\w)')),
     ('street', re.compile(r'(?<!\w)\d+[ \t]+(?:[A-Z][\w.-]*[ \t]+){1,5}(?:Street|St\.?|Road|Rd\.?|Avenue|Ave\.?|Lane|Ln\.?|Drive|Dr\.?|Boulevard|Blvd\.?)(?!\w)')),
     ('zip', re.compile(r'(?<=\b[A-Z]{2} )\d{5}(?:-\d{4})?\b')),
@@ -98,19 +112,69 @@ def names(info) -> NameList:
     return NameList(people, orgs, info.anon_employer,
                     tuple(dict.fromkeys((*info.anon_ids, *([info.iab_hearing_number] if info.iab_hearing_number else [])))),
                     info.anon_places, info.anon_keep, info.anon_dob,
-                    info.date_of_accident, info.folder, info)
+                    info.date_of_accident, info.folder, info,
+                    {alias: strip_title(target) if target in info.anon_people or target in
+                     (info.client_name, info.treating_physician) else target for alias, target in info.anon_aliases.items()})
 
 
 def variants(name, kind):
     name = strip_title(name) if kind in ('claimant','doctor','attorney','adjuster','person') else name
     values = [name]
     if kind in ('claimant','doctor','attorney','adjuster','person'):
-        values.append(name.split()[-1])
+        words = name.split()
+        values.extend((words[-1], words[0]))
+        if len(words) > 1:
+            values.append(f'{words[-1]}, {words[0]}')
     return list(dict.fromkeys(v for value in values for v in (value, value.upper()) if v))
 
 
+@lru_cache(maxsize=4096)
 def boundary(value):
     return re.compile(r'(?<![\w\[])' + re.escape(value) + r'(?![\w\]])')
+
+
+PERSON_KINDS = ('claimant', 'doctor', 'attorney', 'adjuster', 'person')
+ORG_KINDS = ('employer', 'other', 'provider', 'insurer')
+
+
+@lru_cache(maxsize=4096)
+def entity_pattern(name, kind, forms):
+    """Match list variants, keeping person case rules and organization punctuation rules."""
+    parts = [re.escape(form) for form in forms if '\n' not in form and '\r' not in form]
+    if kind in PERSON_KINDS and len(name.split()) > 1:
+        given, surname = name.split()[0], name.split()[-1]
+        parts.extend(re.escape(g) + r'[ \t]+[A-Z]\.?' + r'(?:[ \t]+' + re.escape(s) + r')?'
+                     for g, s in ((given, surname), (given.upper(), surname.upper())))
+    if kind in ORG_KINDS:
+        words = re.sub(r'[.,]', '', name).split()
+        suffix = words.pop() if words and words[-1].casefold() in ('llc', 'inc', 'co', 'corp') else ''
+        base = r'[ \t]*[.,]?[ \t]+'.join(re.escape(word) for word in words)
+        if suffix:
+            legal = r'\.?'.join(re.escape(char) for char in suffix)
+            base += r'(?:[ \t.,]+' + legal + r')?'
+        parts.insert(0, '(?i:' + base + ')')
+    return re.compile(r'(?<![\w\[])(?:' + '|'.join(sorted(set(parts), key=len, reverse=True)) + r')(?![\w\]])')
+
+
+def members(namelist, value):
+    """Resolve explicit aliases first, then all list variants without choosing an ambiguity."""
+    records = [*namelist.people.items(), *namelist.organizations.items(), *((n, 'place') for n in namelist.places)]
+    target = next((target for alias, target in namelist.aliases.items() if quotes.same(alias, value)), None)
+    if target is not None:
+        return [(n, k) for n, k in records if n == target]
+    wanted = TITLE.sub('', value).strip()
+    return [(n, k) for n, k in records if entity_pattern(n, k, tuple(variants(n, k))).fullmatch(wanted)]
+
+
+def is_kept(namelist, value):
+    if any(quotes.same(value, alias) and target in namelist.kept for alias, target in namelist.aliases.items()):
+        return True
+    resolved = members(namelist, value)
+    if resolved and all(k in ('adjuster', 'provider', 'insurer') or n in namelist.keep for n, k in resolved):
+        return True
+    wanted = TITLE.sub('', value).strip()
+    return any(entity_pattern(strip_title(n), 'person', tuple(variants(n, 'person'))).fullmatch(wanted)
+               for n in namelist.keep)
 
 
 def protected(pages):
@@ -146,19 +210,25 @@ def mapping(namelist, hits, pages, key) -> Key:
     pages = tuple(pages)
     key._ids = namelist.ids
     key._keep = namelist.kept
+    key._kept_people = {f'kept:{i}': {'name': n, 'kind': k, 'variants': variants(n, k)}
+                        for i, (n, k) in enumerate(namelist.people.items())
+                        if k == 'adjuster' or n in namelist.keep}
     records = [(n,k) for n,k in namelist.people.items()] + [(n,k) for n,k in namelist.organizations.items()]
     records += [(n,'place') for n in namelist.places]
     def position(row):
-        forms = variants(*row)
-        return next(((i, min(m.start() for v in forms for m in boundary(v).finditer(p.text)))
-                     for i,p in enumerate(pages) if any(boundary(v).search(p.text) for v in forms)), (len(pages), 0))
+        patterns = [entity_pattern(*row, tuple(variants(*row))),
+                    *(re.compile(boundary(alias).pattern, re.I) for alias, target in namelist.aliases.items() if target == row[0])]
+        return next(((i, min(m.start() for m in matches)) for i, p in enumerate(pages)
+                     if (matches := [m for pattern in patterns if (m := pattern.search(p.text))])), (len(pages), 0))
     for name, kind in sorted(records, key=position):
         if kind in ('adjuster','provider','insurer') or name in namelist.keep:
             continue
         forms = variants(name, kind)
         for hit in hits:
-            if hit.kind != 'anchor' and any(quotes.same(strip_title(hit.name), v) for v in forms):
-                forms.extend(v for v in variants(hit.name, kind) if v not in forms)
+            if hit.kind != 'anchor' and members(namelist, hit.name) == [(name, kind)]:
+                form = TITLE.sub('', hit.name).strip()
+                if form not in forms:
+                    forms.append(form)
         existing = next((tag for tag, row in key.entities.items() if row['name'] == name and row['kind'] == kind), None)
         if existing:
             key.entities[existing]['variants'] = list(dict.fromkeys((*key.entities[existing]['variants'], *forms)))
@@ -173,6 +243,15 @@ def mapping(namelist, hits, pages, key) -> Key:
             numbers = [int(m[1]) for tag in key.entities if (m := re.fullmatch(r'\['+prefix+r'-(\d+)\]',tag))]
             tag = f'[{prefix}-{max(numbers, default=0)+1}]'
         key.entities[tag] = {'name': name, 'kind': kind, 'variants': forms}
+    for alias, target in namelist.aliases.items():
+        tag = next((tag for tag, row in key.entities.items() if row['name'] == target), None)
+        if tag:
+            if alias in key.aliases and key.aliases[alias] != tag:
+                raise AnonError('anon.aliases: cannot change an existing alias; correct matter.toml')
+            key.aliases[alias] = tag
+            forms = key.entities[tag]['variants']
+            if alias not in forms:
+                forms.append(alias)
     # Preallocate all non-entity references in page order, before packet metadata.
     for page in pages:
         text(page.text, key, protected=(*protected(pages), *namelist.kept), namelist=namelist)
@@ -185,11 +264,19 @@ def _parsed(value):
     if parsed:
         return parsed
     try:
-        if re.fullmatch(r'\d{1,2}-\d{1,2}-\d{4}', compact):
-            m,d,y = map(int, compact.split('-'))
-            return date(y,m,d)
-        return dates.parse(re.sub(r'([A-Za-z]+ \d{1,2}) (\d{4})', r'\1, \2', compact))
-    except ValueError:
+        if m := re.fullmatch(r'(\d{1,2})[/-](\d{1,2})[/-](\d{2}|\d{4})', compact):
+            mo, d, y = map(int, m.groups())
+            if len(m[3]) == 2:
+                y += 1900 if y >= 69 else 2000
+            return date(y, mo, d)
+        compact = re.sub(r'(?<=\d)(?:st|nd|rd|th)\b', '', compact, flags=re.I)
+        compact = compact.replace(',', '').replace('.', '')
+        if m := re.fullmatch(r'([A-Za-z]+) (\d{1,2}) (\d{4})', compact):
+            return date(int(m[3]), MONTH_FORMS[m[1].casefold()], int(m[2]))
+        if m := re.fullmatch(r'(\d{1,2}) ([A-Za-z]+) (\d{4})', compact):
+            return date(int(m[3]), MONTH_FORMS[m[2].casefold()], int(m[1]))
+        return None
+    except (ValueError, KeyError):
         return None
 
 
@@ -211,7 +298,7 @@ def _date_tag(value, key, dob=''):
         tag = f'[DATE {label}]'
     if value not in spellings:
         spellings.append(value)
-    return tag + ('\r\n' if '\r\n' in value else '\n' if '\n' in value else '')
+    return tag + ''.join(re.findall(r'[\r\n]', value))
 
 
 def text(value, key, *, protected, namelist=None) -> str:
@@ -229,18 +316,18 @@ def text(value, key, *, protected, namelist=None) -> str:
     dob = namelist.dob if namelist else key.refs.get('[DOB]', '')
     def full(m):
         label = value[value.rfind('\n', 0, m.start()) + 1:m.start()]
-        labelled = re.search(r'\b(?:DOB|Date of Birth)\s*[:=]?\s*$', label, re.I)
+        labelled = re.search(r'\b(?:D\.?O\.?B\.?|Date[ \t]+of[ \t]+Birth|Birth[ \t]+date)[ \t]*[:=]?[ \t]*$', label, re.I)
         return _date_tag(m[0], key, m[0] if labelled else dob)
     value = _sub(FULL_DATE, full, value, tokens)
     def month(m):
         words = m[0].split()
         anchor = date.fromisoformat(key.anchor)
-        offset = (int(words[-1]) - anchor.year)*12 + dates.MONTHS.index(words[0].casefold()) + 1 - anchor.month
+        offset = (int(words[-1]) - anchor.year)*12 + MONTH_FORMS[words[0].casefold().rstrip('.')] - anchor.month
         tag = f'[MONTH M{offset:+d}]'
         key.dates.setdefault(f'M{offset:+d}', [])
         if m[0] not in key.dates[f'M{offset:+d}']:
             key.dates[f'M{offset:+d}'].append(m[0])
-        return tag + ('\n' if '\n' in m[0] else '')
+        return tag + ''.join(re.findall(r'[\r\n]', m[0]))
     value = _sub(MONTH_DATE, month, value, tokens)
     def year(m):
         label = f'Y{int(m[0])-date.fromisoformat(key.anchor).year:+d}'
@@ -250,11 +337,33 @@ def text(value, key, *, protected, namelist=None) -> str:
         return f'[YEAR {label}]'
     value = _sub(YEAR, year, value, tokens)
     value = _sub(DATE_REF, lambda m: _allocate(key.refs, 'DATE-REF', m[0]), value, tokens)
-    forms = sorted(((v,tag) for tag,row in key.entities.items() for v in row['variants']), key=lambda p:len(p[0]), reverse=True)
-    if forms:
-        lookup = dict(forms)
-        pattern = re.compile(r'(?<![\w\[])(?:' + '|'.join(re.escape(v) for v in dict(forms)) + r')(?![\w\]])')
-        value = _sub(pattern, lambda m: lookup[m[0]], value, tokens)
+    candidates = []
+    for tag, row in {**key.entities, **getattr(key, '_kept_people', {})}.items():
+        pattern = entity_pattern(row['name'], row['kind'], tuple(row['variants']))
+        candidates.extend((m.start(), m.end(), tag) for m in pattern.finditer(value))
+    for alias, tag in key.aliases.items():
+        candidates.extend((m.start(), m.end(), tag) for m in re.finditer(boundary(alias).pattern, value, re.I))
+    spans = _spans(value, tokens)
+    cursor, parts = 0, []
+    for start, end, _ in sorted(set(candidates), key=lambda item: (item[0], -item[1])):
+        if start < cursor or any(start < b and end > a for a, b in spans):
+            continue
+        raw = value[start:end]
+        tags = {tag for a, b, tag in candidates if a == start and b == end}
+        alias_tag = next((tag for alias, tag in key.aliases.items() if quotes.same(alias, raw)), None)
+        if alias_tag:
+            tags = {alias_tag}
+        if len(tags) != 1:
+            continue
+        tag = next(iter(tags))
+        if tag not in key.entities:
+            continue
+        row = key.entities[tag]
+        if raw not in row['variants']:
+            row['variants'].append(raw)
+        parts.extend((value[cursor:start], tag + ''.join(re.findall(r'[\r\n]', raw))))
+        cursor = end
+    value = ''.join((*parts, value[cursor:]))
     return value
 
 
@@ -293,8 +402,6 @@ def _canonical(tag, key):
 
 
 def restore(value, key) -> str:
-    value = re.sub(r'(?<![\w\[])(DR-\d+)(?![\w\]])', r'[\1]', value)
-    value = re.sub(r'(?<![\w\[])(D[+-]\d+)(?![\w\]])', r'[DATE \1]', value)
     value = TAG.sub(lambda m: _canonical(m[0],key), value)
     return TAG.sub(lambda m: key.srcs.get(m[0],m[0]),value)
 
@@ -323,14 +430,18 @@ def restore_quote(quote, key, page) -> str | None:
         values = key.entities[tag]['variants'] if tag in key.entities else [key.srcs[tag]] if tag in key.srcs else None
         label = tag[6:-1] if tag.startswith('[DATE ') else tag[7:-1] if tag.startswith('[MONTH ') else 'DOB' if tag=='[DOB]' else ''
         values = values or key.dates.get(label) or [_canonical(tag,key)]
+        values = sorted(values, key=len, reverse=True)
+        candidates = []
         for value in values:
             next_end = m.end()
             if '\n' in value and quote[next_end:next_end+1] == '\n':
                 next_end += 1
             candidate = prefix + quote[end:m.start()] + value
             if quotes.found_in(candidate, page.text) or quotes.match(candidate,page.text):
-                if (result := walk(index+1,next_end,candidate)) is not None:
-                    return result
+                candidates.append((candidate, next_end))
+        for candidate, next_end in sorted(candidates, key=lambda item: item[0] not in page.text):
+            if (result := walk(index+1,next_end,candidate)) is not None:
+                return result
         return None
     return walk(0,0,'')
 
@@ -395,13 +506,38 @@ def check_code(data, key, namelist, pages) -> Verdict:
     def inside(m):
         return any(m.start()<b and m.end()>a for a,b in hidden)
     folded, source = _fold_positions(value)
-    for row in key.entities.values():
-        for variant in row['variants']:
-            wanted = quotes.fold(variant)
-            for m in re.finditer(r'(?<!\w)' + re.escape(wanted) + r'(?!\w)', folded):
-                start, end = source[m.start()], source[m.end()-1]+1
-                if not any(start < b and end > a for a,b in hidden):
-                    add(1,row['kind'],start)
+    found = {}
+    rows = {**key.entities, **{f'kept:{i}': {'name': n, 'kind': k, 'variants': variants(n, k)}
+            for i, (n, k) in enumerate(namelist.people.items()) if k == 'adjuster' or n in namelist.keep}}
+    for tag, row in rows.items():
+        forms = tuple(quotes.fold(v) for v in row['variants'])
+        pattern = entity_pattern(quotes.fold(row['name']), row['kind'], forms)
+        for m in re.finditer(pattern.pattern, folded, re.I):
+            found.setdefault((m.start(), m.end()), set()).add(tag)
+    for (left, right), tags in found.items():
+        start, end = source[left], source[right - 1] + 1
+        if any(start < b and end > a for a, b in hidden):
+            continue
+        current_alias = next((alias for alias in namelist.aliases if quotes.same(alias, folded[left:right])), None)
+        if current_alias is not None:
+            if not is_kept(namelist, current_alias):
+                resolved = members(namelist, current_alias)
+                add(1, resolved[0][1] if len(resolved) == 1 else 'ambiguous', start)
+            continue
+        explicit = next((tag for alias, tag in key.aliases.items() if quotes.same(alias, folded[left:right])), None)
+        if explicit:
+            tags = {explicit}
+        if len(tags) == 1 and next(iter(tags)) not in key.entities:
+            continue
+        add(1, 'ambiguous' if len(tags) > 1 else rows[next(iter(tags))]['kind'], start)
+    for alias in namelist.aliases:
+        if is_kept(namelist, alias):
+            continue
+        resolved = members(namelist, alias)
+        for m in re.finditer(boundary(quotes.fold(alias)).pattern, folded, re.I):
+            start, end = source[m.start()], source[m.end() - 1] + 1
+            if not any(start < b and end > a for a, b in hidden):
+                add(1, resolved[0][1] if len(resolved) == 1 else 'ambiguous', start)
     for identifier in (*namelist.ids, *([namelist.dob] if namelist.dob else []), *key.dates.get('DOB', [])):
         for m in boundary(identifier).finditer(value):
             if not inside(m):
@@ -409,7 +545,7 @@ def check_code(data, key, namelist, pages) -> Verdict:
     exemptions = _spans(value, (*protected(pages), *namelist.kept))
     def exempt(m):
         return any(m.start()<b and m.end()>a for a,b in exemptions)
-    for pattern in (FULL_DATE, MONTH_DATE, YEAR, DATE_REF):
+    for pattern in (CHECK_DATE,):
         for m in pattern.finditer(value):
             if not exempt(m):
                 add(2,'date',m.start())
@@ -461,7 +597,8 @@ def load_key(folder) -> Key:
         if directory.is_symlink() or path.is_symlink() or path.stat().st_mode & 0o077:
             raise AnonError('anon/key.json must be mode 600')
         data = jsonrepair.loads(path.read_text(encoding='utf-8'))
-        if not isinstance(data,dict) or set(data)!=set(Key.__dataclass_fields__) or data['convention']!='casefile-anon/1':
+        if (not isinstance(data,dict) or set(data) not in (set(Key.__dataclass_fields__), set(Key.__dataclass_fields__) - {'aliases'})
+                or data['convention']!='casefile-anon/1'):
             raise ValueError
         if not isinstance(data['anchor'],str) or (data['anchor'] and not dates.parse(data['anchor'])):
             raise ValueError
@@ -478,6 +615,9 @@ def load_key(folder) -> Key:
                 raise ValueError
         if any(not isinstance(v,list) or any(not isinstance(s,str) for s in v) for v in data['dates'].values()):
             raise ValueError
+        if (not isinstance(data.get('aliases', {}), dict) or any(not isinstance(alias, str)
+                or tag not in data['entities'] for alias, tag in data.get('aliases', {}).items())):
+            raise ValueError
         key = Key(**data)
         key._ids = tuple(v for k,v in key.refs.items() if k.startswith('[ID-'))
         return key
@@ -492,7 +632,7 @@ def save_key(folder, key):
     old = load_key(folder)
     if old.anchor and old.anchor != key.anchor:
         raise AnonError('anon/key.json cannot change anchor')
-    for table in ('entities','refs','dates','srcs'):
+    for table in ('entities','refs','dates','srcs','aliases'):
         for tag,value in getattr(old,table).items():
             new = getattr(key,table).get(tag)
             retained = (isinstance(new,list) and new[:len(value)]==value) if table=='dates' else (

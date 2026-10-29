@@ -86,15 +86,17 @@ class Unit:
     text: str
     cites: tuple[str, ...]
     quotes: tuple[str, ...]
+    quote_error: bool = False
 
 
 def parse_draft(paragraphs):
     result = []
     for index, text in enumerate(paragraphs):
+        text = text.translate(str.maketrans(quotes.CURLY))
         spans = tuple(QUOTED.finditer(text))
         outside = QUOTED.sub(lambda match: ' ' * len(match[0]), text)
         result.append(Unit(index, text, tuple(match[1] for match in CITE.finditer(outside)),
-                           tuple(match[1] for match in spans)))
+                           tuple(match[1] for match in spans), bool(text.count('"') % 2)))
     return result
 
 
@@ -166,6 +168,8 @@ def fact_check(draft, pages, rules, *, restore_prose, restore_quote):
     checked, uncited, rule_hits = [], [], 0
     for unit in units:
         failures = []
+        if unit.quote_error:
+            failures.append(f'paragraph {unit.index + 1}: unparsable quote; close or correct the quotation marks')
         resolved = []
         for cite in unit.cites:
             page = _resolve(cite, pages)

@@ -2,6 +2,7 @@
 
 from dataclasses import replace
 import json
+import re
 import time
 
 import pytest
@@ -67,7 +68,7 @@ def test_text_32():
         ('Quill Quill','[DR-1] [DR-1]',person),
     ]
     results = [transform(value,listed=listed,protected=('MED 123456','probe/001')) == expected for value,expected,listed in cases]
-    print(f'anon_text={sum(results)} of 32')
+    print(f'anon_text={sum(results)} of {len(cases)}')
     assert all(results), [(i,cases[i]) for i,v in enumerate(results) if not v]
     assert anon.restore(transform('[DR-1]'),anon.Key(srcs={'[SRC-1]':'[DR-1]'}))=='[DR-1]'
     key=anon.Key(anchor='2025-03-11')
@@ -90,22 +91,22 @@ def test_pages_and_goldens():
     worst = max(range(len(durations)),key=durations.__getitem__)
     print(f'restore_quote_worst_page={loaded.pages[worst].page_id} ms={durations[worst]*1000:.2f}')
     count=sum(a==p.text for a,p in zip(restored,loaded.pages))
-    print(f'anon_pages={count} of 14')
+    print(f'anon_pages={count} of {len(loaded.pages)}')
     assert count==14, [(p.page_id,a) for p,a in zip(loaded.pages,restored) if a!=p.text]
     expected={name:(GOLDEN/f'{name}.txt').read_text(encoding='utf-8') for name in ('DEF0001','EMP0001')}
     got={p.stamps[0]:s for p,s in zip(loaded.pages,converted)}
     count=sum(got[k]==v for k,v in expected.items())
-    print(f'anon_golden={count} of 2')
+    print(f'anon_golden={count} of {len(expected)}')
     assert count==2,'anon_golden: fixture bytes differ'
     unit=matter.Page('probe',1,'Date March 14,\n2025\nMED 123456',('MED 123456',))
     output=anon.text(unit.text,key,protected=anon.protected((unit,)))
     kept=sum(all(s in extract.page_block(replace(p,text=t)) for s in (*p.stamps,p.page_id)) for p,t in zip(loaded.pages,converted))
     kept+=('MED 123456' in output)
-    print(f'stamps_kept={kept} of 15')
+    print(f'stamps_kept={kept} of {len(loaded.pages) + 1}')
     assert kept==15,'stamps_kept: protected stamp changed'
     lines=sum(p.text.count('\n')==s.count('\n') for p,s in zip(loaded.pages[:-1],converted[:-1]))
     lines+=unit.text.count('\n')==output.count('\n')
-    print(f'lines_kept={lines} of 14')
+    print(f'lines_kept={lines} of {len(loaded.pages)}')
     assert lines==14,'lines_kept: split date lost a newline'
     assert anon.restore_quote(output,key,unit)==unit.text
     joined='\n'.join(converted)
@@ -129,7 +130,7 @@ def test_restore_six():
            ('Invented absent sentence',None,page),('[DR-999]',None,page)]
     result=[anon.restore_quote(s,key,p)==want for s,want,p in pairs]
     result.append(anon.restore('[DATE D+0]',key)=='3/11/2025')
-    print(f'restore_quote={sum(result)} of 6')
+    print(f'restore_quote={sum(result)} of {len(result)}')
     assert all(result),'restore_quote: canonical or source spelling differs'
 
 
@@ -187,7 +188,7 @@ def test_code_sixteen():
         offset=len(prefix.encode())+(3 if kind=='zip' else 0)
         checks.append(not verdict.ok and (step,kind,offset) in verdict.hits)
     checks.append(anon.check_code(json.dumps({'pages':[clean]},ensure_ascii=False).encode(),key,listed,loaded.pages).ok)
-    print(f'check_code={sum(checks)} of 16')
+    print(f'check_code={sum(checks)} of {len(checks)}')
     assert all(checks),f'check_code={sum(checks)} of 16'
 
 
@@ -232,3 +233,104 @@ def test_year_placeholder_must_have_been_seen():
     verdict=anon.check_code(b'[YEAR Y+999]',key,listed,loaded.pages)
     assert verdict==anon.Verdict(False,((5,'placeholder',0),)),'unseen year placeholder accepted'
     assert key.dates['Y-6']==['2019']
+
+
+@pytest.mark.parametrize('value', ['Morgan said hello.', 'Ashby-Vale, Morgan was seen.',
+    'Morgan A. Ashby-Vale was seen.', 'Morgan A. was seen.', 'Quarry Ridge Logistics, LLC paid.',
+    'Quarry Ridge Logistics,LLC paid.',
+    'quarry ridge logistics l.l.c. paid.', 'Quarry Ridge Logistics paid.'])
+def test_h1_variants_replace_and_check(value):
+    loaded, listed, key = setup()
+    output = anon.text(value, key, protected=())
+    tag = '[EMPLOYER]' if 'logistics' in value.casefold() else '[CLAIMANT]'
+    assert tag in output, 'H1: listed variant escaped replacement'
+    assert not anon.check_code(value.encode(), key, listed, loaded.pages).ok, 'H1: listed variant escaped step 1'
+    assert anon.check_code(output.encode(), key, listed, loaded.pages).ok
+    page = matter.Page('variant', 1, value, ())
+    assert anon.restore_quote(output, key, page) == value
+    assert output.count(tag) == 1 and not re.search(r'\b[A-Z]\.', output), 'H1: variant only partially replaced'
+    assert not re.search(r'\bLLC\b', output, re.I), 'H1: organization suffix only partially replaced'
+
+
+@pytest.mark.parametrize('people, value', [
+    ({'Althea Quill': 'doctor', 'Beatrice Quill': 'person'}, 'Quill reviewed it.'),
+    ({'Althea Quill': 'doctor', 'Beatrice Quill': 'adjuster'}, 'Quill reviewed it.'),
+    ({'Althea Quill': 'doctor', 'Althea Finch': 'person'}, 'Althea reviewed it.')])
+def test_m2_ambiguous_variants(people, value):
+    listed = anon.NameList(people=people)
+    key = anon.Key(anchor='2025-03-11')
+    anon.mapping(listed, [], (), key)
+    output = anon.text(value, key, protected=())
+    assert output == value, 'M2: ambiguous mention assigned an identity'
+    assert (1, 'ambiguous', 0) in anon.check_code(output.encode(), key, listed, ()).hits
+
+
+def test_h1_explicit_alias_resolves_shared_given(tmp_path):
+    listed = anon.NameList(people={'Althea Quill': 'doctor', 'Althea Finch': 'person'},
+                           aliases={'Althea': 'Althea Quill'})
+    key = anon.mapping(listed, [], (), anon.Key(anchor='2025-03-11'))
+    assert anon.text('Althea reviewed it.', key, protected=()) == '[DR-1] reviewed it.'
+    assert (1, 'doctor', 0) in anon.check_code(b'Althea reviewed it.', key, listed, ()).hits
+    anon.save_key(tmp_path, key)
+    assert anon.text('Althea', anon.load_key(tmp_path), protected=()) == '[DR-1]'
+    assert anon.text('ALTHEA', anon.load_key(tmp_path), protected=()) == '[DR-1]', 'H1: capitalized alias lost disambiguation'
+
+
+def test_h1_alias_first_appearance_numbers():
+    listed = anon.NameList(people={'Althea Quill': 'doctor', 'Beatrice Finch': 'doctor'}, aliases={'AQ': 'Althea Quill'})
+    page = matter.Page('probe', 1, 'AQ before Beatrice Finch.', ())
+    key = anon.mapping(listed, [], (page,), anon.Key(anchor='2025-03-11'))
+    assert key.entities['[DR-1]']['name'] == 'Althea Quill', 'H1: alias ignored for first appearance'
+
+
+def test_h1_identifier_checks_alias_added_after_key():
+    listed = anon.NameList(people={'Althea Quill': 'doctor'}, aliases={'AQ': 'Althea Quill'})
+    key = anon.mapping(replace(listed, aliases={}), [], (), anon.Key(anchor='2025-03-11'))
+    assert (1, 'doctor', 0) in anon.check_code(b'AQ reviewed it.', key, listed, ()).hits, 'H1: current alias absent from identifier check'
+
+
+@pytest.mark.parametrize('value', ['3/11/25', 'March 11th, 2025', '11 March 2025',
+    'March 11 2025', 'Mar 11, 2025', 'Mar. 11 2025', '11 Mar. 2025'])
+def test_m3_date_forms(value):
+    key = anon.Key(anchor='2025-03-11')
+    assert anon.text(value, key, protected=()) == '[DATE D+0]', 'M3: calendar date not fully replaced'
+    page = matter.Page('date', 1, value, ())
+    assert anon.restore_quote('[DATE D+0]', key, page) == value
+    assert (2, 'date', 0) in anon.check_code(value.encode(), key, anon.NameList(), ()).hits
+
+
+def test_m3_date_detector_independent(monkeypatch):
+    monkeypatch.setattr(anon, 'FULL_DATE', re.compile(r'(?!)'))
+    verdict = anon.check_code(b'3/11/25', anon.Key(), anon.NameList(), ())
+    assert verdict == anon.Verdict(False, ((2, 'date', 0),)), 'M3: check shares replacer blind spot'
+
+
+def test_l1_restore_bracketed_only():
+    key = anon.Key(anchor='2025-03-11', entities={'[DR-1]': {'name': 'Althea Quill'}})
+    value = 'vitamin D-3 and DR-1; D+2 [DR-1] [DATE D+2]'
+    assert anon.restore(value, key) == 'vitamin D-3 and DR-1; D+2 Althea Quill 3/13/2025', 'L1: loose prose rewritten'
+
+
+@pytest.mark.parametrize('value', ['on March\n14 the patient', 'Seen Mar. 11th,\r\n2025.',
+    'March\n2025', 'March\r\n2025', 'Morgan\nAshby-Vale', 'DOB:\n02/17/1981'])
+def test_l2_every_page_keeps_lines(value):
+    key = anon.Key(anchor='2025-03-11')
+    result = anon.text(value, key, protected=())
+    assert (result.count('\n'), result.count('\r')) == (value.count('\n'), value.count('\r')), 'L2: page lost a line break'
+    if value in ('March\n2025', 'March\r\n2025'):
+        assert result.startswith('[MONTH M+0]'), 'L2: wrapped month/year only partly replaced'
+
+
+@pytest.mark.parametrize('label', ['DOB', 'D.O.B.', 'Date of Birth', 'Birth date'])
+def test_l3_untyped_labelled_dob(label):
+    key = anon.Key(anchor='2025-03-11')
+    assert anon.text(label + ': 02/17/1981', key, protected=()) == label + ': [DOB]', 'L3: labelled birth date became offset'
+
+
+@pytest.mark.parametrize('kind, value', [('ssn', '321 54 9876'), ('ssn', '321.54.9876'),
+    ('ssn', '321-54-9876'), ('phone', '302 555 0197'), ('phone', '302.555.0197'),
+    ('phone', '302-555-0197'), ('phone', '(302) 555 0197')])
+def test_l5_contact_separators(kind, value):
+    key = anon.Key(anchor='2025-03-11')
+    assert anon.text(value, key, protected=()) == f'[{kind.upper()}-1]', 'L5: contact separator escaped'
+    assert (3, kind, 0) in anon.check_code(value.encode(), key, anon.NameList(), ()).hits

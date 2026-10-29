@@ -94,25 +94,20 @@ def entity_pass(pages, *, client, rules, log, matter, playbook_version, job, ste
 
 
 def _members(namelist, hit):
-    wanted = anon.strip_title(hit.name)
-    listed = [*namelist.people.items(), *namelist.organizations.items(), *((n,'place') for n in namelist.places)]
-    exact = [(n,k) for n,k in listed if quotes.same(wanted,anon.strip_title(n))]
-    if exact:
-        return exact
-    return [(n,k) for n,k in listed if any(quotes.same(wanted,v) for v in anon.variants(n,k))]
+    return anon.members(namelist, hit.name)
 
 
 def halt(namelist, hits, stdin, stdout):
     """Ask once per unlisted name on a tty, or stop without a write."""
     unknown = []
     for hit in hits:
-        if hit.kind=='anchor' or any(quotes.same(hit.name,v) for v in namelist.kept):
+        if hit.kind=='anchor' or anon.is_kept(namelist, hit.name):
             continue
         members = _members(namelist,hit)
         if len(members)==1:
             continue
         if len(members)>1:
-            print('NAME LIST NEEDED: ambiguous name; resolve matter.toml [anon]',file=stdout)
+            print('NAME LIST NEEDED: ambiguous name; add an alias to matter.toml [anon.aliases] with its listed full name',file=stdout)
             raise NameListNeeded('NAME LIST NEEDED')
         if not any(quotes.same(hit.name,h.name) for h in unknown):
             unknown.append(hit)
@@ -120,20 +115,32 @@ def halt(namelist, hits, stdin, stdout):
         return namelist
     if not stdin.isatty():
         detail = '; '.join(f'{h.kind} ({h.cite})' for h in unknown)
-        print(f'NAME LIST NEEDED: {len(unknown)} names found on the pages are not in matter.toml [anon]: {detail}',file=stdout)
+        print(f'NAME LIST NEEDED: {len(unknown)} names found on the pages are not in matter.toml [anon]: {detail}; '
+              'add a listed name or an alias in [anon.aliases] with its listed full name',file=stdout)
         raise NameListNeeded('NAME LIST NEEDED')
     people, organizations = dict(namelist.people),dict(namelist.organizations)
+    aliases = dict(namelist.aliases)
     places, kept = list(namelist.places),list(namelist.keep)
     for hit in unknown:
         choices = ('claimant','doctor','attorney','adjuster','person') if hit.kind in (
             'claimant','doctor','attorney','adjuster','person') else ('employer','insurer','provider','other') if hit.kind!='place' else ('place',)
-        print(f'Name {hit.name} ({hit.cite}): {", ".join((*choices,"keep"))} [{hit.kind}]: ',
+        unnumbered = hit.kind in ('claimant', 'employer') and any(k == hit.kind for k in
+            (*people.values(), *organizations.values()))
+        default = 'alias' if unnumbered else hit.kind
+        print(f'Name {hit.name} ({hit.cite}): {", ".join((*choices,"alias","keep"))} [{default}]: ',
               end='',file=stdout,flush=True)
-        selected = stdin.readline().strip() or hit.kind
-        if selected not in (*choices,'keep'):
+        selected = stdin.readline().strip() or default
+        if selected not in (*choices,'alias','keep'):
             raise NameListNeeded('NAME LIST NEEDED: choose a listed kind or keep')
         name = anon.strip_title(hit.name)
-        if selected=='keep':
+        if selected == 'alias' or (unnumbered and selected == hit.kind):
+            print('Listed full name for this alias: ', end='', file=stdout, flush=True)
+            target = stdin.readline().strip()
+            records = {**people, **organizations, **{p: 'place' for p in places}}
+            if target not in records:
+                raise NameListNeeded('NAME LIST NEEDED: use a listed full name in matter.toml [anon.aliases]')
+            aliases[hit.name] = target
+        elif selected=='keep':
             kept.append(hit.name)
         elif selected=='place':
             places.append(hit.name)
@@ -141,10 +148,10 @@ def halt(namelist, hits, stdin, stdout):
             people[name]=selected
         else:
             organizations[name]=selected
-    result = replace(namelist,people=people,organizations=organizations,places=tuple(places),keep=tuple(kept))
+    result = replace(namelist,people=people,organizations=organizations,places=tuple(places),keep=tuple(kept),aliases=aliases)
     if namelist.info is not None and namelist.folder is not None:
         info = replace(namelist.info,anon_people=people,anon_organizations=organizations,
-                       anon_places=tuple(places),anon_keep=tuple(kept))
+                       anon_places=tuple(places),anon_keep=tuple(kept),anon_aliases=aliases)
         matterinfo.write(namelist.folder,info)
         result = replace(result,info=info)
     return result
@@ -210,7 +217,7 @@ def check(data, key, namelist, pages, *, client, rules, log, matter, playbook_ve
     blocked=[]
     value=data.decode('utf-8')
     for hit in hits:
-        if any(quotes.same(hit.name,kept) for kept in namelist.kept):
+        if anon.GRAMMAR.fullmatch(hit.name) or anon.is_kept(namelist, hit.name):
             continue
         # Only the attorney's kept entries authorize cleartext, regardless of the model's kind.
         offset=value.find(hit.name)

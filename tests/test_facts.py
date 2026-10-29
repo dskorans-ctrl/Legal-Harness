@@ -243,9 +243,11 @@ CASES = (round_trip, edited_line, removed_middle, cut_middle, torn_tail, missing
 
 def test_casefile(tmp_path):
     assert len(CASES) == 22
+    completed = 0
     for case in CASES:
         case(tmp_path / f"{case.__name__}.jsonl")
-    print("casefile_ok=22 of 22")
+        completed += 1
+    print(f"casefile_ok={completed} of {len(CASES)}")
 
 
 def legacy_bytes(events):
@@ -356,10 +358,15 @@ def split_on_append(path):
             text="Another page of the later examination."))])
     old = facts.append(grouped, source)
     splits = facts.upgrade_events(old)
-    assert [event.payload["page_id"] for event in splits] == ["defense-report/002", "defense-report/003"]
+    assert len(splits) == 1 and splits[0].payload['page_id'] == 'defense-report/002'
+    assert [move['page_id'] for move in splits[0].payload['moves']] == ['defense-report/003']
     new = facts.append(grouped, splits)
-    assert new.split_needed == 0 and len(new.facts) == 3
+    assert new.split_needed == 0 and len(new.facts) == 2, 'M4: one identity became two facts'
     assert new.facts[0].page_ids == ["medical/002", "medical/003"]
+    assert new.facts[1].page_ids == ['defense-report/002', 'defense-report/003']
+    assert new.facts[1].readings == old.facts[0].readings[1:]
+    assert new.facts[1].reading_pages == ['defense-report/002'] * 2 + ['defense-report/003']
+    assert facts.upgrade_events(new) == []
 
 
 def same_identity_still_cites(path):
